@@ -1,0 +1,6 @@
+environment: "Production"
+mssql:
+  connectionString: "CONNECTION_STRING"
+security:
+  expirationAt: 30
+  jwtSecret: "JWT_SECRET"
