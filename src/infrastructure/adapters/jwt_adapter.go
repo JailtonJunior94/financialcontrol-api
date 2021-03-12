@@ -3,7 +3,7 @@ package adapters
 import (
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/src/app/configuration"
+	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/environments"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -25,9 +25,9 @@ func (j *JwtAdapter) GenerateTokenJWT(id, email string) (r string, err error) {
 
 	claims["sub"] = id
 	claims["email"] = email
-	claims["exp"] = time.Now().Local().Add(time.Hour * 24 * time.Duration(configuration.ExpirationAt))
+	claims["exp"] = time.Now().Local().Add(time.Hour * 24 * time.Duration(environments.ExpirationAt))
 
-	t, err := token.SignedString([]byte(configuration.JwtSecret))
+	t, err := token.SignedString([]byte(environments.JwtSecret))
 	if err != nil {
 		return "", err
 	}
