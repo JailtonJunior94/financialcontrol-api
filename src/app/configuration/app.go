@@ -3,6 +3,7 @@ package configuration
 import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/database"
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/environments"
+	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/ioc"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -18,9 +19,7 @@ func App() *fiber.App {
 	environments.SetupEnvironments()
 
 	sqlConnection := database.NewConnection()
-	defer sqlConnection.Disconnect()
-
-	SetupDependencyInjection(sqlConnection)
+	ioc.SetupDependencyInjection(sqlConnection)
 	SetupRoutes(app)
 
 	return app
