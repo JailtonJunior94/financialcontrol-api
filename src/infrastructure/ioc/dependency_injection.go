@@ -11,15 +11,16 @@ import (
 )
 
 var (
-	SqlConnection  database.ISqlConnection
-	HashAdapter    adapters.IHashAdapter
-	JwtAdapter     adapters.IJwtAdapter
-	UuidAdapter    adapters.IUuidAdapter
-	UserRepository interfaces.IUserRepository
-	UserService    usecases.IUserService
-	AuthService    usecases.IAuthService
-	UserController *controllers.UserController
-	AuthController *controllers.AuthController
+	SqlConnection         database.ISqlConnection
+	HashAdapter           adapters.IHashAdapter
+	JwtAdapter            adapters.IJwtAdapter
+	UuidAdapter           adapters.IUuidAdapter
+	UserRepository        interfaces.IUserRepository
+	UserService           usecases.IUserService
+	AuthService           usecases.IAuthService
+	UserController        *controllers.UserController
+	AuthController        *controllers.AuthController
+	TransactionController *controllers.TransactionController
 )
 
 func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
@@ -41,4 +42,5 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
 	AuthController = controllers.NewAuthController(AuthService)
+	TransactionController = controllers.NewTransactionController(JwtAdapter)
 }
