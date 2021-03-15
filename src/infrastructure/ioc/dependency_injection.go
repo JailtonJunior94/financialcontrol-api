@@ -17,7 +17,9 @@ var (
 	UuidAdapter    adapters.IUuidAdapter
 	UserRepository interfaces.IUserRepository
 	UserService    usecases.IUserService
+	AuthService    usecases.IAuthService
 	UserController *controllers.UserController
+	AuthController *controllers.AuthController
 )
 
 func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
@@ -34,7 +36,9 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 
 	/* Services */
 	UserService = services.NewUserService(UserRepository, HashAdapter)
+	AuthService = services.NewAuthService(UserRepository, HashAdapter, JwtAdapter)
 
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
+	AuthController = controllers.NewAuthController(AuthService)
 }

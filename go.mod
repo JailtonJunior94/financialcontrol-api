@@ -6,6 +6,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.9.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gofiber/fiber/v2 v2.5.0
+	github.com/gofiber/jwt/v2 v2.1.0
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/viper v1.7.1

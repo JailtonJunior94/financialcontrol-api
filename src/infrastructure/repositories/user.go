@@ -33,6 +33,7 @@ func (u *UserRepository) Add(p *entities.User) (user *entities.User, err error) 
 		sql.Named("createdAt", p.CreatedAt),
 		sql.Named("updatedAt", p.UpdatedAt),
 		sql.Named("active", p.Active))
+
 	if err != nil {
 		return nil, err
 	}
@@ -46,5 +47,13 @@ func (u *UserRepository) Add(p *entities.User) (user *entities.User, err error) 
 }
 
 func (u *UserRepository) GetByEmail(email string) (user *entities.User, err error) {
-	return nil, nil
+	connection := u.Db.Connect()
+	row := connection.QueryRow(queries.GetByEmail, sql.Named("email", email))
+
+	usu := new(entities.User)
+
+	if err := row.Scan(&usu.ID, &usu.Name, &usu.Email, &usu.Password, &usu.CreatedAt, &usu.UpdatedAt, &usu.Active); err != nil {
+		return nil, err
+	}
+	return usu, nil
 }
