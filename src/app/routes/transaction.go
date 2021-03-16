@@ -8,5 +8,7 @@ import (
 )
 
 func AddTransactionRouter(router fiber.Router) {
-	router.Post("/transactions", middlewares.Protected(), ioc.TransactionController.Create)
+	router.Post("/transactions", middlewares.Protected(), ioc.TransactionController.CreateTransaction)
+	router.Post("/transactions/:id", middlewares.Protected(), ioc.TransactionController.CreateTransactionItem)
+	router.Get("/transactions/:id", middlewares.Protected(), ioc.TransactionController.TransactionById)
 }

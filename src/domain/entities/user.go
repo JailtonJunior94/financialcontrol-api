@@ -1,10 +1,10 @@
 package entities
 
 type User struct {
-	Entity
 	Name     string `db:"Name"`
 	Email    string `db:"Email"`
 	Password string `db:"Password"`
+	Entity
 }
 
 func (u *User) NewUser(name, email, password string) {

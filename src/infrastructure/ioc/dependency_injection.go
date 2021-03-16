@@ -16,8 +16,10 @@ var (
 	JwtAdapter            adapters.IJwtAdapter
 	UuidAdapter           adapters.IUuidAdapter
 	UserRepository        interfaces.IUserRepository
+	TransactionRepository interfaces.ITransactionRepository
 	UserService           usecases.IUserService
 	AuthService           usecases.IAuthService
+	TransactionService    usecases.ITransactionService
 	UserController        *controllers.UserController
 	AuthController        *controllers.AuthController
 	TransactionController *controllers.TransactionController
@@ -34,13 +36,15 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 
 	/* Repositories */
 	UserRepository = repositories.NewUserRepository(SqlConnection)
+	TransactionRepository = repositories.NewTransactionRepository(SqlConnection)
 
 	/* Services */
 	UserService = services.NewUserService(UserRepository, HashAdapter)
 	AuthService = services.NewAuthService(UserRepository, HashAdapter, JwtAdapter)
+	TransactionService = services.NewTransactionService(TransactionRepository)
 
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
 	AuthController = controllers.NewAuthController(AuthService)
-	TransactionController = controllers.NewTransactionController(JwtAdapter)
+	TransactionController = controllers.NewTransactionController(JwtAdapter, TransactionService)
 }

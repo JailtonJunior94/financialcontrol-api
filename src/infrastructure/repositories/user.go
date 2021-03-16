@@ -18,8 +18,7 @@ func NewUserRepository(db database.ISqlConnection) interfaces.IUserRepository {
 }
 
 func (u *UserRepository) Add(p *entities.User) (user *entities.User, err error) {
-	connection := u.Db.Connect()
-	s, err := connection.Prepare(queries.AddUser)
+	s, err := u.Db.OpenConnectionAndMountStatement(queries.AddUser)
 	if err != nil {
 		return nil, err
 	}
@@ -34,12 +33,7 @@ func (u *UserRepository) Add(p *entities.User) (user *entities.User, err error) 
 		sql.Named("updatedAt", p.UpdatedAt),
 		sql.Named("active", p.Active))
 
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := result.RowsAffected()
-	if rows == 0 {
+	if err := u.Db.ValidateResult(result, err); err != nil {
 		return nil, err
 	}
 

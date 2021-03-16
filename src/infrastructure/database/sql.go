@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/environments"
@@ -13,6 +14,8 @@ import (
 type ISqlConnection interface {
 	Connect() *sqlx.DB
 	Disconnect()
+	OpenConnectionAndMountStatement(query string) (*sql.Stmt, error)
+	ValidateResult(result sql.Result, err error) error
 }
 
 type SqlConnection struct {
@@ -40,4 +43,24 @@ func (s *SqlConnection) Disconnect() {
 	if err := s.db.Close(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (s *SqlConnection) OpenConnectionAndMountStatement(query string) (*sql.Stmt, error) {
+	stmt, err := s.db.DB.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	return stmt, nil
+}
+
+func (s *SqlConnection) ValidateResult(result sql.Result, err error) error {
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if rows == 0 {
+		return err
+	}
+	return nil
 }
