@@ -9,5 +9,5 @@ type TransactionResponse struct {
 	Income  float64                   `json:"income"`
 	Outcome float64                   `json:"outcome"`
 	Active  bool                      `json:"active"`
-	Items   []TransactionItemResponse `json:"items"`
+	Items   []TransactionItemResponse `json:"items,omitempty"`
 }

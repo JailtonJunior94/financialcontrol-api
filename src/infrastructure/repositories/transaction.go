@@ -38,7 +38,6 @@ func (r *TransactionRepository) AddTransaction(t *entities.Transaction) (transac
 	if err := r.Db.ValidateResult(result, err); err != nil {
 		return nil, err
 	}
-
 	return t, nil
 }
 
@@ -62,26 +61,33 @@ func (r *TransactionRepository) AddTransactionItem(t *entities.TransactionItem) 
 	if err := r.Db.ValidateResult(result, err); err != nil {
 		return nil, err
 	}
-
-	return t, nil
-}
-
-func (r *TransactionRepository) GetTransactionById(id string) (transaction *entities.Transaction, err error) {
-	connection := r.Db.Connect()
-	row := connection.QueryRow(queries.GetTransactionById, sql.Named("id", id))
-
-	t := new(entities.Transaction)
-
-	if err := row.Scan(&t.ID, &t.UserId, &t.Date, &t.Total, &t.Income, &t.Outcome, &t.CreatedAt, &t.UpdatedAt, &t.Active); err != nil {
-		return nil, err
-	}
 	return t, nil
 }
 
 func (r *TransactionRepository) GetItemByTransactionId(transactionId string) (items []entities.TransactionItem, err error) {
 	connection := r.Db.Connect()
+
 	if err := connection.Select(&items, queries.GetItemByTransactionId, sql.Named("transactionId", transactionId)); err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+func (r *TransactionRepository) GetTransactions(userId string) (transactions []entities.Transaction, err error) {
+	connection := r.Db.Connect()
+	if err := connection.Select(&transactions, queries.GetTransactions, sql.Named("userId", userId)); err != nil {
+		return nil, err
+	}
+	return transactions, nil
+}
+
+func (r *TransactionRepository) GetTransactionById(id string, userId string) (transaction *entities.Transaction, err error) {
+	connection := r.Db.Connect()
+	row := connection.QueryRow(queries.GetTransactionById, sql.Named("id", id), sql.Named("userId", userId))
+
+	t := new(entities.Transaction)
+	if err := row.Scan(&t.ID, &t.UserId, &t.Date, &t.Total, &t.Income, &t.Outcome, &t.CreatedAt, &t.UpdatedAt, &t.Active); err != nil {
+		return nil, err
+	}
+	return t, nil
 }

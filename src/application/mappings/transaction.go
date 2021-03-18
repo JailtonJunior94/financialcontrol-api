@@ -25,6 +25,26 @@ func ToTransactionResponse(e *entities.Transaction) (r *responses.TransactionRes
 	}
 }
 
+func ToManyTransactionResponse(entities []entities.Transaction) (r []responses.TransactionResponse) {
+	if len(entities) == 0 {
+		return make([]responses.TransactionResponse, 0)
+	}
+
+	for _, e := range entities {
+		transaction := responses.TransactionResponse{
+			ID:      e.ID,
+			Date:    e.Date,
+			Total:   e.Total,
+			Income:  e.Income,
+			Outcome: e.Outcome,
+			Active:  e.Active,
+		}
+		r = append(r, transaction)
+	}
+
+	return r
+}
+
 func ToTransactionItemEntity(r *requests.TransactionItemRequest, transactionId string) (e *entities.TransactionItem) {
 	entity := new(entities.TransactionItem)
 	entity.NewTransactionItem(transactionId, r.Title, r.Type, r.Value)

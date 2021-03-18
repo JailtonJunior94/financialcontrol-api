@@ -19,8 +19,7 @@ func NewTransactionController(j adapters.IJwtAdapter, s usecases.ITransactionSer
 }
 
 func (u *TransactionController) CreateTransaction(c *fiber.Ctx) error {
-	authorization := c.Get("Authorization")
-	userId, err := u.Jwt.ExtractClaims(authorization)
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 	}
@@ -53,6 +52,21 @@ func (u *TransactionController) CreateTransactionItem(c *fiber.Ctx) error {
 }
 
 func (u *TransactionController) TransactionById(c *fiber.Ctx) error {
-	response := u.Service.TransactionById(c.Params("id"))
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.TransactionById(c.Params("id"), *userId)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *TransactionController) Transactions(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.Transactions(*userId)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }

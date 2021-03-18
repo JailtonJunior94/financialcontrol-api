@@ -1,8 +1,6 @@
 package services
 
 import (
-	"fmt"
-
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/mappings"
@@ -40,25 +38,30 @@ func (s *TransactionService) CreateTransactionItem(request *requests.Transaction
 	return responses.Created(mappings.ToTransactionItemResponse(transactionItem))
 }
 
-func (s *TransactionService) TransactionById(id string) *responses.HttpResponse {
-	transaction, err := s.TransactionRepository.GetTransactionById(id)
+func (s *TransactionService) Transactions(userId string) *responses.HttpResponse {
+	transactions, err := s.TransactionRepository.GetTransactions(userId)
 	if err != nil {
 		return responses.ServerError()
+	}
+
+	return responses.Ok(mappings.ToManyTransactionResponse(transactions))
+}
+
+func (s *TransactionService) TransactionById(id string, userId string) *responses.HttpResponse {
+	transaction, err := s.TransactionRepository.GetTransactionById(id, userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if transaction == nil {
+		return responses.NotFound("Não foi encontrado nenhuma Transação")
 	}
 
 	items, err := s.TransactionRepository.GetItemByTransactionId(id)
 	if err != nil {
 		return responses.ServerError()
 	}
-
-	if transaction == nil {
-		return responses.NotFound("")
-	}
-
 	transaction.AddItems(items)
-	total := transaction.GetTotal()
-
-	fmt.Println(total)
 
 	return responses.Ok(mappings.ToTransactionResponse(transaction))
 }

@@ -13,6 +13,24 @@ const (
 					dbo.[User] (NOLOCK)
 				WHERE
 					[Email] = @email`
+	GetTransactions = `SELECT
+						CAST([Id] AS CHAR(36)) [Id],
+						CAST([UserId] AS CHAR(36)) [UserId],
+						[Date],
+						[Total],
+						[Income],
+						[Outcome],
+						[CreatedAt],
+						[UpdatedAt],
+						[Active]
+					FROM
+						dbo.[Transaction] (NOLOCK)
+					WHERE
+						[UserId] = @userId
+					AND
+						[Active] = 1
+					ORDER BY
+						[Date]`
 	GetTransactionById = `SELECT 
 							CAST([Id] AS CHAR(36)) [Id],
 							CAST([UserId] AS CHAR(36)) [UserId],
@@ -25,7 +43,10 @@ const (
 							[Active]
 						FROM 
 							dbo.[Transaction] (NOLOCK)
-						WHERE [Id] = @id`
+						WHERE 
+							[Id] = @id
+						AND 
+							[UserId] = @userId`
 	GetItemByTransactionId = `SELECT 
 								CAST([Id] AS CHAR(36)) [Id],
 								CAST([TransactionId] AS CHAR(36)) [TransactionId],
