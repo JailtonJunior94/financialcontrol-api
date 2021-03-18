@@ -7,7 +7,7 @@ import (
 
 type ITransactionService interface {
 	CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse
-	CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string) *responses.HttpResponse
+	CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse
 	Transactions(userId string) *responses.HttpResponse
 	TransactionById(id string, userId string) *responses.HttpResponse
 }

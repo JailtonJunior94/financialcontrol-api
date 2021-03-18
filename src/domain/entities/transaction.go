@@ -27,6 +27,11 @@ func (u *Transaction) AddItems(items []TransactionItem) {
 	u.TransactionItems = items
 }
 
+func (u *Transaction) UpdatingValues() {
+	u.GetTotal()
+	u.ChangeUpdatedAt()
+}
+
 func (u *Transaction) GetTotal() float64 {
 	u.Total = u.SumIncomes() - u.SumOutcome()
 	return u.Total
@@ -42,10 +47,16 @@ func (u *Transaction) SumIncomes() float64 {
 		return 0
 	}
 
-	for _, income := range incomes {
-		u.Income += income.Value
+	var income float64
+	for _, i := range incomes {
+		income += i.Value
 	}
 
+	return u.AddIncome(income)
+}
+
+func (u *Transaction) AddIncome(income float64) float64 {
+	u.Income = income
 	return u.Income
 }
 
@@ -59,10 +70,16 @@ func (u *Transaction) SumOutcome() float64 {
 		return 0
 	}
 
-	for _, outcome := range outcomes {
-		u.Outcome += outcome.Value
+	var outcome float64
+	for _, o := range outcomes {
+		outcome += o.Value
 	}
 
+	return u.AddOutcome(outcome)
+}
+
+func (u *Transaction) AddOutcome(outcome float64) float64 {
+	u.Outcome = outcome
 	return u.Outcome
 }
 

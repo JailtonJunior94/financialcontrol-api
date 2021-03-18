@@ -62,4 +62,13 @@ const (
 	AddUser            = `INSERT INTO dbo.[User] VALUES (@id, @name, @email, @password, @createdAt, @updatedAt, @active)`
 	AddTransaction     = `INSERT INTO dbo.[Transaction] VALUES (@id, @userId, @date, @total, @income, @outcome, @createdAt, @updatedAt, @active)`
 	AddTransactionItem = `INSERT INTO dbo.[TransactionItem] VALUES (@id, @transactionId, @title, @value, @type, @createdAt, @updatedAt, @active)`
+	UpdateTransaction  = `UPDATE
+								dbo.[Transaction]
+							SET
+								[Total] = @total,
+								[Income] = @income,
+								[Outcome] = @outcome,
+								[UpdatedAt] = @updatedAt
+							WHERE
+								[Id] = @id`
 )

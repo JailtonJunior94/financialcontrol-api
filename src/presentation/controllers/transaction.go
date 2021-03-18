@@ -38,6 +38,11 @@ func (u *TransactionController) CreateTransaction(c *fiber.Ctx) error {
 }
 
 func (u *TransactionController) CreateTransactionItem(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
 	request := new(requests.TransactionItemRequest)
 	if err := c.BodyParser(request); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
@@ -47,7 +52,7 @@ func (u *TransactionController) CreateTransactionItem(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	response := u.Service.CreateTransactionItem(request, c.Params("id"))
+	response := u.Service.CreateTransactionItem(request, c.Params("id"), *userId)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 

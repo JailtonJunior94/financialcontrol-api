@@ -91,3 +91,23 @@ func (r *TransactionRepository) GetTransactionById(id string, userId string) (tr
 	}
 	return t, nil
 }
+
+func (r *TransactionRepository) UpdateTransaction(t *entities.Transaction) (transaction *entities.Transaction, err error) {
+	s, err := r.Db.OpenConnectionAndMountStatement(queries.UpdateTransaction)
+	if err != nil {
+		return nil, err
+	}
+	defer s.Close()
+
+	result, err := s.Exec(
+		sql.Named("id", t.ID),
+		sql.Named("total", t.Total),
+		sql.Named("income", t.Income),
+		sql.Named("outcome", t.Outcome),
+		sql.Named("updatedAt", t.UpdatedAt))
+
+	if err := r.Db.ValidateResult(result, err); err != nil {
+		return nil, err
+	}
+	return t, nil
+}

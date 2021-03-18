@@ -27,7 +27,7 @@ func (s *TransactionService) CreateTransaction(request *requests.TransactionRequ
 	return responses.Created(mappings.ToTransactionResponse(transaction))
 }
 
-func (s *TransactionService) CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string) *responses.HttpResponse {
+func (s *TransactionService) CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse {
 	newTransactionItem := mappings.ToTransactionItemEntity(request, transactionId)
 
 	transactionItem, err := s.TransactionRepository.AddTransactionItem(newTransactionItem)
@@ -35,6 +35,22 @@ func (s *TransactionService) CreateTransactionItem(request *requests.Transaction
 		return responses.ServerError()
 	}
 
+	transaction, err := s.TransactionRepository.GetTransactionById(transactionId, userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	items, err := s.TransactionRepository.GetItemByTransactionId(transactionId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	transaction.AddItems(items)
+	transaction.UpdatingValues()
+
+	if _, err := s.TransactionRepository.UpdateTransaction(transaction); err != nil {
+		return responses.ServerError()
+	}
 	return responses.Created(mappings.ToTransactionItemResponse(transactionItem))
 }
 

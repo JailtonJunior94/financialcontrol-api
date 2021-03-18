@@ -8,4 +8,5 @@ type ITransactionRepository interface {
 	GetTransactions(userId string) (transactions []entities.Transaction, err error)
 	GetTransactionById(id string, userId string) (transaction *entities.Transaction, err error)
 	GetItemByTransactionId(transactionId string) (items []entities.TransactionItem, err error)
+	UpdateTransaction(t *entities.Transaction) (transaction *entities.Transaction, err error)
 }
