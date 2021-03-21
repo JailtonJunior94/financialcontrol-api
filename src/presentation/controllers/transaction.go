@@ -75,3 +75,37 @@ func (u *TransactionController) Transactions(c *fiber.Ctx) error {
 	response := u.Service.Transactions(*userId)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
+
+func (u *TransactionController) TransactionItemById(c *fiber.Ctx) error {
+	response := u.Service.TransactionItemById(c.Params("itemId"))
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *TransactionController) UpdateTransactionItem(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	request := new(requests.TransactionItemRequest)
+	if err := c.BodyParser(request); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
+	}
+
+	if err := request.IsValid(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	response := u.Service.UpdateTransactionItem(c.Params("itemId"), *userId, request)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *TransactionController) RemoveTransactionItem(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.RemoveTransactionItem(c.Params("itemId"), *userId)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}

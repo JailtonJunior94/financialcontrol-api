@@ -16,3 +16,15 @@ func (u *TransactionItem) NewTransactionItem(transactionId, title, typ string, v
 	u.Value = value
 	u.Type = typ
 }
+
+func (u *TransactionItem) UpdateTransactionItem(title, typ string, value float64) {
+	u.Title = title
+	u.Type = typ
+	u.Value = value
+	u.ChangeUpdatedAt()
+}
+
+func (u *TransactionItem) UpdateStatus(status bool) {
+	u.ChangeUpdatedAt()
+	u.ChangeStatus(status)
+}

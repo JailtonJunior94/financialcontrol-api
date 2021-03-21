@@ -10,4 +10,7 @@ type ITransactionService interface {
 	CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse
 	Transactions(userId string) *responses.HttpResponse
 	TransactionById(id string, userId string) *responses.HttpResponse
+	TransactionItemById(id string) *responses.HttpResponse
+	UpdateTransactionItem(id, userId string, request *requests.TransactionItemRequest) *responses.HttpResponse
+	RemoveTransactionItem(id, userId string) *responses.HttpResponse
 }

@@ -111,3 +111,35 @@ func (r *TransactionRepository) UpdateTransaction(t *entities.Transaction) (tran
 	}
 	return t, nil
 }
+
+func (r *TransactionRepository) GetTransactionItemsById(id string) (transactionItem *entities.TransactionItem, err error) {
+	connection := r.Db.Connect()
+	row := connection.QueryRow(queries.GetTransactionItemsById, sql.Named("id", id))
+
+	t := new(entities.TransactionItem)
+	if err := row.Scan(&t.ID, &t.TransactionId, &t.Title, &t.Value, &t.Type, &t.CreatedAt, &t.UpdatedAt, &t.Active); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+func (r *TransactionRepository) UpdateTransactionItem(t *entities.TransactionItem) (transactionItem *entities.TransactionItem, err error) {
+	s, err := r.Db.OpenConnectionAndMountStatement(queries.UpdateTransactionItem)
+	if err != nil {
+		return nil, err
+	}
+	defer s.Close()
+
+	result, err := s.Exec(
+		sql.Named("id", t.ID),
+		sql.Named("title", t.Title),
+		sql.Named("value", t.Value),
+		sql.Named("type", t.Type),
+		sql.Named("updatedAt", t.UpdatedAt),
+		sql.Named("active", t.Active))
+
+	if err := r.Db.ValidateResult(result, err); err != nil {
+		return nil, err
+	}
+	return t, nil
+}

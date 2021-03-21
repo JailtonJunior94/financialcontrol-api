@@ -31,6 +31,10 @@ func Created(data interface{}) *HttpResponse {
 	return newHttpResponse(http.StatusCreated, data)
 }
 
+func NoContent() *HttpResponse {
+	return newHttpResponse(http.StatusNoContent, nil)
+}
+
 func BadRequest(data interface{}) *HttpResponse {
 	return newHttpResponse(http.StatusBadRequest, formatError(data))
 }
