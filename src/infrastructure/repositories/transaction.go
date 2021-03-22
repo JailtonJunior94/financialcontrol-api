@@ -86,9 +86,15 @@ func (r *TransactionRepository) GetTransactionById(id string, userId string) (tr
 	row := connection.QueryRow(queries.GetTransactionById, sql.Named("id", id), sql.Named("userId", userId))
 
 	t := new(entities.Transaction)
-	if err := row.Scan(&t.ID, &t.UserId, &t.Date, &t.Total, &t.Income, &t.Outcome, &t.CreatedAt, &t.UpdatedAt, &t.Active); err != nil {
+	err = row.Scan(&t.ID, &t.UserId, &t.Date, &t.Total, &t.Income, &t.Outcome, &t.CreatedAt, &t.UpdatedAt, &t.Active)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err != nil {
 		return nil, err
 	}
+
 	return t, nil
 }
 
@@ -117,9 +123,15 @@ func (r *TransactionRepository) GetTransactionItemsById(id string) (transactionI
 	row := connection.QueryRow(queries.GetTransactionItemsById, sql.Named("id", id))
 
 	t := new(entities.TransactionItem)
-	if err := row.Scan(&t.ID, &t.TransactionId, &t.Title, &t.Value, &t.Type, &t.CreatedAt, &t.UpdatedAt, &t.Active); err != nil {
+	err = row.Scan(&t.ID, &t.TransactionId, &t.Title, &t.Value, &t.Type, &t.CreatedAt, &t.UpdatedAt, &t.Active)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err != nil {
 		return nil, err
 	}
+
 	return t, nil
 }
 
