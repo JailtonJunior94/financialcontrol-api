@@ -4,6 +4,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/mappings"
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
 )
@@ -14,32 +15,6 @@ type TransactionService struct {
 
 func NewTransactionService(r interfaces.ITransactionRepository) usecases.ITransactionService {
 	return &TransactionService{TransactionRepository: r}
-}
-
-func (s *TransactionService) CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse {
-	newTransaction := mappings.ToTransactionEntity(request, userId)
-
-	transaction, err := s.TransactionRepository.AddTransaction(newTransaction)
-	if err != nil {
-		return responses.ServerError()
-	}
-
-	return responses.Created(mappings.ToTransactionResponse(transaction))
-}
-
-func (s *TransactionService) CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse {
-	newTransactionItem := mappings.ToTransactionItemEntity(request, transactionId)
-
-	transactionItem, err := s.TransactionRepository.AddTransactionItem(newTransactionItem)
-	if err != nil {
-		return responses.ServerError()
-	}
-
-	if err := s.updatingTransactionValues(transactionId, userId); err != nil {
-		return responses.ServerError()
-	}
-
-	return responses.Created(mappings.ToTransactionItemResponse(transactionItem))
 }
 
 func (s *TransactionService) Transactions(userId string) *responses.HttpResponse {
@@ -58,7 +33,7 @@ func (s *TransactionService) TransactionById(id string, userId string) *response
 	}
 
 	if transaction == nil {
-		return responses.NotFound("Não foi encontrado nenhuma Transação")
+		return responses.NotFound(customErrors.TransactionItemNotFound)
 	}
 
 	items, err := s.TransactionRepository.GetItemByTransactionId(id)
@@ -70,27 +45,53 @@ func (s *TransactionService) TransactionById(id string, userId string) *response
 	return responses.Ok(mappings.ToTransactionResponse(transaction))
 }
 
-func (s *TransactionService) TransactionItemById(id string) *responses.HttpResponse {
-	item, err := s.TransactionRepository.GetTransactionItemsById(id)
+func (s *TransactionService) CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse {
+	newTransaction := mappings.ToTransactionEntity(request, userId)
+
+	transaction, err := s.TransactionRepository.AddTransaction(newTransaction)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.Created(mappings.ToTransactionResponse(transaction))
+}
+
+func (s *TransactionService) TransactionItemById(transactionId, id string) *responses.HttpResponse {
+	item, err := s.TransactionRepository.GetTransactionItemsById(transactionId, id)
 	if err != nil {
 		return responses.ServerError()
 	}
 
 	if item == nil {
-		return responses.NotFound("Não foi encontrado nenhum item da transação")
+		return responses.NotFound(customErrors.TransactionItemNotFound)
 	}
 
 	return responses.Ok(mappings.ToTransactionItemResponse(item))
 }
 
-func (s *TransactionService) UpdateTransactionItem(id, userId string, request *requests.TransactionItemRequest) *responses.HttpResponse {
-	item, err := s.TransactionRepository.GetTransactionItemsById(id)
+func (s *TransactionService) CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse {
+	newTransactionItem := mappings.ToTransactionItemEntity(request, transactionId)
+
+	transactionItem, err := s.TransactionRepository.AddTransactionItem(newTransactionItem)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if err := s.updatingTransactionValues(transactionId, userId); err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.Created(mappings.ToTransactionItemResponse(transactionItem))
+}
+
+func (s *TransactionService) UpdateTransactionItem(transactionId, id, userId string, request *requests.TransactionItemRequest) *responses.HttpResponse {
+	item, err := s.TransactionRepository.GetTransactionItemsById(transactionId, id)
 	if err != nil {
 		return responses.ServerError()
 	}
 
 	if item == nil {
-		return responses.NotFound("Não foi encontrado nenhum item da transação")
+		return responses.NotFound(customErrors.TransactionItemNotFound)
 	}
 
 	item.UpdateTransactionItem(request.Title, request.Type, request.Value)
@@ -105,14 +106,14 @@ func (s *TransactionService) UpdateTransactionItem(id, userId string, request *r
 	return responses.Ok(mappings.ToTransactionItemResponse(item))
 }
 
-func (s *TransactionService) RemoveTransactionItem(id, userId string) *responses.HttpResponse {
-	item, err := s.TransactionRepository.GetTransactionItemsById(id)
+func (s *TransactionService) RemoveTransactionItem(transactionId, id, userId string) *responses.HttpResponse {
+	item, err := s.TransactionRepository.GetTransactionItemsById(transactionId, id)
 	if err != nil {
 		return responses.ServerError()
 	}
 
 	if item == nil {
-		return responses.NotFound("Não foi encontrado nenhum item da transação")
+		return responses.NotFound(customErrors.TransactionItemNotFound)
 	}
 
 	item.UpdateStatus(false)

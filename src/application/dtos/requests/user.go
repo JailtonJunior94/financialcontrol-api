@@ -1,6 +1,8 @@
 package requests
 
-import "errors"
+import (
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
+)
 
 type UserRequest struct {
 	Name     string `json:"name"`
@@ -10,15 +12,15 @@ type UserRequest struct {
 
 func (u *UserRequest) IsValid() error {
 	if u.Name == "" {
-		return errors.New("")
+		return customErrors.NameIsRequired
 	}
 
 	if u.Email == "" {
-		return errors.New("")
+		return customErrors.EmailIsRequired
 	}
 
 	if u.Password == "" {
-		return errors.New("")
+		return customErrors.PasswordIsRequired
 	}
 
 	return nil

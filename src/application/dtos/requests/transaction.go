@@ -12,7 +12,7 @@ type TransactionRequest struct {
 
 func (u *TransactionRequest) IsValid() error {
 	if u.Date == time.Now() {
-		return customErrors.EmailIsRequired
+		return customErrors.DateIsRequired
 	}
 
 	return nil

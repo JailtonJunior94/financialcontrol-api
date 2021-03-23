@@ -6,11 +6,11 @@ import (
 )
 
 type ITransactionService interface {
-	CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse
-	CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse
 	Transactions(userId string) *responses.HttpResponse
 	TransactionById(id string, userId string) *responses.HttpResponse
-	TransactionItemById(id string) *responses.HttpResponse
-	UpdateTransactionItem(id, userId string, request *requests.TransactionItemRequest) *responses.HttpResponse
-	RemoveTransactionItem(id, userId string) *responses.HttpResponse
+	CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse
+	TransactionItemById(transactionId, id string) *responses.HttpResponse
+	CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse
+	UpdateTransactionItem(transactionId, id, userId string, request *requests.TransactionItemRequest) *responses.HttpResponse
+	RemoveTransactionItem(transactionId, id, userId string) *responses.HttpResponse
 }

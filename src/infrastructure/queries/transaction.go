@@ -1,18 +1,6 @@
 package queries
 
 const (
-	GetByEmail = `SELECT
-					CAST([Id] AS CHAR(36)) [Id],
-					[Name],
-					[Email],
-					[Password],
-					[CreatedAt],
-					[UpdatedAt],
-					[Active]
-				FROM
-					dbo.[User] (NOLOCK)
-				WHERE [Email] = @email
-				AND [Active] = 1`
 	GetTransactions = `SELECT
 						CAST([Id] AS CHAR(36)) [Id],
 						CAST([UserId] AS CHAR(36)) [UserId],
@@ -67,8 +55,8 @@ const (
 							FROM
 								dbo.[TransactionItem] (NOLOCK)
 							WHERE [Id] = @id
+							AND [TransactionId] = @transactionId
 							AND [Active] = 1`
-	AddUser           = `INSERT INTO dbo.[User] VALUES (@id, @name, @email, @password, @createdAt, @updatedAt, @active)`
 	AddTransaction    = `INSERT INTO dbo.[Transaction] VALUES (@id, @userId, @date, @total, @income, @outcome, @createdAt, @updatedAt, @active)`
 	UpdateTransaction = `UPDATE
 							dbo.[Transaction]
@@ -89,5 +77,6 @@ const (
 								[UpdatedAt] = @updatedAt,
 								[Active] = @active
 							WHERE
-								[Id] = @id`
+								[Id] = @id
+							AND [TransactionId] = @transactionId`
 )

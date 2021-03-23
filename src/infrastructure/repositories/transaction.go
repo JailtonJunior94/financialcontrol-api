@@ -118,9 +118,9 @@ func (r *TransactionRepository) UpdateTransaction(t *entities.Transaction) (tran
 	return t, nil
 }
 
-func (r *TransactionRepository) GetTransactionItemsById(id string) (transactionItem *entities.TransactionItem, err error) {
+func (r *TransactionRepository) GetTransactionItemsById(transactionId, id string) (transactionItem *entities.TransactionItem, err error) {
 	connection := r.Db.Connect()
-	row := connection.QueryRow(queries.GetTransactionItemsById, sql.Named("id", id))
+	row := connection.QueryRow(queries.GetTransactionItemsById, sql.Named("id", id), sql.Named("transactionId", transactionId))
 
 	t := new(entities.TransactionItem)
 	err = row.Scan(&t.ID, &t.TransactionId, &t.Title, &t.Value, &t.Type, &t.CreatedAt, &t.UpdatedAt, &t.Active)
@@ -144,6 +144,7 @@ func (r *TransactionRepository) UpdateTransactionItem(t *entities.TransactionIte
 
 	result, err := s.Exec(
 		sql.Named("id", t.ID),
+		sql.Named("transactionId", t.TransactionId),
 		sql.Named("title", t.Title),
 		sql.Named("value", t.Value),
 		sql.Named("type", t.Type),

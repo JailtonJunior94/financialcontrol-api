@@ -12,20 +12,16 @@ type TransactionItemRequest struct {
 
 func (t *TransactionItemRequest) IsValid() error {
 	if t.Title == "" {
-		return customErrors.EmailIsRequired
+		return customErrors.TitleIsRequired
 	}
 
 	if t.Value == 0 {
-		return customErrors.EmailIsRequired
+		return customErrors.ValueIsRequired
 	}
 
 	if t.Type == "" {
-		return customErrors.EmailIsRequired
+		return customErrors.TypeIsRequired
 	}
-
-	// if !(t.Type == constants.Income) || !(t.Type == constants.Outcome) {
-	// 	return customErrors.EmailIsRequired
-	// }
 
 	return nil
 }

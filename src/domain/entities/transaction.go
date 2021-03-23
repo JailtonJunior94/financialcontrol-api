@@ -44,7 +44,7 @@ func (u *Transaction) SumIncomes() float64 {
 
 	incomes := filter(u.TransactionItems, filterByIncome)
 	if len(incomes) == 0 {
-		return 0
+		return u.AddIncome(0)
 	}
 
 	var income float64
@@ -67,7 +67,7 @@ func (u *Transaction) SumOutcome() float64 {
 
 	outcomes := filter(u.TransactionItems, filterByOutcome)
 	if len(outcomes) == 0 {
-		return 0
+		return u.AddOutcome(0)
 	}
 
 	var outcome float64
