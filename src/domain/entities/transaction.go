@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/constants"
+	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
 )
 
 type Transaction struct {
@@ -18,9 +19,11 @@ type Transaction struct {
 }
 
 func (u *Transaction) NewTransaction(userId string, date time.Time) {
+	timer := shared.NewTime()
+
 	u.Entity.NewEntity()
 	u.UserId = userId
-	u.Date = date
+	u.Date = timer.FormatDate(date)
 }
 
 func (u *Transaction) AddItems(items []TransactionItem) {

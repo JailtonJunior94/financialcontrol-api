@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/adapters"
+	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
 )
 
 type Entity struct {
@@ -15,13 +16,17 @@ type Entity struct {
 }
 
 func (e *Entity) NewEntity() {
+	timer := shared.NewTime()
+
 	e.ID = adapters.NewUuidAdapter().GenerateUuid()
-	e.CreatedAt = time.Now().UTC().Local()
+	e.CreatedAt = timer.Now
 	e.Active = true
 }
 
 func (e *Entity) ChangeUpdatedAt() {
-	e.UpdatedAt.Time = time.Now().UTC().Local()
+	timer := shared.NewTime()
+
+	e.UpdatedAt.Time = timer.Now
 }
 
 func (e *Entity) ChangeStatus(status bool) {
