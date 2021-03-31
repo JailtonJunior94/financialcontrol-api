@@ -110,7 +110,7 @@ func (r *TransactionRepository) UpdateTransaction(t *entities.Transaction) (tran
 		sql.Named("total", t.Total),
 		sql.Named("income", t.Income),
 		sql.Named("outcome", t.Outcome),
-		sql.Named("updatedAt", t.UpdatedAt))
+		sql.Named("updatedAt", t.UpdatedAt.Time))
 
 	if err := r.Db.ValidateResult(result, err); err != nil {
 		return nil, err
@@ -148,7 +148,7 @@ func (r *TransactionRepository) UpdateTransactionItem(t *entities.TransactionIte
 		sql.Named("title", t.Title),
 		sql.Named("value", t.Value),
 		sql.Named("type", t.Type),
-		sql.Named("updatedAt", t.UpdatedAt),
+		sql.Named("updatedAt", t.UpdatedAt.Time),
 		sql.Named("active", t.Active))
 
 	if err := r.Db.ValidateResult(result, err); err != nil {

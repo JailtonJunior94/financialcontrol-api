@@ -17,7 +17,6 @@ type Entity struct {
 
 func (e *Entity) NewEntity() {
 	timer := shared.NewTime()
-
 	e.ID = adapters.NewUuidAdapter().GenerateUuid()
 	e.CreatedAt = timer.Now
 	e.Active = true
@@ -25,7 +24,6 @@ func (e *Entity) NewEntity() {
 
 func (e *Entity) ChangeUpdatedAt() {
 	timer := shared.NewTime()
-
 	e.UpdatedAt.Time = timer.Now
 }
 
