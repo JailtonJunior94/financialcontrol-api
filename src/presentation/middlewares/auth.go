@@ -17,7 +17,7 @@ func Protected() fiber.Handler {
 
 func jwtError(c *fiber.Ctx, err error) error {
 	if err.Error() == customErrors.MissingJWTMessage {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": customErrors.JwtErrorMessage})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.JwtErrorMessage})
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 }
