@@ -10,4 +10,6 @@ import (
 func AddBillRouter(router fiber.Router) {
 	router.Get("/bills", middlewares.Protected(), ioc.BillController.Bills)
 	router.Post("/bills", middlewares.Protected(), ioc.BillController.CreateBill)
+
+	router.Post("/bills/:billid", middlewares.Protected(), ioc.BillController.CreateBillItem)
 }

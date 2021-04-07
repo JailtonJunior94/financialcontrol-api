@@ -8,4 +8,6 @@ import (
 type IBillService interface {
 	Bills() *responses.HttpResponse
 	CreateBill(request *requests.BillRequest) *responses.HttpResponse
+
+	CreateBillItem(request *requests.BillItemRequest, billId string) *responses.HttpResponse
 }

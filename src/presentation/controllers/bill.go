@@ -33,3 +33,17 @@ func (u *BillController) CreateBill(c *fiber.Ctx) error {
 	response := u.Service.CreateBill(request)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
+
+func (u *BillController) CreateBillItem(c *fiber.Ctx) error {
+	request := new(requests.BillItemRequest)
+	if err := c.BodyParser(request); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
+	}
+
+	if err := request.IsValid(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	response := u.Service.CreateBillItem(request, c.Params("billid"))
+	return c.Status(response.StatusCode).JSON(response.Data)
+}

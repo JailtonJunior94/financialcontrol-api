@@ -29,6 +29,7 @@ func (b *Bill) UpdatingValues() {
 	b.sumTotal()
 	b.sumSixtyPercent()
 	b.sumFortyPercent()
+	b.ChangeUpdatedAt()
 }
 
 func (b *Bill) sumTotal() {

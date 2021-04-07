@@ -46,3 +46,32 @@ func (s *BillService) CreateBill(request *requests.BillRequest) *responses.HttpR
 
 	return responses.Created(mappings.ToBillResponse(bill))
 }
+
+func (s *BillService) CreateBillItem(request *requests.BillItemRequest, billId string) *responses.HttpResponse {
+	bill, err := s.BillRepository.GetBillById(billId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	newBillItem := mappings.ToBillItemEntity(request, billId)
+
+	billItem, err := s.BillRepository.AddBillItem(newBillItem)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	items, err := s.BillRepository.GetBillItemByBillId(bill.ID)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	bill.AddBillItems(items)
+	bill.UpdatingValues()
+
+	_, err = s.BillRepository.UpdateBill(bill)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.Created(mappings.ToBillItemResponse(billItem))
+}
