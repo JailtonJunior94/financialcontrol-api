@@ -26,6 +26,25 @@ func (s *BillService) Bills() *responses.HttpResponse {
 	return responses.Ok(mappings.ToManyBillResponse(bills))
 }
 
+func (s *BillService) BillById(id string) *responses.HttpResponse {
+	bill, err := s.BillRepository.GetBillById(id)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if bill == nil {
+		return responses.NotFound("Não foi encontrado conta do mês")
+	}
+
+	items, err := s.BillRepository.GetBillItemByBillId(id)
+	if err != nil {
+		return responses.ServerError()
+	}
+	bill.AddBillItems(items)
+
+	return responses.Ok(mappings.ToBillResponse(bill))
+}
+
 func (s *BillService) CreateBill(request *requests.BillRequest) *responses.HttpResponse {
 	time := shared.NewTime(shared.Time{Now: request.Date})
 
