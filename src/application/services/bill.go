@@ -80,11 +80,6 @@ func (s *BillService) BillItemById(id, billId string) *responses.HttpResponse {
 }
 
 func (s *BillService) CreateBillItem(request *requests.BillItemRequest, billId string) *responses.HttpResponse {
-	bill, err := s.BillRepository.GetBillById(billId)
-	if err != nil {
-		return responses.ServerError()
-	}
-
 	newBillItem := mappings.ToBillItemEntity(request, billId)
 
 	billItem, err := s.BillRepository.AddBillItem(newBillItem)
@@ -92,18 +87,29 @@ func (s *BillService) CreateBillItem(request *requests.BillItemRequest, billId s
 		return responses.ServerError()
 	}
 
-	items, err := s.BillRepository.GetBillItemByBillId(bill.ID)
-	if err != nil {
+	if err := s.updatingBillValues(billId); err != nil {
 		return responses.ServerError()
+	}
+
+	return responses.Created(mappings.ToBillItemResponse(billItem))
+}
+
+func (s *BillService) updatingBillValues(id string) error {
+	bill, err := s.BillRepository.GetBillById(id)
+	if err != nil {
+		return err
+	}
+
+	items, err := s.BillRepository.GetBillItemByBillId(id)
+	if err != nil {
+		return err
 	}
 
 	bill.AddBillItems(items)
 	bill.UpdatingValues()
 
-	_, err = s.BillRepository.UpdateBill(bill)
-	if err != nil {
-		return responses.ServerError()
+	if _, err := s.BillRepository.UpdateBill(bill); err != nil {
+		return err
 	}
-
-	return responses.Created(mappings.ToBillItemResponse(billItem))
+	return nil
 }
