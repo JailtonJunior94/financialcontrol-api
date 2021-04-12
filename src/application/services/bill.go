@@ -66,6 +66,19 @@ func (s *BillService) CreateBill(request *requests.BillRequest) *responses.HttpR
 	return responses.Created(mappings.ToBillResponse(bill))
 }
 
+func (s *BillService) BillItemById(id, billId string) *responses.HttpResponse {
+	billItem, err := s.BillRepository.GetBillItemById(id, billId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if billItem == nil {
+		return responses.NotFound("Não foi encontrado nenhum item!")
+	}
+
+	return responses.Ok(mappings.ToBillItemResponse(billItem))
+}
+
 func (s *BillService) CreateBillItem(request *requests.BillItemRequest, billId string) *responses.HttpResponse {
 	bill, err := s.BillRepository.GetBillById(billId)
 	if err != nil {

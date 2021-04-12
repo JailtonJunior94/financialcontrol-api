@@ -9,6 +9,6 @@ type IBillService interface {
 	Bills() *responses.HttpResponse
 	BillById(id string) *responses.HttpResponse
 	CreateBill(request *requests.BillRequest) *responses.HttpResponse
-
+	BillItemById(id, billId string) *responses.HttpResponse
 	CreateBillItem(request *requests.BillItemRequest, billId string) *responses.HttpResponse
 }

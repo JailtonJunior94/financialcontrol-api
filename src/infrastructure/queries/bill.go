@@ -68,4 +68,18 @@ const (
 							WHERE
 								[Active] = 1
 								AND [BillId] = @billId`
+	GetBillItemById = `SELECT
+							CAST([Id] AS CHAR(36)) [Id],
+							CAST([BillId] AS CHAR(36)) [BillId],
+							[Title],
+							[Value],
+							[CreatedAt],
+							[UpdatedAt],
+							[Active]
+						FROM
+							dbo.[BillItem] (NOLOCK)
+						WHERE
+							[Active] = 1
+						AND [Id] = @id
+						AND [BillId] = @billId`
 )

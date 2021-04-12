@@ -111,6 +111,23 @@ func (r *BillRepository) GetBillItemByBillId(billId string) (billItems []entitie
 	return billItems, nil
 }
 
+func (r *BillRepository) GetBillItemById(id, billId string) (billItem *entities.BillItem, err error) {
+	connection := r.Db.Connect()
+	row := connection.QueryRow(queries.GetBillItemById, sql.Named("id", id), sql.Named("billId", billId))
+
+	b := new(entities.BillItem)
+	err = row.Scan(&b.ID, &b.BillId, &b.Title, &b.Value, &b.CreatedAt, &b.UpdatedAt, &b.Active)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
 func (r *BillRepository) AddBillItem(p *entities.BillItem) (billItem *entities.BillItem, err error) {
 	s, err := r.Db.OpenConnectionAndMountStatement(queries.AddBillItem)
 	if err != nil {

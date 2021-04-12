@@ -39,6 +39,11 @@ func (u *BillController) CreateBill(c *fiber.Ctx) error {
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
+func (u *BillController) BillItemById(c *fiber.Ctx) error {
+	response := u.Service.BillItemById(c.Params("id"), c.Params("billid"))
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
 func (u *BillController) CreateBillItem(c *fiber.Ctx) error {
 	request := new(requests.BillItemRequest)
 	if err := c.BodyParser(request); err != nil {
