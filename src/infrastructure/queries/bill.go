@@ -66,7 +66,8 @@ const (
 								dbo.[BillItem] (NOLOCK)
 							WHERE
 								[Active] = 1
-								AND [BillId] = @billId`
+								AND [BillId] = @billId
+							ORDER BY [Value]`
 	GetBillItemById = `SELECT
 							CAST([Id] AS CHAR(36)) [Id],
 							CAST([BillId] AS CHAR(36)) [BillId],
