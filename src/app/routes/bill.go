@@ -13,4 +13,6 @@ func AddBillRouter(router fiber.Router) {
 	router.Post("/bills", middlewares.Protected(), ioc.BillController.CreateBill)
 	router.Get("/bills/:billid/items/:id", middlewares.Protected(), ioc.BillController.BillItemById)
 	router.Post("/bills/:billid", middlewares.Protected(), ioc.BillController.CreateBillItem)
+	router.Put("/bills/:billid/items/:id", middlewares.Protected(), ioc.BillController.UpdateBillItem)
+	router.Delete("/bills/:billid/items/:id", middlewares.Protected(), ioc.BillController.RemoveBillItem)
 }

@@ -17,4 +17,7 @@ const (
 	NameIsRequiredMessage          = "O Nome é obrigatório"
 	TransactionNotFoundMessage     = "Não foi possível encontrar a Transação"
 	TransactionItemNotFoundMessage = "Não foi possível encontrar o Item da Transação"
+	BillNotFoundMessage            = "Não foi encontrado conta do mês"
+	BillItemNotFoundMessage        = "Não foi encontrado nenhum item"
+	BillExistsMessage              = "Já existe mês cadastrado para despesas"
 )

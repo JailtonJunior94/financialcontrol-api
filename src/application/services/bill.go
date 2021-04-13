@@ -4,6 +4,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/mappings"
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
 	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
@@ -33,7 +34,7 @@ func (s *BillService) BillById(id string) *responses.HttpResponse {
 	}
 
 	if bill == nil {
-		return responses.NotFound("Não foi encontrado conta do mês")
+		return responses.NotFound(customErrors.BillNotFound)
 	}
 
 	items, err := s.BillRepository.GetBillItemByBillId(id)
@@ -54,7 +55,7 @@ func (s *BillService) CreateBill(request *requests.BillRequest) *responses.HttpR
 	}
 
 	if isExist != nil {
-		return responses.BadRequest("Já existe mês cadastrado para despesas")
+		return responses.BadRequest(customErrors.BillExists)
 	}
 
 	newBill := mappings.ToBillEntity(request)
@@ -73,7 +74,7 @@ func (s *BillService) BillItemById(id, billId string) *responses.HttpResponse {
 	}
 
 	if billItem == nil {
-		return responses.NotFound("Não foi encontrado nenhum item!")
+		return responses.NotFound(customErrors.BillItemNotFound)
 	}
 
 	return responses.Ok(mappings.ToBillItemResponse(billItem))
@@ -92,6 +93,50 @@ func (s *BillService) CreateBillItem(request *requests.BillItemRequest, billId s
 	}
 
 	return responses.Created(mappings.ToBillItemResponse(billItem))
+}
+
+func (s *BillService) UpdateBillItem(billId, id string, request *requests.BillItemRequest) *responses.HttpResponse {
+	item, err := s.BillRepository.GetBillItemById(id, billId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if item == nil {
+		return responses.NotFound(customErrors.BillItemNotFound)
+	}
+
+	item.Update(request.Title, request.Value)
+	item, err = s.BillRepository.UpdateBillItem(item)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if err := s.updatingBillValues(billId); err != nil {
+		return responses.ServerError()
+	}
+	return responses.Ok(mappings.ToBillItemResponse(item))
+}
+
+func (s *BillService) RemoveBillItem(billId, id string) *responses.HttpResponse {
+	item, err := s.BillRepository.GetBillItemById(id, billId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if item == nil {
+		return responses.NotFound(customErrors.BillItemNotFound)
+	}
+
+	item.UpdateStatus(false)
+	_, err = s.BillRepository.UpdateBillItem(item)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if err := s.updatingBillValues(item.BillId); err != nil {
+		return responses.ServerError()
+	}
+	return responses.NoContent()
 }
 
 func (s *BillService) updatingBillValues(id string) error {

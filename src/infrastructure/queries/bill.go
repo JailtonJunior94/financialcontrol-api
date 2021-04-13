@@ -54,7 +54,6 @@ const (
 						[UpdatedAt] = @updatedAt
 					WHERE
 						[Id] = @id`
-	AddBillItem         = `INSERT INTO dbo.[BillItem] VALUES (@id, @billId, @title, @value, @createdAt, @updatedAt, @active)`
 	GetBillItemByBillId = `SELECT
 								CAST([Id] AS CHAR(36)) [Id],
 								CAST([BillId] AS CHAR(36)) [BillId],
@@ -81,5 +80,16 @@ const (
 						WHERE
 							[Active] = 1
 						AND [Id] = @id
+						AND [BillId] = @billId`
+	AddBillItem    = `INSERT INTO dbo.[BillItem] VALUES (@id, @billId, @title, @value, @createdAt, @updatedAt, @active)`
+	UpdateBillItem = `UPDATE
+							dbo.[BillItem]
+						SET
+							[Title] = @title,
+							[Value] = @value,
+							[UpdatedAt] = @updatedAt,
+							[Active] = @active
+						WHERE
+							[Id] = @id
 						AND [BillId] = @billId`
 )

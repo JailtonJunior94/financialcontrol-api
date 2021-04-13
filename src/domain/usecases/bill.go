@@ -11,4 +11,6 @@ type IBillService interface {
 	CreateBill(request *requests.BillRequest) *responses.HttpResponse
 	BillItemById(id, billId string) *responses.HttpResponse
 	CreateBillItem(request *requests.BillItemRequest, billId string) *responses.HttpResponse
+	UpdateBillItem(billId, id string, request *requests.BillItemRequest) *responses.HttpResponse
+	RemoveBillItem(billId, id string) *responses.HttpResponse
 }

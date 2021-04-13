@@ -15,4 +15,7 @@ var (
 	NameIsRequired          = errors.New(NameIsRequiredMessage)
 	TransactionNotFound     = errors.New(TransactionNotFoundMessage)
 	TransactionItemNotFound = errors.New(TransactionItemNotFoundMessage)
+	BillNotFound            = errors.New(BillNotFoundMessage)
+	BillItemNotFound        = errors.New(BillItemNotFoundMessage)
+	BillExists              = errors.New(BillExistsMessage)
 )

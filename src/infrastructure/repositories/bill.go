@@ -149,3 +149,24 @@ func (r *BillRepository) AddBillItem(p *entities.BillItem) (billItem *entities.B
 	}
 	return p, nil
 }
+
+func (r *BillRepository) UpdateBillItem(p *entities.BillItem) (billItem *entities.BillItem, err error) {
+	s, err := r.Db.OpenConnectionAndMountStatement(queries.UpdateBillItem)
+	if err != nil {
+		return nil, err
+	}
+	defer s.Close()
+
+	result, err := s.Exec(
+		sql.Named("id", p.ID),
+		sql.Named("billId", p.BillId),
+		sql.Named("title", p.Title),
+		sql.Named("value", p.Value),
+		sql.Named("updatedAt", p.UpdatedAt.Time),
+		sql.Named("active", p.Active))
+
+	if err := r.Db.ValidateResult(result, err); err != nil {
+		return nil, err
+	}
+	return p, nil
+}

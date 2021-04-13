@@ -1,10 +1,11 @@
 package controllers
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type BillController struct {
@@ -55,5 +56,24 @@ func (u *BillController) CreateBillItem(c *fiber.Ctx) error {
 	}
 
 	response := u.Service.CreateBillItem(request, c.Params("billid"))
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *BillController) UpdateBillItem(c *fiber.Ctx) error {
+	request := new(requests.BillItemRequest)
+	if err := c.BodyParser(request); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
+	}
+
+	if err := request.IsValid(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	response := u.Service.UpdateBillItem(c.Params("billid"), c.Params("id"), request)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *BillController) RemoveBillItem(c *fiber.Ctx) error {
+	response := u.Service.RemoveBillItem(c.Params("billid"), c.Params("id"))
 	return c.Status(response.StatusCode).JSON(response.Data)
 }

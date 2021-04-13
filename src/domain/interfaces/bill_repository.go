@@ -15,4 +15,5 @@ type IBillRepository interface {
 	GetBillItemByBillId(billId string) (billItems []entities.BillItem, err error)
 	GetBillItemById(id, billId string) (billItem *entities.BillItem, err error)
 	AddBillItem(p *entities.BillItem) (billItem *entities.BillItem, err error)
+	UpdateBillItem(p *entities.BillItem) (billItem *entities.BillItem, err error)
 }
