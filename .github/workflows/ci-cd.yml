@@ -18,15 +18,15 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.29
-      
+
       # - name: "Unit Tests"
       #   run: go test --coverprofile tests/coverage.out ./...
-        
-      # - name: SonarCloud Scan
-      #   uses: SonarSource/sonarcloud-github-action@master
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Variable Substitution
         uses: microsoft/variable-substitution@v1
