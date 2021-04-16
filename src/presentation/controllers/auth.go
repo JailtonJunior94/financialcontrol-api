@@ -1,10 +1,11 @@
 package controllers
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type AuthController struct {

@@ -15,11 +15,9 @@ func ToTransactionEntity(r *requests.TransactionRequest, userId string) (e *enti
 }
 
 func ToTransactionResponse(e *entities.Transaction) (r *responses.TransactionResponse) {
-	timer := shared.NewTime()
-
 	return &responses.TransactionResponse{
 		ID:      e.ID,
-		Date:    timer.FormatDate(e.Date),
+		Date:    shared.NewTime(shared.Time{Date: e.Date}).FormatDate(),
 		Total:   e.Total,
 		Income:  e.Income,
 		Outcome: e.Outcome,
@@ -33,12 +31,10 @@ func ToManyTransactionResponse(entities []entities.Transaction) (r []responses.T
 		return make([]responses.TransactionResponse, 0)
 	}
 
-	timer := shared.NewTime()
-
 	for _, e := range entities {
 		transaction := responses.TransactionResponse{
 			ID:      e.ID,
-			Date:    timer.FormatDate(e.Date),
+			Date:    shared.NewTime(shared.Time{Date: e.Date}).FormatDate(),
 			Total:   e.Total,
 			Income:  e.Income,
 			Outcome: e.Outcome,

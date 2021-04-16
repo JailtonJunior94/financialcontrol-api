@@ -7,6 +7,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
+	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
 )
 
 type TransactionService struct {
@@ -46,8 +47,18 @@ func (s *TransactionService) TransactionById(id string, userId string) *response
 }
 
 func (s *TransactionService) CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse {
-	newTransaction := mappings.ToTransactionEntity(request, userId)
+	time := shared.NewTime(shared.Time{Now: request.Date})
 
+	isExist, err := s.TransactionRepository.GetTransactionByDate(time.StartDate(), time.EndDate())
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if isExist != nil {
+		return responses.BadRequest("Já existe mês cadastrado para apontamento")
+	}
+
+	newTransaction := mappings.ToTransactionEntity(request, userId)
 	transaction, err := s.TransactionRepository.AddTransaction(newTransaction)
 	if err != nil {
 		return responses.ServerError()

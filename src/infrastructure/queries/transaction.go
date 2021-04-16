@@ -16,6 +16,22 @@ const (
 					WHERE [UserId] = @userId
 					AND [Active] = 1
 					ORDER BY [Date]`
+	GetTransactionByDate = `SELECT 
+								CAST([Id] AS CHAR(36)) [Id],
+								CAST([UserId] AS CHAR(36)) [UserId],
+								[Date],
+								[Total],
+								[Income],
+								[Outcome],
+								[CreatedAt],
+								[UpdatedAt],
+								[Active]
+							FROM 
+								dbo.[Transaction] (NOLOCK)
+							WHERE
+								[Active] = 1
+								AND [Date] BETWEEN CONVERT(DATETIME, @startDate)
+								AND CONVERT(DATETIME, @endDate)`
 	GetTransactionById = `SELECT 
 							CAST([Id] AS CHAR(36)) [Id],
 							CAST([UserId] AS CHAR(36)) [UserId],

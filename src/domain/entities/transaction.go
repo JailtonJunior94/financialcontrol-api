@@ -19,11 +19,9 @@ type Transaction struct {
 }
 
 func (u *Transaction) NewTransaction(userId string, date time.Time) {
-	timer := shared.NewTime()
-
 	u.Entity.NewEntity()
 	u.UserId = userId
-	u.Date = timer.FormatDate(date)
+	u.Date = shared.NewTime(shared.Time{Date: date}).FormatDate()
 }
 
 func (u *Transaction) AddItems(items []TransactionItem) {

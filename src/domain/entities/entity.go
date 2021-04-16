@@ -23,8 +23,7 @@ func (e *Entity) NewEntity() {
 }
 
 func (e *Entity) ChangeUpdatedAt() {
-	timer := shared.NewTime()
-	e.UpdatedAt.Time = timer.Now
+	e.UpdatedAt.Time = shared.NewTime(shared.Time{Date: time.Now()}).FormatDate()
 }
 
 func (e *Entity) ChangeStatus(status bool) {

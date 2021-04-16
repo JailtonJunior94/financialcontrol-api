@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
@@ -84,6 +85,23 @@ func (r *TransactionRepository) GetTransactions(userId string) (transactions []e
 func (r *TransactionRepository) GetTransactionById(id string, userId string) (transaction *entities.Transaction, err error) {
 	connection := r.Db.Connect()
 	row := connection.QueryRow(queries.GetTransactionById, sql.Named("id", id), sql.Named("userId", userId))
+
+	t := new(entities.Transaction)
+	err = row.Scan(&t.ID, &t.UserId, &t.Date, &t.Total, &t.Income, &t.Outcome, &t.CreatedAt, &t.UpdatedAt, &t.Active)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
+}
+
+func (r *TransactionRepository) GetTransactionByDate(startDate, endDate time.Time) (transaction *entities.Transaction, err error) {
+	connection := r.Db.Connect()
+	row := connection.QueryRow(queries.GetTransactionByDate, sql.Named("startDate", startDate), sql.Named("endDate", endDate))
 
 	t := new(entities.Transaction)
 	err = row.Scan(&t.ID, &t.UserId, &t.Date, &t.Total, &t.Income, &t.Outcome, &t.CreatedAt, &t.UpdatedAt, &t.Active)
