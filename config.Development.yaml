@@ -1,6 +1,6 @@
 environment: "Development"
 mssql:
-  connectionString: "sqlserver://sa:@stefany@1994@localhost:1433?database=FinancialControlDB"
+  connectionString: "sqlserver://sa:@stefany@1994@mssql?database=FinancialControlDB"
 security:
   expirationAt: 1
   jwtSecret: "5d64937afc75e2ba2e77b237d33ca633"

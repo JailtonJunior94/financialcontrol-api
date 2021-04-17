@@ -1,0 +1,29 @@
+version: "3"
+services: 
+    mssql:
+      container_name: financialcontrol-db
+      image: mcr.microsoft.com/mssql/server:2019-latest
+      restart: always
+      volumes:
+        - ./data:/var/opt/mssql/data
+      environment:
+        - ACCEPT_EULA=Y
+        - SA_PASSWORD=@stefany@1994
+      ports:
+        - "1433:1433"
+    api:
+      container_name: financialcontrol-api
+      build: .
+      image: financialcontrol-api
+      restart: always
+      environment:
+        - PORT=4000
+        - ENVIRONMENT=Development
+        - TZ=America/Sao_Paulo
+      ports:
+        - "4000:4000"
+      links: 
+        - mssql
+      depends_on:
+        - mssql
+     
