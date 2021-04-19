@@ -99,9 +99,9 @@ func (r *TransactionRepository) GetTransactionById(id string, userId string) (tr
 	return t, nil
 }
 
-func (r *TransactionRepository) GetTransactionByDate(startDate, endDate time.Time) (transaction *entities.Transaction, err error) {
+func (r *TransactionRepository) GetTransactionByDate(startDate, endDate time.Time, userId string) (transaction *entities.Transaction, err error) {
 	connection := r.Db.Connect()
-	row := connection.QueryRow(queries.GetTransactionByDate, sql.Named("startDate", startDate), sql.Named("endDate", endDate))
+	row := connection.QueryRow(queries.GetTransactionByDate, sql.Named("startDate", startDate), sql.Named("endDate", endDate), sql.Named("userId", userId))
 
 	t := new(entities.Transaction)
 	err = row.Scan(&t.ID, &t.UserId, &t.Date, &t.Total, &t.Income, &t.Outcome, &t.CreatedAt, &t.UpdatedAt, &t.Active)

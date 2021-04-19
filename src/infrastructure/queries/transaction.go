@@ -30,6 +30,7 @@ const (
 								dbo.[Transaction] (NOLOCK)
 							WHERE
 								[Active] = 1
+								AND [UserId] = @userId
 								AND [Date] BETWEEN CONVERT(DATETIME, @startDate)
 								AND CONVERT(DATETIME, @endDate)`
 	GetTransactionById = `SELECT 

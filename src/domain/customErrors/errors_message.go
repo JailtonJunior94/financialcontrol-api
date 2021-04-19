@@ -20,4 +20,5 @@ const (
 	BillNotFoundMessage            = "Não foi encontrado conta do mês"
 	BillItemNotFoundMessage        = "Não foi encontrado nenhum item"
 	BillExistsMessage              = "Já existe mês cadastrado para despesas"
+	TransactionExistsMessage       = "Já existe mês cadastrado para apontamento"
 )

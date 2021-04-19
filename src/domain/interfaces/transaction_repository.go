@@ -9,7 +9,7 @@ import (
 type ITransactionRepository interface {
 	GetTransactions(userId string) (transactions []entities.Transaction, err error)
 	GetTransactionById(id string, userId string) (transaction *entities.Transaction, err error)
-	GetTransactionByDate(startDate, endDate time.Time) (transaction *entities.Transaction, err error)
+	GetTransactionByDate(startDate, endDate time.Time, userId string) (transaction *entities.Transaction, err error)
 	AddTransaction(t *entities.Transaction) (transaction *entities.Transaction, err error)
 	UpdateTransaction(t *entities.Transaction) (transaction *entities.Transaction, err error)
 	GetItemByTransactionId(transactionId string) (items []entities.TransactionItem, err error)
