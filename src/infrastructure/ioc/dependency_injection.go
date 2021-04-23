@@ -18,14 +18,17 @@ var (
 	UserRepository        interfaces.IUserRepository
 	TransactionRepository interfaces.ITransactionRepository
 	BillRepository        interfaces.IBillRepository
+	FlagRepository        interfaces.IFlagRepository
 	UserService           usecases.IUserService
 	AuthService           usecases.IAuthService
 	TransactionService    usecases.ITransactionService
 	BillService           usecases.IBillService
+	FlagService           usecases.IFlagService
 	UserController        *controllers.UserController
 	AuthController        *controllers.AuthController
 	TransactionController *controllers.TransactionController
 	BillController        *controllers.BillController
+	FlagController        *controllers.FlagController
 )
 
 func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
@@ -41,16 +44,19 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	UserRepository = repositories.NewUserRepository(SqlConnection)
 	TransactionRepository = repositories.NewTransactionRepository(SqlConnection)
 	BillRepository = repositories.NewBillRepository(SqlConnection)
+	FlagRepository = repositories.NewFlagRepository(SqlConnection)
 
 	/* Services */
 	UserService = services.NewUserService(UserRepository, HashAdapter)
 	AuthService = services.NewAuthService(UserRepository, HashAdapter, JwtAdapter)
 	TransactionService = services.NewTransactionService(TransactionRepository)
 	BillService = services.NewBillService(BillRepository)
+	FlagService = services.NewFlagService(FlagRepository)
 
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
 	AuthController = controllers.NewAuthController(AuthService)
 	TransactionController = controllers.NewTransactionController(JwtAdapter, TransactionService)
 	BillController = controllers.NewBillController(BillService)
+	FlagController = controllers.NewFlagController(FlagService)
 }
