@@ -19,4 +19,5 @@ var (
 	BillItemNotFound        = errors.New(BillItemNotFoundMessage)
 	BillExists              = errors.New(BillExistsMessage)
 	TransactionExists       = errors.New(TransactionExistsMessage)
+	CardNotFound            = errors.New(CardNotFoundMessage)
 )

@@ -18,6 +18,26 @@ func NewCardController(u usecases.ICardService, j adapters.IJwtAdapter) *CardCon
 	return &CardController{Service: u, Jwt: j}
 }
 
+func (u *CardController) Cards(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.Cards(*userId)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *CardController) CardById(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.CardById(c.Params("id"), *userId)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
 func (u *CardController) CreateCard(c *fiber.Ctx) error {
 	request := new(requests.CardRequest)
 	if err := c.BodyParser(request); err != nil {

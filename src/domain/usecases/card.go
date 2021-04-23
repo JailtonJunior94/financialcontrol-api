@@ -6,6 +6,8 @@ import (
 )
 
 type ICardService interface {
+	Cards(userId string) *responses.HttpResponse
+	CardById(id, userId string) *responses.HttpResponse
 	CreateCard(userId string, request *requests.CardRequest) *responses.HttpResponse
 	UpdateCard(id, userId string, request *requests.CardRequest) *responses.HttpResponse
 }

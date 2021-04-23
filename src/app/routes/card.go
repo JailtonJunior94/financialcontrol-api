@@ -9,5 +9,7 @@ import (
 )
 
 func AddCardRouter(router fiber.Router) {
+	router.Get(constants.Cards, middlewares.Protected(), ioc.CardController.Cards)
+	router.Get(constants.CardId, middlewares.Protected(), ioc.CardController.CardById)
 	router.Post(constants.Cards, middlewares.Protected(), ioc.CardController.CreateCard)
 }

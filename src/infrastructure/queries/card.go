@@ -2,36 +2,46 @@ package queries
 
 const (
 	GetCards = `SELECT
-					CAST([Id] AS CHAR(36)) [Id],
-					CAST([UserId] AS CHAR(36)) [UserId],
-					CAST([FlagId] AS CHAR(36)) [FlagId],
-					[Name],
-					[Number],
-					[Description],
-					[ClosingDay],
-					[ExpirationDate],
-					[CreatedAt],
-					[UpdatedAt],
-					[Active]
-				FROM dbo.[Card] (NOLOCK)
-				WHERE [Active] = 1
-				AND [UserId] = @userId`
+					CAST(C.[Id] AS CHAR(36)) [Id],
+					CAST(C.[UserId] AS CHAR(36)) [UserId],
+					CAST(C.[FlagId] AS CHAR(36)) [FlagId],
+					C.[Name],
+					C.[Number],
+					C.[Description],
+					C.[ClosingDay],
+					C.[ExpirationDate],
+					C.[CreatedAt],
+					C.[UpdatedAt],
+					C.[Active],
+					CAST(F.[Id] AS CHAR(36)) [FlagId],
+					F.[Name],
+					F.[Active]
+				FROM
+					dbo.[Card] C (NOLOCK)
+					INNER JOIN dbo.[Flag] F (NOLOCK) ON F.[Id] = C.[FlagId]
+				WHERE C.[Active] = 1
+				AND C.[UserId] = @userId`
 	GetCardById = `SELECT
-						CAST([Id] AS CHAR(36)) [Id],
-						CAST([UserId] AS CHAR(36)) [UserId],
-						CAST([FlagId] AS CHAR(36)) [FlagId],
-						[Name],
-						[Number],
-						[Description],
-						[ClosingDay],
-						[ExpirationDate],
-						[CreatedAt],
-						[UpdatedAt],
-						[Active]
-					FROM dbo.[Card] (NOLOCK)
-					WHERE [Id] = @id
-					AND [Active] = 1
-					AND [UserId] = @userId`
+						CAST(C.[Id] AS CHAR(36)) [Id],
+						CAST(C.[UserId] AS CHAR(36)) [UserId],
+						CAST(C.[FlagId] AS CHAR(36)) [FlagId],
+						C.[Name],
+						C.[Number],
+						C.[Description],
+						C.[ClosingDay],
+						C.[ExpirationDate],
+						C.[CreatedAt],
+						C.[UpdatedAt],
+						C.[Active],
+						CAST(F.[Id] AS CHAR(36)) [FlagId],
+						F.[Name],
+						F.[Active]
+					FROM
+						dbo.[Card] C (NOLOCK)
+						INNER JOIN dbo.[Flag] F (NOLOCK) ON F.[Id] = C.[FlagId]
+					WHERE C.[Active] = 1
+					AND C.[UserId] = @userId
+					AND C.[Id] = @id`
 	AddCard = `INSERT INTO dbo.[Card]
 				VALUES
 					(

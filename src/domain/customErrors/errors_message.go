@@ -21,4 +21,5 @@ const (
 	BillItemNotFoundMessage        = "Não foi encontrado nenhum item"
 	BillExistsMessage              = "Já existe mês cadastrado para despesas"
 	TransactionExistsMessage       = "Já existe mês cadastrado para apontamento"
+	CardNotFoundMessage            = "Não foi possível encontrar o Cartão"
 )
