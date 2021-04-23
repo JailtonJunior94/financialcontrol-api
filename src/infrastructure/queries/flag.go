@@ -8,7 +8,7 @@ const (
 					[UpdatedAt],
 					[Active]
 				FROM
-					dbo.[Flag]
+					dbo.[Flag] (NOLOCK)
 				WHERE
 					[Active] = 1
 				ORDER BY

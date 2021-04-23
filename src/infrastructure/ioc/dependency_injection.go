@@ -19,16 +19,19 @@ var (
 	TransactionRepository interfaces.ITransactionRepository
 	BillRepository        interfaces.IBillRepository
 	FlagRepository        interfaces.IFlagRepository
+	CardRepository        interfaces.ICardRepository
 	UserService           usecases.IUserService
 	AuthService           usecases.IAuthService
 	TransactionService    usecases.ITransactionService
 	BillService           usecases.IBillService
 	FlagService           usecases.IFlagService
+	CardService           usecases.ICardService
 	UserController        *controllers.UserController
 	AuthController        *controllers.AuthController
 	TransactionController *controllers.TransactionController
 	BillController        *controllers.BillController
 	FlagController        *controllers.FlagController
+	CardController        *controllers.CardController
 )
 
 func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
@@ -45,6 +48,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	TransactionRepository = repositories.NewTransactionRepository(SqlConnection)
 	BillRepository = repositories.NewBillRepository(SqlConnection)
 	FlagRepository = repositories.NewFlagRepository(SqlConnection)
+	CardRepository = repositories.NewCardRepository(SqlConnection)
 
 	/* Services */
 	UserService = services.NewUserService(UserRepository, HashAdapter)
@@ -52,6 +56,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	TransactionService = services.NewTransactionService(TransactionRepository)
 	BillService = services.NewBillService(BillRepository)
 	FlagService = services.NewFlagService(FlagRepository)
+	CardService = services.NewCardService(CardRepository)
 
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
@@ -59,4 +64,5 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	TransactionController = controllers.NewTransactionController(JwtAdapter, TransactionService)
 	BillController = controllers.NewBillController(BillService)
 	FlagController = controllers.NewFlagController(FlagService)
+	CardController = controllers.NewCardController(CardService, JwtAdapter)
 }

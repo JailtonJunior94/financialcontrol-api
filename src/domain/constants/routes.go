@@ -12,4 +12,6 @@ const (
 	TransactionIdAndItemId = "/transactions/:transactionid/items/:id"
 	TransactionId          = "/transactions/:transactionid"
 	Users                  = "/users"
+	Cards                  = "/cards"
+	CardId                 = "/cards/:id"
 )
