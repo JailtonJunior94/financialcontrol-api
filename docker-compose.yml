@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       - PORT=4000
-      - ENVIRONMENT=Development
+      - ENVIRONMENT=Docker
       - TZ=America/Sao_Paulo
     ports:
       - "4000:4000"
@@ -20,10 +20,10 @@ services:
     image: mcr.microsoft.com/mssql/server:2019-latest
     restart: always
     volumes:
-      - ./data:/var/opt/mssql/data
+      - ./docker/data:/var/opt/mssql/data
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=@stefany@1994
+      - SA_PASSWORD=@docker@2021
     ports:
-      - "1433:1433"
+      - "1434:1433"
       

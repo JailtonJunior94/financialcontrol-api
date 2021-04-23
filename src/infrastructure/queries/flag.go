@@ -8,7 +8,7 @@ const (
 					[UpdatedAt],
 					[Active]
 				FROM
-					[FinancialControlDB].[dbo].[Flag]
+					dbo.[Flag]
 				WHERE
 					[Active] = 1
 				ORDER BY

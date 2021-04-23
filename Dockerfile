@@ -15,6 +15,7 @@ RUN apk --no-cache add tzdata
 ENV TZ=America/Sao_Paulo
 COPY --from=builder /app/main .
 COPY config.Development.yaml .
+COPY config.Docker.yaml .
 COPY config.Production.yaml .
 
 EXPOSE 4000
