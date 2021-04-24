@@ -1,4 +1,4 @@
-environment: "Production"
+environment: Production
 mssql:
   connectionString: "CONNECTION_STRING"
 security:

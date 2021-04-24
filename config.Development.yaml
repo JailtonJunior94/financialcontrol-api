@@ -1,4 +1,4 @@
-environment: "Development"
+environment: Development
 mssql:
   connectionString: "sqlserver://sa:@stefany@1994@localhost:1433?database=FinancialControlDB"
 security:

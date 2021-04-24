@@ -1,4 +1,4 @@
-environment: "Docker"
+environment: Staging
 mssql:
   connectionString: "sqlserver://sa:@docker@2021@mssql?database=FinancialControlDB"
 security:

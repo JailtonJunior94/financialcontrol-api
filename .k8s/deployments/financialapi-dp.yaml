@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: financialapi
+  name: financialapi-deployment
+  namespace: financialcontrol
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: financialapi
+  template:
+    metadata:
+      labels:
+        app: financialapi
+    spec:
+      containers:
+        - name: financialapi
+          image: jailtonjunior/financialcontrol:v6
+          env:
+            - name: ENVIRONMENT
+              value: Staging
+            - name: TZ
+              value: America/Sao_Paulo
+          ports:
+            - containerPort: 4000
