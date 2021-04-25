@@ -87,16 +87,14 @@ const (
 							[Id] = @id`
 	AddTransactionItem    = `INSERT INTO dbo.[TransactionItem] VALUES (@id, @transactionId, @title, @value, @type, @createdAt, @updatedAt, @active)`
 	UpdateTransactionItem = `UPDATE
-								dbo.[Card]
+								dbo.[BillItem]
 							SET
-								[FlagId] = @flagId,
-								[Name] = @name,
-								[Number] = @number,
-								[Description] = @description,
-								[ClosingDay] = @closingDay,
-								[ExpirationDate] = @expirationDate,
+								[Title] = @title,
+								[Value] = @value,
 								[UpdatedAt] = @updatedAt,
 								[Active] = @active
 							WHERE
-								[Id] = @id`
+								[Id] = @id
+								AND [BillId] = @billId
+							`
 )
