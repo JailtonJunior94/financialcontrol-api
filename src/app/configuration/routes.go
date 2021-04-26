@@ -15,4 +15,5 @@ func SetupRoutes(app *fiber.App) {
 	routes.AddBillRouter(v1)
 	routes.AddFlagRouter(v1)
 	routes.AddCardRouter(v1)
+	routes.AddInvoiceRouter(v1)
 }

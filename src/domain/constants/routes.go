@@ -14,4 +14,5 @@ const (
 	Users                  = "/users"
 	Cards                  = "/cards"
 	CardId                 = "/cards/:id"
+	Invoices               = "/invoices"
 )
