@@ -56,3 +56,32 @@ func (u *CardController) CreateCard(c *fiber.Ctx) error {
 	response := u.Service.CreateCard(*userId, request)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
+
+func (u *CardController) UpdateCard(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	request := new(requests.CardRequest)
+	if err := c.BodyParser(request); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
+	}
+
+	if err := request.IsValid(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	response := u.Service.UpdateCard(c.Params("id"), *userId, request)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *CardController) RemoveCard(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.RemoveCard(c.Params("id"), *userId)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}

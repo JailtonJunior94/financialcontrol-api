@@ -50,5 +50,39 @@ func (s *CardService) CreateCard(userId string, request *requests.CardRequest) *
 }
 
 func (s *CardService) UpdateCard(id, userId string, request *requests.CardRequest) *responses.HttpResponse {
-	return nil
+	card, err := s.CardRepository.GetCardById(id, userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if card == nil {
+		return responses.NotFound(customErrors.CardNotFound)
+	}
+
+	card.Update(request.FlagId, request.Name, request.Description, request.Number, request.ClosingDay, request.ExpirationDate)
+	_, err = s.CardRepository.UpdateCard(card)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.Ok(mappings.ToCardResponse(card))
+}
+
+func (s *CardService) RemoveCard(id, userId string) *responses.HttpResponse {
+	card, err := s.CardRepository.GetCardById(id, userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if card == nil {
+		return responses.NotFound(customErrors.CardNotFound)
+	}
+
+	card.UpdateStatus(false)
+	_, err = s.CardRepository.UpdateCard(card)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.NoContent()
 }

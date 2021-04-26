@@ -10,4 +10,5 @@ type ICardService interface {
 	CardById(id, userId string) *responses.HttpResponse
 	CreateCard(userId string, request *requests.CardRequest) *responses.HttpResponse
 	UpdateCard(id, userId string, request *requests.CardRequest) *responses.HttpResponse
+	RemoveCard(id, userId string) *responses.HttpResponse
 }
