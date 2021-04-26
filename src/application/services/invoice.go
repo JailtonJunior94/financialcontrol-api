@@ -53,7 +53,7 @@ func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceR
 		}
 	}
 
-	return responses.Created("Cadastrado com sucesso")
+	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
 }
 
 func (u *InvoiceService) getDates(purchaseDate time.Time) (startDate, endDate time.Time) {
