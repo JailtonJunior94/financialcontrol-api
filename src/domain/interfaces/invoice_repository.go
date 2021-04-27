@@ -7,7 +7,7 @@ import (
 )
 
 type IInvoiceRepository interface {
-	GetInvoiceByCardId(cardId string) (invoice *entities.Invoice, err error)
+	GetInvoiceByCardId(userId, cardId string) (invoices []entities.Invoice, err error)
 	GetInvoiceByDate(startDate, endDate time.Time, cardId string) (invoice *entities.Invoice, err error)
 	AddInvoice(p *entities.Invoice) (invoice *entities.Invoice, err error)
 	UpdateInvoice(p *entities.Invoice) (invoice *entities.Invoice, err error)

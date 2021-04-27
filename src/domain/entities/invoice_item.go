@@ -8,7 +8,7 @@ type InvoiceItem struct {
 	PurchaseDate     time.Time `db:"PurchaseDate"`
 	Description      string    `db:"Description"`
 	TotalAmount      float64   `db:"TotalAmount"`
-	Installment      string    `db:"Installment"`
+	Installment      int       `db:"Installment"`
 	InstallmentValue float64   `db:"InstallmentValue"`
 	Tags             string    `db:"Tags"`
 	Entity
@@ -16,7 +16,7 @@ type InvoiceItem struct {
 	Category Category
 }
 
-func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags, installment string, purchaseDate time.Time, totalAmount, installmentValue float64) {
+func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags string, installment int, purchaseDate time.Time, totalAmount, installmentValue float64) {
 	p.Entity.NewEntity()
 	p.InvoiceId = invoiceId
 	p.CategoryId = categoryId

@@ -18,22 +18,31 @@ func NewInvoiceRepository(db database.ISqlConnection) interfaces.IInvoiceReposit
 	return &InvoiceRepository{Db: db}
 }
 
-func (r *InvoiceRepository) GetInvoiceByCardId(cardId string) (invoice *entities.Invoice, err error) {
+func (r *InvoiceRepository) GetInvoiceByCardId(userId, cardId string) (invoices []entities.Invoice, err error) {
 	connection := r.Db.Connect()
-	row := connection.QueryRow(queries.GetInvoiceByCardId, sql.Named("cardId", cardId))
-
-	i := new(entities.Invoice)
-	err = row.Scan(&i.ID, &i.CardId, &i.Date, &i.Total, &i.CreatedAt, &i.UpdatedAt, &i.Active)
-
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-
+	rows, err := connection.Query(queries.GetInvoiceByCardId, sql.Named("userId", userId), sql.Named("cardId", cardId))
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	return i, nil
+	for rows.Next() {
+		var invoice entities.Invoice
+		if err := rows.Scan(&invoice.ID,
+			&invoice.CardId,
+			&invoice.Date,
+			&invoice.Total,
+			&invoice.CreatedAt,
+			&invoice.UpdatedAt,
+			&invoice.Active,
+		); err != nil {
+			return nil, err
+		}
+
+		invoices = append(invoices, invoice)
+	}
+
+	return invoices, nil
 }
 
 func (r *InvoiceRepository) GetInvoiceByDate(startDate, endDate time.Time, cardId string) (invoice *entities.Invoice, err error) {

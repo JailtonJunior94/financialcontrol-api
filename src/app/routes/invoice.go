@@ -9,5 +9,6 @@ import (
 )
 
 func AddInvoiceRouter(router fiber.Router) {
+	router.Get(constants.Invoices, middlewares.Protected(), ioc.InvoiceController.Invoices)
 	router.Post(constants.Invoices, middlewares.Protected(), ioc.InvoiceController.CreateInvoice)
 }

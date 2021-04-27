@@ -27,16 +27,16 @@ func (p *Invoice) UpdatingValues() {
 	p.ChangeUpdatedAt()
 }
 
-func (b *Invoice) sumTotal() {
+func (p *Invoice) sumTotal() {
 	var total float64
 
-	if len(b.InvoiceItems) == 0 {
-		b.Total = total
+	if len(p.InvoiceItems) == 0 {
+		p.Total = total
 	}
 
-	for _, bill := range b.InvoiceItems {
-		total += bill.InstallmentValue
+	for _, invoice := range p.InvoiceItems {
+		total += invoice.InstallmentValue
 	}
 
-	b.Total = total
+	p.Total = total
 }

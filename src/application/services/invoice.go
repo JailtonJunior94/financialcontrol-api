@@ -1,7 +1,6 @@
 package services
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
@@ -22,6 +21,15 @@ func NewInvoiceService(r interfaces.ICardRepository, i interfaces.IInvoiceReposi
 	return &InvoiceService{CardRepository: r, InvoiceRepository: i}
 }
 
+func (u *InvoiceService) Invoices(userId string, cardId string) *responses.HttpResponse {
+	invoices, err := u.InvoiceRepository.GetInvoiceByCardId(userId, cardId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.Ok(mappings.ToManyInvoiceResponse(invoices))
+}
+
 func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
 	card, err := u.CardRepository.GetCardById(request.CardId, userId)
 	if err != nil {
@@ -29,7 +37,6 @@ func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceR
 	}
 
 	startDate, endDate := u.getDates(request.PurchaseDate)
-
 	for i := 0; i < request.QuantityInvoice; i++ {
 		invoice, err := u.InvoiceRepository.GetInvoiceByDate(startDate.AddDate(0, i, 0), endDate.AddDate(0, i, 0), card.ID)
 		if err != nil {
@@ -72,7 +79,7 @@ func (u *InvoiceService) getDates(purchaseDate time.Time) (startDate, endDate ti
 }
 
 func (u *InvoiceService) addInvoiceItemAndUpdateTotal(invoice *entities.Invoice, request *requests.InvoiceRequest, installment int) error {
-	_, err := u.InvoiceRepository.AddInvoiceItem(mappings.ToInvoiceItemEntity(request, invoice.ID, strconv.Itoa(installment)))
+	_, err := u.InvoiceRepository.AddInvoiceItem(mappings.ToInvoiceItemEntity(request, invoice.ID, installment+1))
 	if err != nil {
 		return err
 	}

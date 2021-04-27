@@ -36,7 +36,7 @@ func ToManyCardResponse(entities []entities.Card) (r []responses.CardResponse) {
 	}
 
 	for _, e := range entities {
-		Card := responses.CardResponse{
+		card := responses.CardResponse{
 			ID:             e.ID,
 			Name:           e.Name,
 			Number:         e.Number,
@@ -50,7 +50,7 @@ func ToManyCardResponse(entities []entities.Card) (r []responses.CardResponse) {
 				Active: e.Flag.Active,
 			},
 		}
-		r = append(r, Card)
+		r = append(r, card)
 	}
 
 	return r

@@ -18,6 +18,16 @@ func NewInvoiceController(u usecases.IInvoiceService, j adapters.IJwtAdapter) *I
 	return &InvoiceController{Service: u, Jwt: j}
 }
 
+func (u *InvoiceController) Invoices(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.Invoices(*userId, c.Query("cardid"))
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
 func (u *InvoiceController) CreateInvoice(c *fiber.Ctx) error {
 	request := new(requests.InvoiceRequest)
 	if err := c.BodyParser(request); err != nil {

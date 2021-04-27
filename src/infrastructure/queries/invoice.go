@@ -2,15 +2,21 @@ package queries
 
 const (
 	GetInvoiceByCardId = `SELECT
-							CAST([Id] AS CHAR(36)) [Id],
-							CAST([CardId] AS CHAR(36)) [CardId],
-							[Date],
-							[Total],
-							[CreatedAt],
-							[UpdatedAt],
-							[Active]
-						FROM dbo.[Invoice] (NOLOCK)
-						WHERE [CardId] = @cardId`
+							CAST(I.[Id] AS CHAR(36)) [Id],
+							CAST(I.[CardId] AS CHAR(36)) [CardId],
+							I.[Date],
+							I.[Total],
+							I.[CreatedAt],
+							I.[UpdatedAt],
+							I.[Active]
+						FROM
+							dbo.[Invoice] (NOLOCK) I
+							INNER JOIN dbo.[Card] (NOLOCK) C ON C.Id = I.CardId
+						WHERE
+							I.[CardId] = @cardId
+							AND C.[UserId] = @userId
+						ORDER BY
+							[Date]`
 	GetInvoiceByDate = `SELECT
 							CAST([Id] AS CHAR(36)) [Id],
 							CAST([CardId] AS CHAR(36)) [CardId],
@@ -22,7 +28,8 @@ const (
 						FROM dbo.[Invoice] (NOLOCK)
 						WHERE [CardId] = @cardId	
 						AND [Date] BETWEEN CONVERT(DATETIME, @startDate)
-						AND CONVERT(DATETIME, @endDate)`
+						AND CONVERT(DATETIME, @endDate)
+						ORDER BY [Date]`
 	GetInvoiceItemByInvoiceId = `SELECT
 									CAST(I.[Id] AS CHAR(36)) [Id],
 									CAST(I.[InvoiceId] AS CHAR(36)) [InvoiceId],

@@ -6,5 +6,6 @@ import (
 )
 
 type IInvoiceService interface {
+	Invoices(userId string, cardId string) *responses.HttpResponse
 	CreateInvoice(userId string, request *requests.InvoiceRequest) *responses.HttpResponse
 }
