@@ -60,7 +60,7 @@ const (
 								dbo.[TransactionItem] (NOLOCK)
 							WHERE [TransactionId] = @transactionId
 							AND [Active] = 1
-							ORDER BY [Type], [Value]`
+							ORDER BY [Type], [Value] DESC`
 	GetTransactionItemsById = `SELECT
 								CAST([Id] AS CHAR(36)) [Id],
 								CAST([TransactionId] AS CHAR(36)) [TransactionId],

@@ -67,7 +67,7 @@ const (
 							WHERE
 								[Active] = 1
 								AND [BillId] = @billId
-							ORDER BY [Value]`
+							ORDER BY [Value] DESC`
 	GetBillItemById = `SELECT
 							CAST([Id] AS CHAR(36)) [Id],
 							CAST([BillId] AS CHAR(36)) [BillId],

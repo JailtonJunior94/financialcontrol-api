@@ -11,12 +11,13 @@ type InvoiceItem struct {
 	Installment      int       `db:"Installment"`
 	InstallmentValue float64   `db:"InstallmentValue"`
 	Tags             string    `db:"Tags"`
+	InvoiceControl   int64     `db:"InvoiceControl"`
 	Entity
 	Invoice  Invoice
 	Category Category
 }
 
-func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags string, installment int, purchaseDate time.Time, totalAmount, installmentValue float64) {
+func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags string, installment int, purchaseDate time.Time, totalAmount, installmentValue float64, invoiceControl int64) {
 	p.Entity.NewEntity()
 	p.InvoiceId = invoiceId
 	p.CategoryId = categoryId
@@ -26,4 +27,5 @@ func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags st
 	p.PurchaseDate = purchaseDate
 	p.TotalAmount = totalAmount
 	p.InstallmentValue = installmentValue
+	p.InvoiceControl = invoiceControl
 }

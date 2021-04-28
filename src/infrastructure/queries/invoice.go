@@ -30,27 +30,6 @@ const (
 						AND [Date] BETWEEN CONVERT(DATETIME, @startDate)
 						AND CONVERT(DATETIME, @endDate)
 						ORDER BY [Date]`
-	GetInvoiceItemByInvoiceId = `SELECT
-									CAST(I.[Id] AS CHAR(36)) [Id],
-									CAST(I.[InvoiceId] AS CHAR(36)) [InvoiceId],
-									CAST(I.[CategoryId] AS CHAR(36)) [CategoryId],
-									I.[PurchaseDate],
-									I.[Description],
-									I.[TotalAmount],
-									I.[Installment],
-									I.[InstallmentValue],
-									I.[Tags],
-									I.[CreatedAt],
-									I.[UpdatedAt],
-									I.[Active],
-									C.[Id],
-									C.[Name],
-									C.[Active]
-								FROM
-									dbo.[InvoiceItem] (NOLOCK) I
-									INNER JOIN dbo.[Category] (NOLOCK) C ON C.Id = i.CategoryId
-								WHERE
-									InvoiceId = @invoiceId`
 	AddInvoice     = `INSERT INTO dbo.[Invoice] VALUES (@id, @cardId, @date, @total, @createdAt, @updatedAt, @active)`
 	UpdateInvoice  = `UPDATE dbo.[Invoice] SET Total = @total WHERE Id = @id`
 	AddInvoiceItem = `INSERT INTO
@@ -68,6 +47,36 @@ const (
 							@tags,
 							@createdAt,
 							@updatedAt,
-							@active
+							@active,
+							@invoiceControl
 							)`
+	GetInvoiceItemByInvoiceId = `SELECT
+									CAST(II.[Id] AS CHAR(36)) [Id],
+									CAST(II.[InvoiceId] AS CHAR(36)) [InvoiceId],
+									CAST(II.[CategoryId] AS CHAR(36)) [CategoryId],
+									II.[PurchaseDate],
+									II.[Description],
+									II.[TotalAmount],
+									II.[Installment],
+									II.[InstallmentValue],
+									II.[Tags],
+									II.[InvoiceControl],
+									II.[CreatedAt],
+									II.[UpdatedAt],
+									II.[Active],
+									CAST(C.[Id] AS CHAR(36)) [Id],
+									C.[Name],
+									C.[Active]
+								FROM
+									dbo.[InvoiceItem] (NOLOCK) II
+									INNER JOIN dbo.[Category] (NOLOCK) C ON C.Id = II.CategoryId
+									INNER JOIN dbo.[Invoice] (NOLOCK) I ON II.InvoiceId = I.Id
+									INNER JOIN dbo.[Card] (NOLOCK) CA ON CA.Id = I.CardId
+								WHERE
+									II.InvoiceId = @invoiceId
+									AND I.CardId = @cardId
+									AND CA.UserId = @userId
+								ORDER BY
+									II.PurchaseDate`
+	GetLastInvoiceControl = `SELECT TOP 1 [InvoiceControl] FROM dbo.[InvoiceItem] ORDER BY [InvoiceControl] DESC`
 )

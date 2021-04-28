@@ -22,12 +22,26 @@ func NewInvoiceService(r interfaces.ICardRepository, i interfaces.IInvoiceReposi
 }
 
 func (u *InvoiceService) Invoices(userId string, cardId string) *responses.HttpResponse {
+	card, err := u.CardRepository.GetCardById(cardId, userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
 	invoices, err := u.InvoiceRepository.GetInvoiceByCardId(userId, cardId)
 	if err != nil {
 		return responses.ServerError()
 	}
 
-	return responses.Ok(mappings.ToManyInvoiceResponse(invoices))
+	return responses.Ok(mappings.ToCardInvoicesResponse(card, invoices))
+}
+
+func (u *InvoiceService) InvoiceById(userId, cardId, id string) *responses.HttpResponse {
+	invoiceItems, err := u.InvoiceRepository.GetInvoiceItemByInvoiceId(id, cardId, userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.Ok(mappings.ToManyInvoiceItemResponse(invoiceItems))
 }
 
 func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
@@ -36,7 +50,12 @@ func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceR
 		return responses.ServerError()
 	}
 
-	startDate, endDate := u.getDates(request.PurchaseDate)
+	invoiceControl, err := u.InvoiceRepository.GetLastInvoiceControl()
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	startDate, endDate := u.getDates(request.PurchaseDate, card.ClosingDay)
 	for i := 0; i < request.QuantityInvoice; i++ {
 		invoice, err := u.InvoiceRepository.GetInvoiceByDate(startDate.AddDate(0, i, 0), endDate.AddDate(0, i, 0), card.ID)
 		if err != nil {
@@ -49,13 +68,13 @@ func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceR
 				return responses.ServerError()
 			}
 
-			if err := u.addInvoiceItemAndUpdateTotal(newInvoice, request, i); err != nil {
+			if err := u.addInvoiceItemAndUpdateTotal(newInvoice, request, i, invoiceControl, userId); err != nil {
 				return responses.ServerError()
 			}
 			continue
 		}
 
-		if err := u.addInvoiceItemAndUpdateTotal(invoice, request, i); err != nil {
+		if err := u.addInvoiceItemAndUpdateTotal(invoice, request, i, invoiceControl, userId); err != nil {
 			return responses.ServerError()
 		}
 	}
@@ -63,11 +82,11 @@ func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceR
 	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
 }
 
-func (u *InvoiceService) getDates(purchaseDate time.Time) (startDate, endDate time.Time) {
+func (u *InvoiceService) getDates(purchaseDate time.Time, closingDay int) (startDate, endDate time.Time) {
 	time := shared.NewTime(shared.Time{Now: purchaseDate})
-	closing := time.EndDate().AddDate(0, 0, -6)
+	closing := time.EndDate().AddDate(0, 0, closingDay).AddDate(0, 0, -7)
 
-	if purchaseDate.Day() > closing.Day() {
+	if purchaseDate.Day() >= closing.Day() {
 		startDate = time.StartDate().AddDate(0, 2, 0)
 		endDate = time.EndDate().AddDate(0, 2, 0)
 	} else {
@@ -78,13 +97,13 @@ func (u *InvoiceService) getDates(purchaseDate time.Time) (startDate, endDate ti
 	return startDate, endDate
 }
 
-func (u *InvoiceService) addInvoiceItemAndUpdateTotal(invoice *entities.Invoice, request *requests.InvoiceRequest, installment int) error {
-	_, err := u.InvoiceRepository.AddInvoiceItem(mappings.ToInvoiceItemEntity(request, invoice.ID, installment+1))
+func (u *InvoiceService) addInvoiceItemAndUpdateTotal(invoice *entities.Invoice, request *requests.InvoiceRequest, installment int, invoiceControl int64, userId string) error {
+	_, err := u.InvoiceRepository.AddInvoiceItem(mappings.ToInvoiceItemEntity(request, invoice.ID, installment+1, invoiceControl+1))
 	if err != nil {
 		return err
 	}
 
-	items, err := u.InvoiceRepository.GetInvoiceItemByInvoiceId(invoice.ID)
+	items, err := u.InvoiceRepository.GetInvoiceItemByInvoiceId(invoice.ID, invoice.CardId, userId)
 	if err != nil {
 		return err
 	}

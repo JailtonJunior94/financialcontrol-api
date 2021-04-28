@@ -15,9 +15,17 @@ func ToInvoiceEntity(r *requests.InvoiceRequest, date time.Time, total float64) 
 	return entity
 }
 
-func ToInvoiceItemEntity(r *requests.InvoiceRequest, invoiceId string, installment int) (e *entities.InvoiceItem) {
+func ToInvoiceItemEntity(r *requests.InvoiceRequest, invoiceId string, installment int, invoiceControl int64) (e *entities.InvoiceItem) {
 	entity := new(entities.InvoiceItem)
-	entity.NewInvoiceItem(invoiceId, r.CategoryId, r.Description, r.Tags, installment, r.PurchaseDate, r.TotalAmount, r.TotalAmount/float64(r.QuantityInvoice))
+	entity.NewInvoiceItem(invoiceId,
+		r.CategoryId,
+		r.Description,
+		r.Tags,
+		installment,
+		r.PurchaseDate,
+		r.TotalAmount,
+		r.TotalAmount/float64(r.QuantityInvoice),
+		invoiceControl)
 
 	return entity
 }
@@ -34,6 +42,33 @@ func ToManyInvoiceResponse(entities []entities.Invoice) (r []responses.InvoiceRe
 			Total: e.Total,
 		}
 		r = append(r, invoice)
+	}
+
+	return r
+}
+
+func ToManyInvoiceItemResponse(entities []entities.InvoiceItem) (r []responses.InvoiceItemResponse) {
+	if len(entities) == 0 {
+		return make([]responses.InvoiceItemResponse, 0)
+	}
+
+	for _, e := range entities {
+		invoiceItem := responses.InvoiceItemResponse{
+			ID:               e.ID,
+			InvoiceControl:   e.InvoiceControl,
+			PurchaseDate:     e.PurchaseDate,
+			Description:      e.Description,
+			TotalAmount:      e.TotalAmount,
+			Installment:      e.Installment,
+			InstallmentValue: e.InstallmentValue,
+			Tags:             e.Tags,
+			Category: responses.CategoryResponse{
+				ID:     e.Category.ID,
+				Name:   e.Category.Name,
+				Active: e.Category.Active,
+			},
+		}
+		r = append(r, invoiceItem)
 	}
 
 	return r

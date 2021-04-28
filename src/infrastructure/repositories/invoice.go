@@ -100,9 +100,9 @@ func (r *InvoiceRepository) UpdateInvoice(p *entities.Invoice) (invoice *entitie
 	return p, nil
 }
 
-func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceId string) (items []entities.InvoiceItem, err error) {
+func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceId, cardId, userId string) (items []entities.InvoiceItem, err error) {
 	connection := r.Db.Connect()
-	rows, err := connection.Query(queries.GetInvoiceItemByInvoiceId, sql.Named("invoiceId", invoiceId))
+	rows, err := connection.Query(queries.GetInvoiceItemByInvoiceId, sql.Named("invoiceId", invoiceId), sql.Named("cardId", cardId), sql.Named("userId", userId))
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +120,7 @@ func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceId string) (items [
 			&item.Installment,
 			&item.InstallmentValue,
 			&item.Tags,
+			&item.InvoiceControl,
 			&item.CreatedAt,
 			&item.UpdatedAt,
 			&item.Active,
@@ -155,10 +156,27 @@ func (r *InvoiceRepository) AddInvoiceItem(p *entities.InvoiceItem) (invoiceItem
 		sql.Named("tags", p.Tags),
 		sql.Named("createdAt", p.CreatedAt),
 		sql.Named("updatedAt", p.UpdatedAt),
-		sql.Named("active", p.Active))
+		sql.Named("active", p.Active),
+		sql.Named("invoiceControl", p.InvoiceControl))
 
 	if err := r.Db.ValidateResult(result, err); err != nil {
 		return nil, err
 	}
 	return p, nil
+}
+
+func (r *InvoiceRepository) GetLastInvoiceControl() (invoiceControl int64, err error) {
+	connection := r.Db.Connect()
+	row := connection.QueryRow(queries.GetLastInvoiceControl)
+
+	err = row.Scan(&invoiceControl)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	return invoiceControl, nil
 }
