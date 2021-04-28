@@ -21,6 +21,7 @@ var (
 	FlagRepository        interfaces.IFlagRepository
 	CardRepository        interfaces.ICardRepository
 	InvoiceRepository     interfaces.IInvoiceRepository
+	CategoryRepository    interfaces.ICategoryRepository
 	UserService           usecases.IUserService
 	AuthService           usecases.IAuthService
 	TransactionService    usecases.ITransactionService
@@ -28,6 +29,7 @@ var (
 	FlagService           usecases.IFlagService
 	CardService           usecases.ICardService
 	InvoiceService        usecases.IInvoiceService
+	CategoryService       usecases.ICategoryService
 	UserController        *controllers.UserController
 	AuthController        *controllers.AuthController
 	TransactionController *controllers.TransactionController
@@ -35,6 +37,7 @@ var (
 	FlagController        *controllers.FlagController
 	CardController        *controllers.CardController
 	InvoiceController     *controllers.InvoiceController
+	CategoryController    *controllers.CategoryController
 )
 
 func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
@@ -53,6 +56,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	FlagRepository = repositories.NewFlagRepository(SqlConnection)
 	CardRepository = repositories.NewCardRepository(SqlConnection)
 	InvoiceRepository = repositories.NewInvoiceRepository(SqlConnection)
+	CategoryRepository = repositories.NewCategoryRepository(SqlConnection)
 
 	/* Services */
 	UserService = services.NewUserService(UserRepository, HashAdapter)
@@ -62,6 +66,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	FlagService = services.NewFlagService(FlagRepository)
 	CardService = services.NewCardService(CardRepository)
 	InvoiceService = services.NewInvoiceService(CardRepository, InvoiceRepository)
+	CategoryService = services.NewCategoryService(CategoryRepository)
 
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
@@ -71,4 +76,5 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	FlagController = controllers.NewFlagController(FlagService)
 	CardController = controllers.NewCardController(CardService, JwtAdapter)
 	InvoiceController = controllers.NewInvoiceController(InvoiceService, JwtAdapter)
+	CategoryController = controllers.NewCategoryController(CategoryService)
 }

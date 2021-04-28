@@ -2,6 +2,6 @@ package entities
 
 type Category struct {
 	Name     string `db:"Name"`
-	Sequence string `db:"Sequence"`
+	Sequence int    `db:"Sequence"`
 	Entity
 }

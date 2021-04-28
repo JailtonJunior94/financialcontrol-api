@@ -7,18 +7,18 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/queries"
 )
 
-type FlagRepository struct {
+type CategoryRepository struct {
 	Db database.ISqlConnection
 }
 
-func NewFlagRepository(db database.ISqlConnection) interfaces.IFlagRepository {
-	return &FlagRepository{Db: db}
+func NewCategoryRepository(db database.ISqlConnection) interfaces.ICategoryRepository {
+	return &CategoryRepository{Db: db}
 }
 
-func (r *FlagRepository) GetFlags() (flags []entities.Flag, err error) {
+func (r *CategoryRepository) GetCategories() (categories []entities.Category, err error) {
 	connection := r.Db.Connect()
-	if err := connection.Select(&flags, queries.GetFlags); err != nil {
+	if err := connection.Select(&categories, queries.GetCategories); err != nil {
 		return nil, err
 	}
-	return flags, nil
+	return categories, nil
 }

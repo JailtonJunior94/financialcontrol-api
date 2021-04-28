@@ -22,17 +22,12 @@ func NewInvoiceService(r interfaces.ICardRepository, i interfaces.IInvoiceReposi
 }
 
 func (u *InvoiceService) Invoices(userId string, cardId string) *responses.HttpResponse {
-	card, err := u.CardRepository.GetCardById(cardId, userId)
-	if err != nil {
-		return responses.ServerError()
-	}
-
 	invoices, err := u.InvoiceRepository.GetInvoiceByCardId(userId, cardId)
 	if err != nil {
 		return responses.ServerError()
 	}
 
-	return responses.Ok(mappings.ToCardInvoicesResponse(card, invoices))
+	return responses.Ok(mappings.ToManyInvoiceResponse(invoices))
 }
 
 func (u *InvoiceService) InvoiceById(userId, cardId, id string) *responses.HttpResponse {
