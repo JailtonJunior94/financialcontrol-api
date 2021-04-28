@@ -22,7 +22,7 @@ spec:
             - name: ACCEPT_EULA
               value: "Y"
             - name: SA_PASSWORD
-              value: "@stefany@1994"
+              value: "@docker@2021"
           ports:
             - containerPort: 1433
           volumeMounts:

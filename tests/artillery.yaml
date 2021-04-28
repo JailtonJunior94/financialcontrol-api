@@ -1,0 +1,19 @@
+config:
+  target: "http://127.0.0.1:63938"
+  phases:
+    - duration: 360
+      arrivalRate: 20
+scenarios:
+  - flow:
+      - get:
+          url: "/api/v1/transactions"
+          headers:
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImphaWx0b24uanVuaW9yOTRAb3V0bG9vay5jb20iLCJleHAiOiIyMDIxLTA1LTI4VDEzOjU2OjU2LjUwMzY1MDEtMDM6MDAiLCJzdWIiOiJGOTc4Rjk2OS0zRUI2LTREMEUtOEU0RS0zMjcwQTIwRjM1MTMifQ.o8jvQpthKV4-xowA9l_KuChqfqZlSkQxRFDu8vspx-A"
+      - get:
+          url: "/api/v1/bills"
+          headers:
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImphaWx0b24uanVuaW9yOTRAb3V0bG9vay5jb20iLCJleHAiOiIyMDIxLTA1LTI4VDEzOjU2OjU2LjUwMzY1MDEtMDM6MDAiLCJzdWIiOiJGOTc4Rjk2OS0zRUI2LTREMEUtOEU0RS0zMjcwQTIwRjM1MTMifQ.o8jvQpthKV4-xowA9l_KuChqfqZlSkQxRFDu8vspx-A"
+      - get:
+          url: "/api/v1/cards"
+          headers:
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImphaWx0b24uanVuaW9yOTRAb3V0bG9vay5jb20iLCJleHAiOiIyMDIxLTA1LTI4VDEzOjU2OjU2LjUwMzY1MDEtMDM6MDAiLCJzdWIiOiJGOTc4Rjk2OS0zRUI2LTREMEUtOEU0RS0zMjcwQTIwRjM1MTMifQ.o8jvQpthKV4-xowA9l_KuChqfqZlSkQxRFDu8vspx-A"

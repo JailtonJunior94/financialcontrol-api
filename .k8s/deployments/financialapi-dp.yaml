@@ -6,7 +6,7 @@ metadata:
   name: financialapi-deployment
   namespace: financialcontrol
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: financialapi
@@ -17,10 +17,14 @@ spec:
     spec:
       containers:
         - name: financialapi
-          image: jailtonjunior/financialcontrol:v6
+          image: jailtonjunior/financialcontrol:v1
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
           env:
             - name: ENVIRONMENT
-              value: Staging
+              value: Production
             - name: TZ
               value: America/Sao_Paulo
           ports:
