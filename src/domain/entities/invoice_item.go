@@ -1,6 +1,10 @@
 package entities
 
-import "time"
+import (
+	"time"
+
+	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
+)
 
 type InvoiceItem struct {
 	InvoiceId        string    `db:"InvoiceId"`
@@ -17,15 +21,18 @@ type InvoiceItem struct {
 	Category Category
 }
 
-func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags string, installment int, purchaseDate time.Time, totalAmount, installmentValue float64, invoiceControl int64) {
+func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags string, purchaseDate time.Time, totalAmount float64) {
 	p.Entity.NewEntity()
 	p.InvoiceId = invoiceId
 	p.CategoryId = categoryId
 	p.Description = description
 	p.Tags = tags
-	p.Installment = installment
-	p.PurchaseDate = purchaseDate
 	p.TotalAmount = totalAmount
+	p.PurchaseDate = shared.NewTime(shared.Time{Date: purchaseDate}).FormatDate()
+}
+
+func (p *InvoiceItem) AddInstallment(installment int, installmentValue float64, invoiceControl int64) {
 	p.InstallmentValue = installmentValue
 	p.InvoiceControl = invoiceControl
+	p.Installment = installment
 }

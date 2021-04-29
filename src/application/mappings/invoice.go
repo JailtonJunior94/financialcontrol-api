@@ -6,6 +6,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
+	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
 )
 
 func ToInvoiceEntity(r *requests.InvoiceRequest, date time.Time, total float64) (e *entities.Invoice) {
@@ -21,11 +22,10 @@ func ToInvoiceItemEntity(r *requests.InvoiceRequest, invoiceId string, installme
 		r.CategoryId,
 		r.Description,
 		r.Tags,
-		installment,
 		r.PurchaseDate,
 		r.TotalAmount,
-		r.TotalAmount/float64(r.QuantityInvoice),
-		invoiceControl)
+	)
+	entity.AddInstallment(installment, r.TotalAmount/float64(r.QuantityInvoice), invoiceControl)
 
 	return entity
 }
@@ -37,9 +37,10 @@ func ToManyInvoiceResponse(entities []entities.Invoice) (r []responses.InvoiceRe
 
 	for _, e := range entities {
 		invoice := responses.InvoiceResponse{
-			ID:    e.ID,
-			Date:  e.Date,
-			Total: e.Total,
+			ID:     e.ID,
+			CardId: e.CardId,
+			Date:   shared.NewTime(shared.Time{Date: e.Date}).FormatDate(),
+			Total:  e.Total,
 		}
 		r = append(r, invoice)
 	}
@@ -56,7 +57,7 @@ func ToManyInvoiceItemResponse(entities []entities.InvoiceItem) (r []responses.I
 		invoiceItem := responses.InvoiceItemResponse{
 			ID:               e.ID,
 			InvoiceControl:   e.InvoiceControl,
-			PurchaseDate:     e.PurchaseDate,
+			PurchaseDate:     shared.NewTime(shared.Time{Date: e.PurchaseDate}).FormatDate(),
 			Description:      e.Description,
 			TotalAmount:      e.TotalAmount,
 			Installment:      e.Installment,

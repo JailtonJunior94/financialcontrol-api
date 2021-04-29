@@ -1,6 +1,10 @@
 package entities
 
-import "time"
+import (
+	"time"
+
+	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
+)
 
 type Invoice struct {
 	CardId string    `db:"CardId"`
@@ -14,7 +18,7 @@ type Invoice struct {
 func (p *Invoice) NewInvoice(cardId string, date time.Time, total float64) {
 	p.Entity.NewEntity()
 	p.CardId = cardId
-	p.Date = date
+	p.Date = shared.NewTime(shared.Time{Date: date}).FormatDate()
 	p.Total = total
 }
 
