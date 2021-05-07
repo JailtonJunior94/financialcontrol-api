@@ -39,40 +39,32 @@ func (u *CardController) CardById(c *fiber.Ctx) error {
 }
 
 func (u *CardController) CreateCard(c *fiber.Ctx) error {
-	request := new(requests.CardRequest)
-	if err := c.BodyParser(request); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
-	}
-
-	if err := request.IsValid(); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-
 	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 	}
 
-	response := u.Service.CreateCard(*userId, request)
+	var request requests.CardRequest
+	if err, statusCode, data := u.inputIsValid(c, &request); err {
+		return c.Status(statusCode).JSON(data)
+	}
+
+	response := u.Service.CreateCard(*userId, &request)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (u *CardController) UpdateCard(c *fiber.Ctx) error {
+	var request requests.CardRequest
+	if err, statusCode, data := u.inputIsValid(c, &request); err {
+		return c.Status(statusCode).JSON(data)
+	}
+
 	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 	}
 
-	request := new(requests.CardRequest)
-	if err := c.BodyParser(request); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
-	}
-
-	if err := request.IsValid(); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	response := u.Service.UpdateCard(c.Params("id"), *userId, request)
+	response := u.Service.UpdateCard(c.Params("id"), *userId, &request)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
@@ -84,4 +76,16 @@ func (u *CardController) RemoveCard(c *fiber.Ctx) error {
 
 	response := u.Service.RemoveCard(c.Params("id"), *userId)
 	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *CardController) inputIsValid(c *fiber.Ctx, r *requests.CardRequest) (isError bool, statusCode int, data interface{}) {
+	if err := c.BodyParser(r); err != nil {
+		return true, fiber.StatusUnprocessableEntity, fiber.Map{"error": customErrors.UnprocessableEntityMessage}
+	}
+
+	if err := r.IsValid(); err != nil {
+		return true, fiber.StatusBadRequest, fiber.Map{"error": err.Error()}
+	}
+
+	return false, fiber.StatusOK, nil
 }

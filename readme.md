@@ -15,3 +15,15 @@ Projeto backend de controle de finanças pessoais.
 * **[GitHub Actions](https://docs.github.com/pt/actions)**
 * **[Docker](https://www.docker.com/)**
 * **[SQL Server](https://www.microsoft.com/pt-br/sql-server/sql-server-2019)**
+
+## Testes de Unidade
+Para gerar o arquivo coverage da aplicação
+```
+go test --coverprofile tests/coverage.txt ./...
+go test --coverprofile tests/coverage.out ./...
+```
+Para gerar html com informações detalhadas do teste
+```
+go tool cover --html=tests/coverage.txt
+go tool cover --html=tests/coverage.out
+```

@@ -46,34 +46,38 @@ func (u *BillController) BillItemById(c *fiber.Ctx) error {
 }
 
 func (u *BillController) CreateBillItem(c *fiber.Ctx) error {
-	request := new(requests.BillItemRequest)
-	if err := c.BodyParser(request); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
+	var request requests.BillItemRequest
+	if err, statusCode, data := u.inputIsValid(&request, c); err {
+		return c.Status(statusCode).JSON(data)
 	}
 
-	if err := request.IsValid(); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	response := u.Service.CreateBillItem(request, c.Params("billid"))
+	response := u.Service.CreateBillItem(&request, c.Params("billid"))
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (u *BillController) UpdateBillItem(c *fiber.Ctx) error {
-	request := new(requests.BillItemRequest)
-	if err := c.BodyParser(request); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
+	var request requests.BillItemRequest
+	if err, statusCode, data := u.inputIsValid(&request, c); err {
+		return c.Status(statusCode).JSON(data)
 	}
 
-	if err := request.IsValid(); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	response := u.Service.UpdateBillItem(c.Params("billid"), c.Params("id"), request)
+	response := u.Service.UpdateBillItem(c.Params("billid"), c.Params("id"), &request)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (u *BillController) RemoveBillItem(c *fiber.Ctx) error {
 	response := u.Service.RemoveBillItem(c.Params("billid"), c.Params("id"))
 	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *BillController) inputIsValid(r *requests.BillItemRequest, c *fiber.Ctx) (isError bool, statusCode int, data interface{}) {
+	if err := c.BodyParser(r); err != nil {
+		return true, fiber.StatusUnprocessableEntity, fiber.Map{"error": customErrors.UnprocessableEntityMessage}
+	}
+
+	if err := r.IsValid(); err != nil {
+		return true, fiber.StatusBadRequest, fiber.Map{"error": err.Error()}
+	}
+
+	return false, fiber.StatusOK, nil
 }
