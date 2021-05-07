@@ -39,13 +39,9 @@ func (u *InvoiceController) InvoiceById(c *fiber.Ctx) error {
 }
 
 func (u *InvoiceController) CreateInvoice(c *fiber.Ctx) error {
-	request := new(requests.InvoiceRequest)
-	if err := c.BodyParser(request); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
-	}
-
-	if err := request.IsValid(); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	var request requests.InvoiceRequest
+	if err, statusCode, data := u.inputIsValid(&request, c); err {
+		return c.Status(statusCode).JSON(data)
 	}
 
 	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
@@ -53,6 +49,18 @@ func (u *InvoiceController) CreateInvoice(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 	}
 
-	response := u.Service.CreateInvoice(*userId, request)
+	response := u.Service.CreateInvoice(*userId, &request)
 	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *InvoiceController) inputIsValid(r *requests.InvoiceRequest, c *fiber.Ctx) (isError bool, statusCode int, data interface{}) {
+	if err := c.BodyParser(r); err != nil {
+		return true, fiber.StatusUnprocessableEntity, fiber.Map{"error": customErrors.UnprocessableEntityMessage}
+	}
+
+	if err := r.IsValid(); err != nil {
+		return true, fiber.StatusBadRequest, fiber.Map{"error": err.Error()}
+	}
+
+	return false, fiber.StatusOK, nil
 }
