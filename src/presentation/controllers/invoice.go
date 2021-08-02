@@ -38,6 +38,16 @@ func (u *InvoiceController) InvoiceById(c *fiber.Ctx) error {
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
+func (u *InvoiceController) InvoiceCategories(c *fiber.Ctx) error {
+	var request requests.RangeDateRequest
+	if err := c.QueryParser(&request); err != nil {
+		c.Status(fiber.StatusUnprocessableEntity).JSON(customErrors.UnprocessableEntityMessage)
+	}
+
+	response := u.Service.InvoiceCategories(request.StartDate, request.EndDate, c.Params("id"))
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
 func (u *InvoiceController) CreateInvoice(c *fiber.Ctx) error {
 	var request requests.InvoiceRequest
 	if err, statusCode, data := u.inputIsValid(&request, c); err {

@@ -180,3 +180,11 @@ func (r *InvoiceRepository) GetLastInvoiceControl() (invoiceControl int64, err e
 
 	return invoiceControl, nil
 }
+
+func (r *InvoiceRepository) GetInvoicesCategories(startDate, endDate time.Time, cardId string) (invoiceCategories []entities.InvoiceCategories, err error) {
+	connection := r.Db.Connect()
+	if err := connection.Select(&invoiceCategories, queries.GetInvoicesCategories, sql.Named("startDate", startDate), sql.Named("endDate", endDate), sql.Named("cardId", cardId)); err != nil {
+		return nil, err
+	}
+	return invoiceCategories, nil
+}

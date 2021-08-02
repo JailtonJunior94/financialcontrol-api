@@ -49,3 +49,7 @@ func (t *Time) EndDate() time.Time {
 func (t *Time) FormatDate() time.Time {
 	return time.Date(t.Date.Year(), t.Date.Month(), t.Date.Day(), t.Date.Hour(), t.Date.Minute(), t.Date.Second(), t.Date.Nanosecond(), t.Location)
 }
+
+func (t *Time) FormatDateWithInput(i time.Time) time.Time {
+	return time.Date(i.Year(), i.Month(), i.Day(), i.Hour(), i.Minute(), i.Second(), i.Nanosecond(), t.Location)
+}

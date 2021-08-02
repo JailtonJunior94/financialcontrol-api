@@ -14,4 +14,5 @@ type IInvoiceRepository interface {
 	GetInvoiceItemByInvoiceId(invoiceId, cardId, userId string) (items []entities.InvoiceItem, err error)
 	AddInvoiceItem(p *entities.InvoiceItem) (invoiceItem *entities.InvoiceItem, err error)
 	GetLastInvoiceControl() (invoiceControl int64, err error)
+	GetInvoicesCategories(startDate, endDate time.Time, cardId string) (invoiceCategories []entities.InvoiceCategories, err error)
 }

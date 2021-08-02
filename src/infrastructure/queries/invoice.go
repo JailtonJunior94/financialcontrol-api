@@ -79,4 +79,26 @@ const (
 								ORDER BY
 									II.PurchaseDate`
 	GetLastInvoiceControl = `SELECT TOP 1 [InvoiceControl] FROM dbo.[InvoiceItem] ORDER BY [InvoiceControl] DESC`
+	GetInvoicesCategories = `SELECT
+									CAST(II.[InvoiceId] AS CHAR(36)) InvoiceId,
+									I.[Date] Date,
+									CAST(II.[CategoryId] AS CHAR(36)) CategoryId,
+									C.[Name] Name,
+									SUM(II.[InstallmentValue]) Total
+								FROM
+									dbo.[InvoiceItem] II (NOLOCK)
+									INNER JOIN dbo.Category C (NOLOCK) ON C.Id = II.CategoryId
+									INNER JOIN dbo.[Invoice] I (NOLOCK) ON I.Id = II.InvoiceId
+								WHERE
+									I.[Date] BETWEEN CONVERT(DATETIME, @startDate)
+									AND CONVERT(DATETIME, @endDate)
+									AND I.[CardId] = @cardId
+								GROUP BY
+									II.[CategoryId],
+									C.[Name],
+									II.[InvoiceId],
+									I.[Date]
+								ORDER BY
+									I.[Date]
+								`
 )

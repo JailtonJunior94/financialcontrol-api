@@ -15,6 +15,7 @@ const (
 	Cards                  = "/cards"
 	CardId                 = "/cards/:id"
 	Invoices               = "/cards/:id/invoices"
+	InvoicesCategories     = "/cards/:id/categories"
 	InvoicesById           = "/cards/:cardid/invoices/:id"
 	Categories             = "/categories"
 )

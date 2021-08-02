@@ -39,6 +39,18 @@ func (u *InvoiceService) InvoiceById(userId, cardId, id string) *responses.HttpR
 	return responses.Ok(mappings.ToManyInvoiceItemResponse(invoiceItems))
 }
 
+func (u *InvoiceService) InvoiceCategories(startDate, endDate time.Time, cardId string) *responses.HttpResponse {
+	start := shared.NewTime(shared.Time{Now: startDate})
+	end := shared.NewTime(shared.Time{Now: endDate})
+
+	invoiceCategories, err := u.InvoiceRepository.GetInvoicesCategories(start.StartDate(), end.EndDate(), cardId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.Ok(invoiceCategories)
+}
+
 func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
 	card, err := u.CardRepository.GetCardById(request.CardId, userId)
 	if err != nil {
