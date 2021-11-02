@@ -8,10 +8,8 @@ import (
 )
 
 func ToTransactionEntity(r *requests.TransactionRequest, userId string) (e *entities.Transaction) {
-	entity := new(entities.Transaction)
-	entity.NewTransaction(userId, r.Date)
-
-	return entity
+	transaction := entities.NewTransaction(userId, r.Date)
+	return transaction
 }
 
 func ToTransactionResponse(e *entities.Transaction) (r *responses.TransactionResponse) {
@@ -47,10 +45,8 @@ func ToManyTransactionResponse(entities []entities.Transaction) (r []responses.T
 }
 
 func ToTransactionItemEntity(r *requests.TransactionItemRequest, transactionId string) (e *entities.TransactionItem) {
-	entity := new(entities.TransactionItem)
-	entity.NewTransactionItem(transactionId, r.Title, r.Type, r.Value)
-
-	return entity
+	transactionItem := entities.NewTransactionItem(transactionId, r.Title, r.Type, r.Value)
+	return transactionItem
 }
 
 func ToTransactionItemResponse(e *entities.TransactionItem) (r *responses.TransactionItemResponse) {
@@ -59,6 +55,7 @@ func ToTransactionItemResponse(e *entities.TransactionItem) (r *responses.Transa
 		Title:  e.Title,
 		Value:  e.Value,
 		Type:   e.Type,
+		IsPaid: e.IsPaid,
 		Active: e.Active,
 	}
 }
@@ -70,6 +67,7 @@ func ToManyTransactionItemResponse(entities []entities.TransactionItem) (r []res
 			Title:  e.Title,
 			Value:  e.Value,
 			Type:   e.Type,
+			IsPaid: e.IsPaid,
 			Active: e.Active,
 		}
 		r = append(r, item)

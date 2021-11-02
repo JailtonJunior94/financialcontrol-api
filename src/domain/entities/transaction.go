@@ -18,10 +18,27 @@ type Transaction struct {
 	TransactionItems []TransactionItem
 }
 
-func (u *Transaction) NewTransaction(userId string, date time.Time) {
-	u.Entity.NewEntity()
-	u.UserId = userId
-	u.Date = shared.NewTime(shared.Time{Date: date}).FormatDate()
+func NewTransaction(userId string, date time.Time) *Transaction {
+	transaction := &Transaction{
+		UserId: userId,
+		Date:   shared.NewTime(shared.Time{Date: date}).FormatDate(),
+	}
+	transaction.Entity.NewEntity()
+
+	return transaction
+}
+
+func NewTransactionWithValues(date time.Time, userId string, total, income, outcome float64) *Transaction {
+	transaction := &Transaction{
+		Date:    shared.NewTime(shared.Time{Date: date}).FormatDate(),
+		UserId:  userId,
+		Total:   total,
+		Income:  income,
+		Outcome: outcome,
+	}
+	transaction.Entity.NewEntity()
+
+	return transaction
 }
 
 func (u *Transaction) AddItems(items []TransactionItem) {

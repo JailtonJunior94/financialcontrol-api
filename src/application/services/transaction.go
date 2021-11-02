@@ -5,6 +5,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/mappings"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
 	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
@@ -65,6 +66,30 @@ func (s *TransactionService) CreateTransaction(request *requests.TransactionRequ
 	}
 
 	return responses.Created(mappings.ToTransactionResponse(transaction))
+}
+
+func (s *TransactionService) CloneTransaction(id, userId string) *responses.HttpResponse {
+	t, err := s.TransactionRepository.GetTransactionById(id, userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	items, err := s.TransactionRepository.GetItemByTransactionId(t.ID)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	newTransaction := entities.NewTransactionWithValues(t.Date.AddDate(0, 1, 0), userId, t.Total, t.Income, t.Outcome)
+	transactionsItems := make([]entities.TransactionItem, len(items), cap(items))
+
+	for index, item := range items {
+		newItem := entities.NewTransactionItem(newTransaction.ID, item.Title, item.Type, item.Value)
+		transactionsItems[index] = *newItem
+	}
+
+	newTransaction.AddItems(transactionsItems)
+
+	return responses.Ok(mappings.ToTransactionResponse(newTransaction))
 }
 
 func (s *TransactionService) TransactionItemById(transactionId, id string) *responses.HttpResponse {

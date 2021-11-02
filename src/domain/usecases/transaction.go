@@ -9,6 +9,8 @@ type ITransactionService interface {
 	Transactions(userId string) *responses.HttpResponse
 	TransactionById(id string, userId string) *responses.HttpResponse
 	CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse
+	CloneTransaction(id, userId string) *responses.HttpResponse
+
 	TransactionItemById(transactionId, id string) *responses.HttpResponse
 	CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse
 	UpdateTransactionItem(transactionId, id, userId string, request *requests.TransactionItemRequest) *responses.HttpResponse

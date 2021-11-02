@@ -57,6 +57,16 @@ func (u *TransactionController) CreateTransaction(c *fiber.Ctx) error {
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
+func (u *TransactionController) CloneTransaction(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.CloneTransaction(c.Params("transactionid"), *userId)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
 func (u *TransactionController) TransactionItemById(c *fiber.Ctx) error {
 	response := u.Service.TransactionItemById(c.Params("transactionid"), c.Params("id"))
 	return c.Status(response.StatusCode).JSON(response.Data)
