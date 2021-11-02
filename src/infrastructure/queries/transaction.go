@@ -55,6 +55,7 @@ const (
 								[Type],
 								[CreatedAt],
 								[UpdatedAt],
+								[IsPaid],
 								[Active]
 							FROM 
 								dbo.[TransactionItem] (NOLOCK)
@@ -69,6 +70,7 @@ const (
 								[Type],
 								[CreatedAt],
 								[UpdatedAt],
+								[IsPaid],
 								[Active]
 							FROM
 								dbo.[TransactionItem] (NOLOCK)
@@ -85,7 +87,7 @@ const (
 							[UpdatedAt] = @updatedAt
 						WHERE
 							[Id] = @id`
-	AddTransactionItem    = `INSERT INTO dbo.[TransactionItem] VALUES (@id, @transactionId, @title, @value, @type, @createdAt, @updatedAt, @active)`
+	AddTransactionItem    = `INSERT INTO dbo.[TransactionItem] VALUES (@id, @transactionId, @title, @value, @type, @createdAt, @updatedAt, @active, @isPaid)`
 	UpdateTransactionItem = `UPDATE
 								dbo.[TransactionItem]
 							SET
@@ -93,7 +95,8 @@ const (
 								[Value] = @value,
 								[Type] = @type,
 								[UpdatedAt] = @updatedAt,
-								[Active] = @active
+								[Active] = @active,
+								[IsPaid] = @isPaid
 							WHERE
 								[Id] = @id
 								AND [TransactionId] = @transactionId`

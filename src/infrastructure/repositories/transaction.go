@@ -57,12 +57,39 @@ func (r *TransactionRepository) AddTransactionItem(t *entities.TransactionItem) 
 		sql.Named("type", t.Type),
 		sql.Named("createdAt", t.CreatedAt),
 		sql.Named("updatedAt", t.UpdatedAt),
+		sql.Named("isPaid", t.IsPaid),
 		sql.Named("active", t.Active))
 
 	if err := r.Db.ValidateResult(result, err); err != nil {
 		return nil, err
 	}
 	return t, nil
+}
+
+func (r *TransactionRepository) AddRangeTransactionItems(t *entities.Transaction, ti []entities.TransactionItem) error {
+	_, err := r.AddTransaction(t)
+	if err != nil {
+		return err
+	}
+
+	ch := make(chan error)
+	var errorsCount []error
+
+	go func() {
+		for _, item := range ti {
+			_, err := r.AddTransactionItem(&item)
+			if err != nil {
+				ch <- err
+				errorsCount = append(errorsCount, err)
+			}
+		}
+	}()
+
+	if len(errorsCount) > 0 {
+		return <-ch
+	}
+
+	return nil
 }
 
 func (r *TransactionRepository) GetItemByTransactionId(transactionId string) (items []entities.TransactionItem, err error) {
@@ -141,7 +168,7 @@ func (r *TransactionRepository) GetTransactionItemsById(transactionId, id string
 	row := connection.QueryRow(queries.GetTransactionItemsById, sql.Named("id", id), sql.Named("transactionId", transactionId))
 
 	t := new(entities.TransactionItem)
-	err = row.Scan(&t.ID, &t.TransactionId, &t.Title, &t.Value, &t.Type, &t.CreatedAt, &t.UpdatedAt, &t.Active)
+	err = row.Scan(&t.ID, &t.TransactionId, &t.Title, &t.Value, &t.Type, &t.CreatedAt, &t.UpdatedAt, &t.IsPaid, &t.Active)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -167,6 +194,7 @@ func (r *TransactionRepository) UpdateTransactionItem(t *entities.TransactionIte
 		sql.Named("value", t.Value),
 		sql.Named("type", t.Type),
 		sql.Named("updatedAt", t.UpdatedAt.Time),
+		sql.Named("isPaid", t.IsPaid),
 		sql.Named("active", t.Active))
 
 	if err := r.Db.ValidateResult(result, err); err != nil {

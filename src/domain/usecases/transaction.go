@@ -14,5 +14,6 @@ type ITransactionService interface {
 	TransactionItemById(transactionId, id string) *responses.HttpResponse
 	CreateTransactionItem(request *requests.TransactionItemRequest, transactionId string, userId string) *responses.HttpResponse
 	UpdateTransactionItem(transactionId, id, userId string, request *requests.TransactionItemRequest) *responses.HttpResponse
+	MarkAsPaidTransactionItem(transactionId, id, userId string, request *requests.TransactionMarkAsPaid) *responses.HttpResponse
 	RemoveTransactionItem(transactionId, id, userId string) *responses.HttpResponse
 }

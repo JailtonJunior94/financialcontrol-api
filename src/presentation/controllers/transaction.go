@@ -50,6 +50,7 @@ func (u *TransactionController) CreateTransaction(c *fiber.Ctx) error {
 	}
 
 	if err := request.IsValid(); err != nil {
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
@@ -99,6 +100,21 @@ func (u *TransactionController) UpdateTransactionItem(c *fiber.Ctx) error {
 	}
 
 	response := u.Service.UpdateTransactionItem(c.Params("transactionid"), c.Params("id"), *userId, &request)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
+func (u *TransactionController) MarkAsPaidTransactionItem(c *fiber.Ctx) error {
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	var request requests.TransactionMarkAsPaid
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customErrors.UnprocessableEntityMessage})
+	}
+
+	response := u.Service.MarkAsPaidTransactionItem(c.Params("transactionid"), c.Params("id"), *userId, &request)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 

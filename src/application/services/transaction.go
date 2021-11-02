@@ -88,6 +88,9 @@ func (s *TransactionService) CloneTransaction(id, userId string) *responses.Http
 	}
 
 	newTransaction.AddItems(transactionsItems)
+	if err := s.TransactionRepository.AddRangeTransactionItems(newTransaction, transactionsItems); err != nil {
+		return responses.ServerError()
+	}
 
 	return responses.Ok(mappings.ToTransactionResponse(newTransaction))
 }
@@ -140,6 +143,25 @@ func (s *TransactionService) UpdateTransactionItem(transactionId, id, userId str
 		return responses.ServerError()
 	}
 	return responses.Ok(mappings.ToTransactionItemResponse(item))
+}
+
+func (s *TransactionService) MarkAsPaidTransactionItem(transactionId, id, userId string, request *requests.TransactionMarkAsPaid) *responses.HttpResponse {
+	item, err := s.TransactionRepository.GetTransactionItemsById(transactionId, id)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if item == nil {
+		return responses.NotFound(customErrors.TransactionItemNotFound)
+	}
+
+	item.MarkAsPaid(request.MarkAsPaid)
+	_, err = s.TransactionRepository.UpdateTransactionItem(item)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	return responses.NoContent()
 }
 
 func (s *TransactionService) RemoveTransactionItem(transactionId, id, userId string) *responses.HttpResponse {

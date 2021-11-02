@@ -17,5 +17,6 @@ func AddTransactionRouter(router fiber.Router) {
 	router.Get(constants.TransactionIdAndItemId, middlewares.Protected(), ioc.TransactionController.TransactionItemById)
 	router.Post(constants.TransactionId, middlewares.Protected(), ioc.TransactionController.CreateTransactionItem)
 	router.Put(constants.TransactionIdAndItemId, middlewares.Protected(), ioc.TransactionController.UpdateTransactionItem)
+	router.Patch(constants.TransactionIdAndItemId, middlewares.Protected(), ioc.TransactionController.MarkAsPaidTransactionItem)
 	router.Delete(constants.TransactionIdAndItemId, middlewares.Protected(), ioc.TransactionController.RemoveTransactionItem)
 }
