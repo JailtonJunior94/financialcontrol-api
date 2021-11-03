@@ -7,10 +7,8 @@ import (
 )
 
 func ToCardEntity(r *requests.CardRequest, userId string) (e *entities.Card) {
-	entity := new(entities.Card)
-	entity.NewCard(userId, r.FlagId, r.Name, r.Description, r.Number, r.ClosingDay, r.ExpirationDate)
-
-	return entity
+	card := entities.NewCard(userId, r.FlagId, r.Name, r.Description, r.Number, r.ClosingDay, r.ExpirationDate)
+	return card
 }
 
 func ToCardResponse(e *entities.Card) (r *responses.CardResponse) {
@@ -21,6 +19,7 @@ func ToCardResponse(e *entities.Card) (r *responses.CardResponse) {
 		Description:    e.Description,
 		ClosingDay:     e.ClosingDay,
 		ExpirationDate: e.ExpirationDate,
+		BestDayToBuy:   e.BestDayToBuy(),
 		Active:         e.Active,
 		Flag: responses.FlagResponse{
 			ID:     e.Flag.ID,
@@ -43,6 +42,7 @@ func ToManyCardResponse(entities []entities.Card) (r []responses.CardResponse) {
 			Description:    e.Description,
 			ClosingDay:     e.ClosingDay,
 			ExpirationDate: e.ExpirationDate,
+			BestDayToBuy:   e.BestDayToBuy(),
 			Active:         e.Active,
 			Flag: responses.FlagResponse{
 				ID:     e.Flag.ID,

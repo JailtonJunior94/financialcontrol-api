@@ -8,6 +8,7 @@ type CardResponse struct {
 	Number         string            `json:"number,omitempty"`
 	Description    string            `json:"description,omitempty"`
 	ClosingDay     int               `json:"closingDay,omitempty"`
+	BestDayToBuy   int               `json:"bestDayToBuy,omitempty"`
 	ExpirationDate time.Time         `json:"expirationDate,omitempty"`
 	Active         bool              `json:"active"`
 	Flag           FlagResponse      `json:"flag,omitempty"`

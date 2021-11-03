@@ -10,10 +10,8 @@ import (
 )
 
 func ToInvoiceEntity(r *requests.InvoiceRequest, date time.Time, total float64) (e *entities.Invoice) {
-	entity := new(entities.Invoice)
-	entity.NewInvoice(r.CardId, date, total)
-
-	return entity
+	invoice := entities.NewInvoice(r.CardId, date, total)
+	return invoice
 }
 
 func ToInvoiceItemEntity(r *requests.InvoiceRequest, invoiceId string, installment int, invoiceControl int64) (e *entities.InvoiceItem) {

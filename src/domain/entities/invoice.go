@@ -15,11 +15,15 @@ type Invoice struct {
 	InvoiceItems []InvoiceItem
 }
 
-func (p *Invoice) NewInvoice(cardId string, date time.Time, total float64) {
-	p.Entity.NewEntity()
-	p.CardId = cardId
-	p.Date = shared.NewTime(shared.Time{Date: date}).FormatDate()
-	p.Total = total
+func NewInvoice(cardId string, date time.Time, total float64) *Invoice {
+	invoice := &Invoice{
+		CardId: cardId,
+		Date:   shared.NewTime(shared.Time{Date: date}).FormatDate(),
+		Total:  total,
+	}
+	invoice.Entity.NewEntity()
+
+	return invoice
 }
 
 func (p *Invoice) AddInvoiceItems(invoiceItems []InvoiceItem) {
