@@ -4,7 +4,6 @@ metadata:
   labels:
     app: sqlserver
   name: sqlserver-deployment
-  namespace: financialcontrol
 spec:
   replicas: 1
   selector:

@@ -27,3 +27,11 @@ Para gerar html com informações detalhadas do teste
 go tool cover --html=tests/coverage.txt
 go tool cover --html=tests/coverage.out
 ```
+
+docker image build -t jailtonjunior/financialcontrol:v1 .
+
+docker image push jailtonjunior/financialcontrol:v1
+
+kubectl get certificate -n financialcontrol
+kubectl describe certificate -n financialcontrol
+kubectl get certificaterequest -n financialcontrol

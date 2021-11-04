@@ -4,7 +4,6 @@ metadata:
   labels:
     app: financialapi
   name: financialapi-deployment
-  namespace: financialcontrol
 spec:
   replicas: 1
   selector:
