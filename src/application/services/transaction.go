@@ -1,6 +1,9 @@
 package services
 
 import (
+	"errors"
+	"time"
+
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/mappings"
@@ -48,14 +51,12 @@ func (s *TransactionService) TransactionById(id string, userId string) *response
 }
 
 func (s *TransactionService) CreateTransaction(request *requests.TransactionRequest, userId string) *responses.HttpResponse {
-	time := shared.NewTime(shared.Time{Now: request.Date})
-
-	isExist, err := s.TransactionRepository.GetTransactionByDate(time.StartDate(), time.EndDate(), userId)
+	isExist, err := s.isTransactionExist(request.Date, userId)
 	if err != nil {
 		return responses.ServerError()
 	}
 
-	if isExist != nil {
+	if isExist {
 		return responses.BadRequest(customErrors.TransactionExists)
 	}
 
@@ -77,6 +78,15 @@ func (s *TransactionService) CloneTransaction(id, userId string) *responses.Http
 	items, err := s.TransactionRepository.GetItemByTransactionId(t.ID)
 	if err != nil {
 		return responses.ServerError()
+	}
+
+	isExist, err := s.isTransactionExist(t.Date.AddDate(0, 1, 0), userId)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if isExist {
+		return responses.BadRequest(customErrors.TransactionExists)
 	}
 
 	newTransaction := entities.NewTransactionWithValues(t.Date.AddDate(0, 1, 0), userId, t.Total, t.Income, t.Outcome)
@@ -204,4 +214,19 @@ func (s *TransactionService) updatingTransactionValues(transactionId, userId str
 		return err
 	}
 	return nil
+}
+
+func (s *TransactionService) isTransactionExist(date time.Time, userId string) (bool, error) {
+	time := shared.NewTime(shared.Time{Now: date})
+
+	isExist, err := s.TransactionRepository.GetTransactionByDate(time.StartDate(), time.EndDate(), userId)
+	if err != nil {
+		return false, errors.New(customErrors.InternalServerErrorMessage)
+	}
+
+	if isExist != nil {
+		return true, nil
+	}
+
+	return false, nil
 }
