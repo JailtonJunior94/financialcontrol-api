@@ -13,4 +13,6 @@ func AddInvoiceRouter(router fiber.Router) {
 	router.Get(constants.InvoicesById, middlewares.Protected(), ioc.InvoiceController.InvoiceById)
 	router.Get(constants.InvoicesCategories, middlewares.Protected(), ioc.InvoiceController.InvoiceCategories)
 	router.Post(constants.Invoices, middlewares.Protected(), ioc.InvoiceController.CreateInvoice)
+
+	router.Post(constants.InvoicesImport, middlewares.Protected(), ioc.InvoiceController.ImportInvoices)
 }
