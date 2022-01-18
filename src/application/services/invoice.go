@@ -1,6 +1,9 @@
 package services
 
 import (
+	"bufio"
+	"mime/multipart"
+	"strings"
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
@@ -84,6 +87,33 @@ func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceR
 		if err := u.addInvoiceItemAndUpdateTotal(invoice, request, i, invoiceControl, userId); err != nil {
 			return responses.ServerError()
 		}
+	}
+
+	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
+}
+
+func (u *InvoiceService) ImportInvoices(userId string, request *multipart.FileHeader) *responses.HttpResponse {
+	body, err := request.Open()
+	if err != nil {
+		return responses.ServerError()
+	}
+	defer body.Close()
+
+	scanner := bufio.NewScanner(body)
+	scanner.Scan()
+
+	var newInvoices []*requests.InvoiceRequest
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		split := strings.Split(line, ";")
+
+		invoice := requests.NewInvoiceRequest(split[0], split[1], split[2], split[3], split[4], split[5], split[6])
+		newInvoices = append(newInvoices, invoice)
+	}
+
+	for _, invoiceRequest := range newInvoices {
+		u.CreateInvoice(userId, invoiceRequest)
 	}
 
 	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})

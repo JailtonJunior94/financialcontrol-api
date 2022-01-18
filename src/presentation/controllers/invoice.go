@@ -1,10 +1,6 @@
 package controllers
 
 import (
-	"bufio"
-	"fmt"
-	"strings"
-
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
@@ -73,27 +69,12 @@ func (u *InvoiceController) ImportInvoices(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"message": customErrors.UnprocessableEntityMessage})
 	}
 
-	body, err := file.Open()
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "shared.ImageIsInvalid"})
-	}
-	defer body.Close()
-
-	scanner := bufio.NewScanner(body)
-	scanner.Scan()
-	for scanner.Scan() {
-		line := scanner.Text()
-		split := strings.Split(line, ";")
-
-		fmt.Println(split)
-	}
-
 	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 	}
 
-	response := u.Service.CreateInvoice(*userId, nil)
+	response := u.Service.ImportInvoices(*userId, file)
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
