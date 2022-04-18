@@ -48,10 +48,12 @@ jobs:
             ${{ env.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
 
   deploy:
+    needs: [build]
     runs-on: ubuntu-20.04
     name: "Deploy"
     environment:
       name: deploy
+
     steps:
       - name: Checkout GithubActions
         uses: actions/checkout@v2
