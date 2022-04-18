@@ -8,8 +8,8 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
-                "PORT": 4000,
-                "ENVIRONMENT": "Development"
+                "PORT": "4000",
+                "ENVIRONMENT": "Development",
             },
             "args": []
         },
@@ -20,7 +20,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
-                "PORT": 4000,
+                "PORT": "4000",
                 "ENVIRONMENT": "Staging"
             },
             "args": []
@@ -32,7 +32,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "env": {
-                "PORT": 4000,
+                "PORT": "4000",
                 "ENVIRONMENT": "Production"
             },
             "args": []

@@ -29,13 +29,13 @@ func (j *JwtAdapter) GenerateTokenJWT(id, email string) (r string, err error) {
 
 	claims["sub"] = id
 	claims["email"] = email
-	claims["exp"] = time.Now().Local().Add(time.Hour * 24 * time.Duration(environments.ExpirationAt))
+	claims["exp"] = time.Now().Add(time.Minute * time.Duration(environments.ExpirationAt)).Unix()
 
 	t, err := token.SignedString([]byte(environments.JwtSecret))
 	if err != nil {
 		return "", err
 	}
-	return t, err
+	return t, nil
 }
 
 func (j *JwtAdapter) ExtractClaims(tokenString string) (id *string, err error) {

@@ -1,28 +1,36 @@
 version: "3"
-services: 
-  api:
-    container_name: financialcontrol-api
-    build: .
+
+services:
+  financialcontrol_api:
+    container_name: financialcontrol_api
     image: financialcontrol-api
+    build: .
     restart: always
-    environment:
-      - ENVIRONMENT=Staging
-      - TZ=America/Sao_Paulo
     ports:
       - "4000:4000"
     depends_on:
       - mssql
-    links: 
-      - mssql
+    networks:
+      - financial_net
+    environment:
+      - ENVIRONMENT=Staging
+      - TZ=America/Sao_Paulo
+
   mssql:
-    container_name: financialcontrol-db
+    container_name: mssql
     image: mcr.microsoft.com/mssql/server:2019-latest
     restart: always
+    ports:
+      - "1433:1433"
+    networks:
+      - financial_net
     volumes:
       - ./.docker/data:/var/opt/mssql/data
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=@docker@2021
-    ports:
-      - "1434:1433"
-      
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: '@docker@2021'
+      MSSQL_AGENT_ENABLED: 'True'
+
+networks:
+  financial_net:
+    driver: bridge

@@ -2,5 +2,5 @@ environment: Production
 mssql:
   connectionString: "sqlserver://sa:@docker@2021@sqlserver-service?database=FinancialControlDB"
 security:
-  expirationAt: 30
+  expirationAt: 1
   jwtSecret: "RmluYW5jaWFsQ29udHJvbEFtYmllbnRlUHJvZHVjdGlvbg=="

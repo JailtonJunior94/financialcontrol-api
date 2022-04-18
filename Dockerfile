@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine3.13 AS builder
+FROM golang:1.18-alpine3.14 AS builder
 WORKDIR /app
 
 COPY . .
@@ -6,7 +6,7 @@ COPY . .
 RUN go clean --modcache
 RUN GOOS=linux go build -o main main.go
 
-FROM alpine:3.13
+FROM alpine:3.14
 WORKDIR /app
 
 RUN apk --no-cache add tzdata
@@ -20,5 +20,4 @@ COPY config.Staging.yaml .
 COPY config.Production.yaml .
 
 EXPOSE 4000
-
 CMD [ "/app/main" ]
