@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  K8S_NAMESPACE: bank
+  DOCKER_USERNAME: jailtonjunior
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -37,6 +41,12 @@ jobs:
           mssql.connectionString: ${{ secrets.SQL_CONNECTION_STRING }}
           security.jwtSecret: ${{ secrets.JWT_SECRET }}
 
+      - name: Docker Login
+        uses: docker/login-action@v1.9.0
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build and push (Financial API)
         uses: docker/build-push-action@v2.4.0
         with:
@@ -44,8 +54,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/financial_api:latest
-            ${{ secrets.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
+            ${{ env.DOCKER_USERNAME }}/financial_api:latest
+            ${{ env.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
 
   deploy:
     needs: [build]
