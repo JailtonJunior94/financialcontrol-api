@@ -44,8 +44,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ env.DOCKER_USERNAME }}/financial_api:latest
-            ${{ env.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
+            ${{ secrets.DOCKER_USERNAME }}/financial_api:latest
+            ${{ secrets.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
 
   deploy:
     needs: [build]
