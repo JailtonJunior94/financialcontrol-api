@@ -1,4 +1,5 @@
 name: "FinancialControlAPI"
+
 on:
   push:
     branches: [master]
@@ -6,9 +7,9 @@ on:
     branches: [master]
 
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-20.04
-    name: "Build And Deploy"
+    name: "Build"
 
     steps:
       - name: Checkout GithubActions
@@ -35,6 +36,25 @@ jobs:
         env:
           mssql.connectionString: ${{ secrets.SQL_CONNECTION_STRING }}
           security.jwtSecret: ${{ secrets.JWT_SECRET }}
+
+      - name: Build and push (Financial API)
+        uses: docker/build-push-action@v2.4.0
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_USERNAME }}/financial_api:latest
+            ${{ env.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
+
+  deploy:
+    runs-on: ubuntu-20.04
+    name: "Deploy"
+    environment:
+      name: deploy
+    steps:
+      - name: Checkout GithubActions
+        uses: actions/checkout@v2
 
       - name: "Deploy to Heroku"
         uses: akhileshns/heroku-deploy@v3.11.10
