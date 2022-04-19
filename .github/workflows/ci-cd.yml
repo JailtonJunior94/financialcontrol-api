@@ -83,6 +83,9 @@ jobs:
           images: ${{ env.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
           manifests: |
             .k8s/deployments/financialapi-dp.yaml
+            .k8s/services/financialapi-svc.yaml
+            .k8s/ingress/ingress.yaml
+            .k8s/certmanager/issuer.yaml
 
       # - name: "Deploy to Heroku"
       #   uses: akhileshns/heroku-deploy@v3.11.10

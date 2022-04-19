@@ -4,15 +4,15 @@ metadata:
   name: ingress-hosts
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    cert-manager.io/cluster-issuer: letsencrypt-production
+    cert-manager.io/cluster-issuer: letsencrypt
+    ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   tls:
     - hosts:
-        - api-financeiro.jailtonjunior.site
-      secretName: api-financial-tls
+        - api-financeiro.limateixeira.site
+      secretName: letsencrypt-tls
   rules:
-    - host: api-financeiro.jailtonjunior.site
+    - host: api-financeiro.limateixeira.site
       http:
         paths:
           - pathType: Prefix
