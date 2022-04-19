@@ -29,7 +29,7 @@ func (j *JwtAdapter) GenerateTokenJWT(id, email string) (r string, err error) {
 
 	claims["sub"] = id
 	claims["email"] = email
-	claims["exp"] = time.Now().Add(time.Minute * time.Duration(environments.ExpirationAt)).Unix()
+	claims["exp"] = time.Now().Add(time.Hour * time.Duration(environments.ExpirationAt)).Unix()
 
 	t, err := token.SignedString([]byte(environments.JwtSecret))
 	if err != nil {

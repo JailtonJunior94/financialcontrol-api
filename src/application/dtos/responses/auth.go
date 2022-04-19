@@ -12,5 +12,5 @@ type AuthResponse struct {
 }
 
 func NewAuthResponse(token string) *AuthResponse {
-	return &AuthResponse{Token: token, ExpiresAt: time.Now().Add(time.Minute * time.Duration(environments.ExpirationAt))}
+	return &AuthResponse{Token: token, ExpiresAt: time.Now().Add(time.Hour * time.Duration(environments.ExpirationAt))}
 }
