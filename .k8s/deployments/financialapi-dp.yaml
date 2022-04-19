@@ -29,11 +29,11 @@ spec:
     spec:
       containers:
         - name: financialapi
-          image: jailtonjunior/financial_api:v1
+          image: jailtonjunior/financial_api:v37
           resources:
             limits:
-              cpu: "200m"
-              memory: "128Mi"
+              cpu: "50m"
+              memory: "64Mi"
           envFrom:
             - configMapRef:
                 name: financialapi-config
