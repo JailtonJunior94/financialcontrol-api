@@ -7,14 +7,12 @@ on:
     branches: [master]
 
 env:
-  K8S_NAMESPACE: bank
+  K8S_NAMESPACE: financialcontrol
   DOCKER_USERNAME: jailtonjunior
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-    name: "Build"
-
     steps:
       - name: Checkout GithubActions
         uses: actions/checkout@v2
@@ -60,18 +58,36 @@ jobs:
   deploy:
     needs: [build]
     runs-on: ubuntu-20.04
-    name: "Deploy"
     environment:
       name: deploy
-
     steps:
       - name: Checkout GithubActions
         uses: actions/checkout@v2
 
-      - name: "Deploy to Heroku"
-        uses: akhileshns/heroku-deploy@v3.11.10
+      - name: Kubernetes set context
+        uses: Azure/k8s-set-context@v1
         with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          usedocker: true
+          method: kubeconfig
+          kubeconfig: ${{ secrets.K8S_CONFIG }}
+
+      - name: Deploy Namespace
+        uses: Azure/k8s-deploy@v1.3
+        with:
+          manifests: |
+            .k8s/namespaces/financialcontrol.yaml
+
+      - name: Deploy (Financial Control API)
+        uses: Azure/k8s-deploy@v1.3
+        with:
+          namespace: ${{ env.K8S_NAMESPACE }}
+          images: ${{ env.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
+          manifests: |
+            .k8s/deployments/financialapi-dp.yaml
+
+      # - name: "Deploy to Heroku"
+      #   uses: akhileshns/heroku-deploy@v3.11.10
+      #   with:
+      #     heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+      #     heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+      #     heroku_email: ${{ secrets.HEROKU_EMAIL }}
+      #     usedocker: true
