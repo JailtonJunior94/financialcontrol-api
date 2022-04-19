@@ -51,8 +51,9 @@ func (p *Card) UpdateStatus(status bool) {
 }
 
 func (p *Card) BestDayToBuy() int {
-	now := shared.NewTime()
-	bestDay := now.EndDate().AddDate(0, 0, p.ClosingDay).AddDate(0, 0, -7)
+	time := shared.NewTime()
+	lastDay := time.LastDayOfMonth()
 
+	bestDay := lastDay.AddDate(0, 0, -7)
 	return bestDay.Day()
 }

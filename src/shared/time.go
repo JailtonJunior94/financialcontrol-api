@@ -53,3 +53,10 @@ func (t *Time) FormatDate() time.Time {
 func (t *Time) FormatDateWithInput(i time.Time) time.Time {
 	return time.Date(i.Year(), i.Month(), i.Day(), i.Hour(), i.Minute(), i.Second(), i.Nanosecond(), t.Location)
 }
+
+func (t *Time) LastDayOfMonth() time.Time {
+	firstDay := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location)
+	lastDay := firstDay.AddDate(0, 1, 0).Add(-time.Nanosecond)
+
+	return lastDay
+}
