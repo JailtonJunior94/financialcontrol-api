@@ -7,9 +7,13 @@ type User struct {
 	Entity
 }
 
-func (u *User) NewUser(name, email, password string) {
-	u.Entity.NewEntity()
-	u.Name = name
-	u.Email = email
-	u.Password = password
+func NewUser(name, email, password string) *User {
+	user := &User{
+		Name:     name,
+		Email:    email,
+		Password: password,
+	}
+	user.Entity.NewEntity()
+
+	return user
 }

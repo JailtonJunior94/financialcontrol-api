@@ -7,9 +7,7 @@ import (
 )
 
 func ToUserEntity(r *requests.UserRequest, password string) (e *entities.User) {
-	entity := new(entities.User)
-	entity.NewUser(r.Name, r.Email, password)
-
+	entity := entities.NewUser(r.Name, r.Email, r.Password)
 	return entity
 }
 

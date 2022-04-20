@@ -31,6 +31,10 @@ func (m *AuthServiceMock) GetByEmail(email string) (user *entities.User, err err
 	return s, args.Error(1)
 }
 
+func (m *AuthServiceMock) GetByID(email string) (user *entities.User, err error) {
+	return nil, nil
+}
+
 func (m *AuthServiceMock) Add(p *entities.User) (user *entities.User, err error) {
 	return nil, nil
 }

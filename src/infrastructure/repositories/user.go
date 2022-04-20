@@ -51,3 +51,15 @@ func (u *UserRepository) GetByEmail(email string) (user *entities.User, err erro
 	}
 	return usu, nil
 }
+
+func (u *UserRepository) GetByID(id string) (user *entities.User, err error) {
+	connection := u.Db.Connect()
+	row := connection.QueryRow(queries.GetByID, sql.Named("id", id))
+
+	usu := new(entities.User)
+
+	if err := row.Scan(&usu.ID, &usu.Name, &usu.Email, &usu.Password, &usu.CreatedAt, &usu.UpdatedAt, &usu.Active); err != nil {
+		return nil, err
+	}
+	return usu, nil
+}

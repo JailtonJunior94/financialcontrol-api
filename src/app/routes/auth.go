@@ -9,4 +9,5 @@ import (
 
 func AddAuthRouter(router fiber.Router) {
 	router.Post(constants.Token, ioc.AuthController.Authenticate)
+	router.Get("/me", ioc.AuthController.Me)
 }

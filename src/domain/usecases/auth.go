@@ -7,4 +7,5 @@ import (
 
 type IAuthService interface {
 	Authenticate(request *requests.AuthRequest) *responses.HttpResponse
+	Me(userID string) *responses.HttpResponse
 }

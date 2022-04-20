@@ -70,7 +70,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
-	AuthController = controllers.NewAuthController(AuthService)
+	AuthController = controllers.NewAuthController(AuthService, JwtAdapter)
 	TransactionController = controllers.NewTransactionController(JwtAdapter, TransactionService)
 	BillController = controllers.NewBillController(BillService)
 	FlagController = controllers.NewFlagController(FlagService)

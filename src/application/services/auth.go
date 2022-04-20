@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/mappings"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/customErrors"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
@@ -39,4 +40,17 @@ func (a *AuthService) Authenticate(request *requests.AuthRequest) *responses.Htt
 	}
 
 	return responses.Ok(responses.NewAuthResponse(token))
+}
+
+func (a *AuthService) Me(userID string) *responses.HttpResponse {
+	user, err := a.UserRepository.GetByID(userID)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if user == nil {
+		return responses.BadRequest(customErrors.InvalidUserOrPassword)
+	}
+
+	return responses.Ok(mappings.ToUserResponse(user))
 }
