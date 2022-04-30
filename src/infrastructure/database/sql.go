@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -16,10 +17,19 @@ type ISqlConnection interface {
 	Disconnect()
 	OpenConnectionAndMountStatement(query string) (*sql.Stmt, error)
 	ValidateResult(result sql.Result, err error) error
+	ExecuteTransaction(ctx context.Context, fn func(*Queries) error) error
 }
 
 type SqlConnection struct {
 	db *sqlx.DB
+}
+
+type Queries struct {
+	db *sqlx.Tx
+}
+
+func New(db *sqlx.Tx) *Queries {
+	return &Queries{db: db}
 }
 
 func NewConnection() ISqlConnection {
@@ -63,4 +73,29 @@ func (s *SqlConnection) ValidateResult(result sql.Result, err error) error {
 		return err
 	}
 	return nil
+}
+
+func (s *SqlConnection) ExecuteTransaction(ctx context.Context, fn func(*Queries) error) error {
+	tx, err := s.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	q := New(tx)
+	err = fn(q)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			log.Fatalf("tx err: %v, rb err: %v", err, rbErr)
+			return err
+		}
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (q *Queries) WithTx(tx *sqlx.Tx) *Queries {
+	return &Queries{
+		db: tx,
+	}
 }

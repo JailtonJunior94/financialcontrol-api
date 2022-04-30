@@ -15,16 +15,15 @@ func ToInvoiceEntity(r *requests.InvoiceRequest, date time.Time, total float64) 
 }
 
 func ToInvoiceItemEntity(r *requests.InvoiceRequest, invoiceId string, installment int, invoiceControl int64) (e *entities.InvoiceItem) {
-	entity := new(entities.InvoiceItem)
-	entity.NewInvoiceItem(invoiceId,
+	entity := entities.NewInvoiceItem(invoiceId,
 		r.CategoryId,
 		r.Description,
 		r.Tags,
 		r.PurchaseDate,
 		r.TotalAmount,
 	)
-	entity.AddInstallment(installment, r.TotalAmount/float64(r.QuantityInvoice), invoiceControl)
 
+	entity.AddInstallment(installment, r.TotalAmount/float64(r.QuantityInvoice), invoiceControl)
 	return entity
 }
 

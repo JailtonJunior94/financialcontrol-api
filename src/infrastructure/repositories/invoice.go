@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -165,6 +166,21 @@ func (r *InvoiceRepository) AddInvoiceItem(p *entities.InvoiceItem) (invoiceItem
 	return p, nil
 }
 
+func (r *InvoiceRepository) DeleteInvoiceItem(invoiceControl int64) error {
+	s, err := r.Db.OpenConnectionAndMountStatement("DELETE FROM dbo.InvoiceItem WHERE InvoiceControl = @invoiceControl")
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	result, err := s.Exec(sql.Named("id", invoiceControl))
+	if err := r.Db.ValidateResult(result, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *InvoiceRepository) GetLastInvoiceControl() (invoiceControl int64, err error) {
 	connection := r.Db.Connect()
 	row := connection.QueryRow(queries.GetLastInvoiceControl)
@@ -187,4 +203,70 @@ func (r *InvoiceRepository) GetInvoicesCategories(startDate, endDate time.Time, 
 		return nil, err
 	}
 	return invoiceCategories, nil
+}
+
+func (r *InvoiceRepository) DeleteAndAddInvoiceItem(invoiceControl int64) error {
+	ctx := context.Background()
+
+	tx, err := r.Db.Connect().BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	result, err := tx.ExecContext(ctx, "DELETE FROM dbo.InvoiceItem WHERE InvoiceControl = @invoiceControl", sql.Named("invoiceControl", invoiceControl))
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if rows <= 0 {
+		tx.Rollback()
+		return err
+	}
+
+	ii := entities.NewInvoiceItem("EADA1FB3-D3DC-4D25-903A-D7D385D5DAB1", "4A41F0DB-1F76-44CF-9139-9C52ECED3C3A", "Drogasil (Editado)", "-", time.Now(), 150)
+
+	resultInsert, err := tx.ExecContext(ctx, queries.AddInvoiceItem,
+		sql.Named("id", ii.ID),
+		sql.Named("invoiceId", ii.InvoiceId),
+		sql.Named("categoryId", ii.CategoryId),
+		sql.Named("purchaseDate", ii.PurchaseDate),
+		sql.Named("description", ii.Description),
+		sql.Named("totalAmount", ii.TotalAmount),
+		sql.Named("installment", ii.Installment),
+		sql.Named("installmentValue", ii.InstallmentValue),
+		sql.Named("tags", ii.Tags),
+		sql.Named("createdAt", ii.CreatedAt),
+		sql.Named("updatedAt", ii.UpdatedAt),
+		sql.Named("active", ii.Active),
+		sql.Named("invoiceControl", ii.InvoiceControl))
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	rowsInsert, err := resultInsert.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if rowsInsert <= 0 {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -21,14 +21,18 @@ type InvoiceItem struct {
 	Category Category
 }
 
-func (p *InvoiceItem) NewInvoiceItem(invoiceId, categoryId, description, tags string, purchaseDate time.Time, totalAmount float64) {
-	p.Entity.NewEntity()
-	p.InvoiceId = invoiceId
-	p.CategoryId = categoryId
-	p.Description = description
-	p.Tags = tags
-	p.TotalAmount = totalAmount
-	p.PurchaseDate = shared.NewTime(shared.Time{Date: purchaseDate}).FormatDate()
+func NewInvoiceItem(invoiceId, categoryId, description, tags string, purchaseDate time.Time, totalAmount float64) *InvoiceItem {
+	invoiceItem := &InvoiceItem{
+		InvoiceId:    invoiceId,
+		CategoryId:   categoryId,
+		Description:  description,
+		Tags:         tags,
+		TotalAmount:  totalAmount,
+		PurchaseDate: shared.NewTime(shared.Time{Date: purchaseDate}).FormatDate(),
+	}
+
+	invoiceItem.Entity.NewEntity()
+	return invoiceItem
 }
 
 func (p *InvoiceItem) AddInstallment(installment int, installmentValue float64, invoiceControl int64) {

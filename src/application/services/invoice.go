@@ -34,6 +34,9 @@ func (u *InvoiceService) Invoices(userId string, cardId string) *responses.HttpR
 }
 
 func (u *InvoiceService) InvoiceById(userId, cardId, id string) *responses.HttpResponse {
+
+	u.InvoiceRepository.DeleteAndAddInvoiceItem(43)
+
 	invoiceItems, err := u.InvoiceRepository.GetInvoiceItemByInvoiceId(id, cardId, userId)
 	if err != nil {
 		return responses.ServerError()
