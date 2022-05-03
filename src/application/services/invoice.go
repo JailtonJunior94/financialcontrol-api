@@ -10,20 +10,20 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/mappings"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/events"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
-	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/database"
 	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
 )
 
 type InvoiceService struct {
 	CardRepository    interfaces.ICardRepository
 	InvoiceRepository interfaces.IInvoiceRepository
-	uow               database.IUnitOfWork
+	Dispatcher        *events.EventDispatcher
 }
 
-func NewInvoiceService(r interfaces.ICardRepository, i interfaces.IInvoiceRepository) usecases.IInvoiceService {
-	return &InvoiceService{CardRepository: r, InvoiceRepository: i}
+func NewInvoiceService(r interfaces.ICardRepository, i interfaces.IInvoiceRepository, d *events.EventDispatcher) usecases.IInvoiceService {
+	return &InvoiceService{CardRepository: r, InvoiceRepository: i, Dispatcher: d}
 }
 
 func (u *InvoiceService) Invoices(userId string, cardId string) *responses.HttpResponse {
@@ -133,6 +133,7 @@ func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest)
 		if err := u.addInvoiceItemAndUpdateTotal(invoice, request, i, invoiceControl, userId); err != nil {
 			return responses.ServerError()
 		}
+		u.Dispatcher.Dispatch(events.NewInvoiceChangedEvent(invoice.ID))
 	}
 
 	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})

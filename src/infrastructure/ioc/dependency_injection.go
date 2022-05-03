@@ -1,7 +1,9 @@
 package ioc
 
 import (
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/services"
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/events"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/adapters"
@@ -58,6 +60,10 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	InvoiceRepository = repositories.NewInvoiceRepository(SqlConnection)
 	CategoryRepository = repositories.NewCategoryRepository(SqlConnection)
 
+	/* Register Events */
+	EventDispatcher := events.NewEventDispatcher()
+	EventDispatcher.AddListener("invoice_changed", handlers.NewInvoiceChangedListener())
+
 	/* Services */
 	UserService = services.NewUserService(UserRepository, HashAdapter)
 	AuthService = services.NewAuthService(UserRepository, HashAdapter, JwtAdapter)
@@ -65,7 +71,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	BillService = services.NewBillService(BillRepository)
 	FlagService = services.NewFlagService(FlagRepository)
 	CardService = services.NewCardService(CardRepository)
-	InvoiceService = services.NewInvoiceService(CardRepository, InvoiceRepository)
+	InvoiceService = services.NewInvoiceService(CardRepository, InvoiceRepository, EventDispatcher)
 	CategoryService = services.NewCategoryService(CategoryRepository)
 
 	/* Controllers */
