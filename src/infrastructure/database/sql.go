@@ -8,7 +8,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/environments"
 
 	_ "github.com/denisenkom/go-mssqldb"
-
 	"github.com/jmoiron/sqlx"
 )
 
@@ -17,19 +16,19 @@ type ISqlConnection interface {
 	Disconnect()
 	OpenConnectionAndMountStatement(query string) (*sql.Stmt, error)
 	ValidateResult(result sql.Result, err error) error
-	ExecuteTransaction(ctx context.Context, fn func(*Queries) error) error
+	IUnitOfWork
+}
+
+type IUnitOfWork interface {
+	Begin() (*sqlx.Tx, error)
+	Rollback() error
+	Commit() error
+	End(txFunc func() error) error
 }
 
 type SqlConnection struct {
-	db *sqlx.DB
-}
-
-type Queries struct {
-	db *sqlx.Tx
-}
-
-func New(db *sqlx.Tx) *Queries {
-	return &Queries{db: db}
+	DB *sqlx.DB
+	TX *sqlx.Tx
 }
 
 func NewConnection() ISqlConnection {
@@ -42,21 +41,21 @@ func NewConnection() ISqlConnection {
 		log.Fatal(err)
 	}
 
-	return &SqlConnection{db}
+	return &SqlConnection{DB: db}
 }
 
 func (s *SqlConnection) Connect() *sqlx.DB {
-	return s.db
+	return s.DB
 }
 
 func (s *SqlConnection) Disconnect() {
-	if err := s.db.Close(); err != nil {
+	if err := s.DB.Close(); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (s *SqlConnection) OpenConnectionAndMountStatement(query string) (*sql.Stmt, error) {
-	stmt, err := s.db.DB.Prepare(query)
+	stmt, err := s.DB.DB.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
@@ -75,27 +74,33 @@ func (s *SqlConnection) ValidateResult(result sql.Result, err error) error {
 	return nil
 }
 
-func (s *SqlConnection) ExecuteTransaction(ctx context.Context, fn func(*Queries) error) error {
-	tx, err := s.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	q := New(tx)
-	err = fn(q)
-	if err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
-			log.Fatalf("tx err: %v, rb err: %v", err, rbErr)
-			return err
-		}
-		return err
-	}
-
-	return tx.Commit()
+func (s *SqlConnection) Begin() (*sqlx.Tx, error) {
+	tx, err := s.DB.BeginTxx(context.Background(), nil)
+	return tx, err
 }
 
-func (q *Queries) WithTx(tx *sqlx.Tx) *Queries {
-	return &Queries{
-		db: tx,
-	}
+func (s *SqlConnection) Rollback() error {
+	return s.TX.Rollback()
+}
+
+func (s *SqlConnection) Commit() error {
+	return s.TX.Rollback()
+}
+
+func (s *SqlConnection) End(txFunc func() error) error {
+	var err error
+	tx := s.TX
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+	err = txFunc()
+	return err
 }

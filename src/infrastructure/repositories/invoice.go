@@ -138,6 +138,37 @@ func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceId, cardId, userId 
 	return items, nil
 }
 
+func (r *InvoiceRepository) GetInvoiceItemById(id string) (item *entities.InvoiceItem, err error) {
+	connection := r.Db.Connect()
+	row := connection.QueryRow(queries.GetInvoiceItemById, sql.Named("id", id))
+
+	i := new(entities.InvoiceItem)
+	err = row.Scan(&i.ID,
+		&i.InvoiceId,
+		&i.CategoryId,
+		&i.PurchaseDate,
+		&i.Description,
+		&i.TotalAmount,
+		&i.Installment,
+		&i.InstallmentValue,
+		&i.Tags,
+		&i.InvoiceControl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Active,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, sql.ErrNoRows
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return i, nil
+}
+
 func (r *InvoiceRepository) AddInvoiceItem(p *entities.InvoiceItem) (invoiceItem *entities.InvoiceItem, err error) {
 	s, err := r.Db.OpenConnectionAndMountStatement(queries.AddInvoiceItem)
 	if err != nil {
@@ -167,7 +198,7 @@ func (r *InvoiceRepository) AddInvoiceItem(p *entities.InvoiceItem) (invoiceItem
 }
 
 func (r *InvoiceRepository) DeleteInvoiceItem(invoiceControl int64) error {
-	s, err := r.Db.OpenConnectionAndMountStatement("DELETE FROM dbo.InvoiceItem WHERE InvoiceControl = @invoiceControl")
+	s, err := r.Db.OpenConnectionAndMountStatement("DELETE FROM dbo.InvoiceItem WHERE InvoiceControl = @id")
 	if err != nil {
 		return err
 	}

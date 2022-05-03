@@ -63,6 +63,21 @@ func (u *InvoiceController) CreateInvoice(c *fiber.Ctx) error {
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
+func (u *InvoiceController) UpdateInvoice(c *fiber.Ctx) error {
+	var request requests.InvoiceRequest
+	if err, statusCode, data := u.inputIsValid(&request, c); err {
+		return c.Status(statusCode).JSON(data)
+	}
+
+	userId, err := u.Jwt.ExtractClaims(c.Get("Authorization"))
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
+	}
+
+	response := u.Service.UpdateInvoice(c.Params("id"), *userId, &request)
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
 func (u *InvoiceController) ImportInvoices(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {

@@ -12,11 +12,9 @@ type IInvoiceRepository interface {
 	AddInvoice(p *entities.Invoice) (invoice *entities.Invoice, err error)
 	UpdateInvoice(p *entities.Invoice) (invoice *entities.Invoice, err error)
 	GetInvoiceItemByInvoiceId(invoiceId, cardId, userId string) (items []entities.InvoiceItem, err error)
+	GetInvoiceItemById(id string) (item *entities.InvoiceItem, err error)
 	AddInvoiceItem(p *entities.InvoiceItem) (invoiceItem *entities.InvoiceItem, err error)
 	DeleteInvoiceItem(invoiceControl int64) error
-
-	DeleteAndAddInvoiceItem(invoiceControl int64) error
-
 	GetLastInvoiceControl() (invoiceControl int64, err error)
 	GetInvoicesCategories(startDate, endDate time.Time, cardId string) (invoiceCategories []entities.InvoiceCategories, err error)
 }

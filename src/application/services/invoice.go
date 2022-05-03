@@ -12,12 +12,14 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
+	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/database"
 	"github.com/jailtonjunior94/financialcontrol-api/src/shared"
 )
 
 type InvoiceService struct {
 	CardRepository    interfaces.ICardRepository
 	InvoiceRepository interfaces.IInvoiceRepository
+	uow               database.IUnitOfWork
 }
 
 func NewInvoiceService(r interfaces.ICardRepository, i interfaces.IInvoiceRepository) usecases.IInvoiceService {
@@ -34,9 +36,6 @@ func (u *InvoiceService) Invoices(userId string, cardId string) *responses.HttpR
 }
 
 func (u *InvoiceService) InvoiceById(userId, cardId, id string) *responses.HttpResponse {
-
-	u.InvoiceRepository.DeleteAndAddInvoiceItem(43)
-
 	invoiceItems, err := u.InvoiceRepository.GetInvoiceItemByInvoiceId(id, cardId, userId)
 	if err != nil {
 		return responses.ServerError()
@@ -58,6 +57,50 @@ func (u *InvoiceService) InvoiceCategories(startDate, endDate time.Time, cardId 
 }
 
 func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
+	return u.create(userId, request)
+}
+
+func (u *InvoiceService) UpdateInvoice(id, userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
+	item, err := u.InvoiceRepository.GetInvoiceItemById(id)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if err := u.InvoiceRepository.DeleteInvoiceItem(item.InvoiceControl); err != nil {
+		return responses.ServerError()
+	}
+
+	return u.create(userId, request)
+}
+
+func (u *InvoiceService) ImportInvoices(userId string, request *multipart.FileHeader) *responses.HttpResponse {
+	body, err := request.Open()
+	if err != nil {
+		return responses.ServerError()
+	}
+	defer body.Close()
+
+	scanner := bufio.NewScanner(body)
+	scanner.Scan()
+
+	var newInvoices []*requests.InvoiceRequest
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		split := strings.Split(line, ";")
+
+		invoice := requests.NewInvoiceRequest(split[0], split[1], split[2], split[3], split[4], split[5], split[6])
+		newInvoices = append(newInvoices, invoice)
+	}
+
+	for _, invoiceRequest := range newInvoices {
+		u.CreateInvoice(userId, invoiceRequest)
+	}
+
+	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
+}
+
+func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
 	card, err := u.CardRepository.GetCardById(request.CardId, userId)
 	if err != nil {
 		return responses.ServerError()
@@ -90,33 +133,6 @@ func (u *InvoiceService) CreateInvoice(userId string, request *requests.InvoiceR
 		if err := u.addInvoiceItemAndUpdateTotal(invoice, request, i, invoiceControl, userId); err != nil {
 			return responses.ServerError()
 		}
-	}
-
-	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
-}
-
-func (u *InvoiceService) ImportInvoices(userId string, request *multipart.FileHeader) *responses.HttpResponse {
-	body, err := request.Open()
-	if err != nil {
-		return responses.ServerError()
-	}
-	defer body.Close()
-
-	scanner := bufio.NewScanner(body)
-	scanner.Scan()
-
-	var newInvoices []*requests.InvoiceRequest
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		split := strings.Split(line, ";")
-
-		invoice := requests.NewInvoiceRequest(split[0], split[1], split[2], split[3], split[4], split[5], split[6])
-		newInvoices = append(newInvoices, invoice)
-	}
-
-	for _, invoiceRequest := range newInvoices {
-		u.CreateInvoice(userId, invoiceRequest)
 	}
 
 	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
