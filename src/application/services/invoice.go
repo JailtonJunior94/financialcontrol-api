@@ -103,7 +103,7 @@ func (u *InvoiceService) ImportInvoices(userId string, request *multipart.FileHe
 func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
 	card, err := u.CardRepository.GetCardById(request.CardId, userId)
 	if err != nil {
-		return responses.ServerError()
+		return responses.BadRequest(nil)
 	}
 
 	invoiceControl, err := u.InvoiceRepository.GetLastInvoiceControl()
@@ -112,6 +112,8 @@ func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest)
 	}
 
 	startDate, endDate := u.getDates(request.PurchaseDate, card.ClosingDay)
+	invoicesItems := make([]*entities.InvoiceItem, request.QuantityInvoice, request.QuantityInvoice)
+
 	for i := 0; i < request.QuantityInvoice; i++ {
 		invoice, err := u.InvoiceRepository.GetInvoiceByDate(startDate.AddDate(0, i, 0), endDate.AddDate(0, i, 0), card.ID)
 		if err != nil {
@@ -123,17 +125,15 @@ func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest)
 			if err != nil {
 				return responses.ServerError()
 			}
-
-			if err := u.addInvoiceItemAndUpdateTotal(newInvoice, request, i, invoiceControl, userId); err != nil {
-				return responses.ServerError()
-			}
+			invoicesItems[i] = mappings.ToInvoiceItemEntity(request, newInvoice.ID, i+1, invoiceControl+1)
 			continue
 		}
+		invoicesItems[i] = mappings.ToInvoiceItemEntity(request, invoice.ID, i+1, invoiceControl+1)
+	}
 
-		if err := u.addInvoiceItemAndUpdateTotal(invoice, request, i, invoiceControl, userId); err != nil {
-			return responses.ServerError()
-		}
-		u.Dispatcher.Dispatch(events.NewInvoiceChangedEvent(invoice.ID))
+	for _, invoiceItem := range invoicesItems {
+		u.InvoiceRepository.AddInvoiceItem(invoiceItem)
+		u.Dispatcher.Dispatch(events.NewInvoiceChangedEvent(invoiceItem.InvoiceId))
 	}
 
 	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})

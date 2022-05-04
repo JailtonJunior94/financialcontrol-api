@@ -15,6 +15,6 @@ func (l *invoiceChangedListener) SetData(data interface{}) {
 }
 
 func (l *invoiceChangedListener) Handle() error {
-	fmt.Printf("E-mail enviado para: %s\n", l.data.(string))
+	fmt.Printf("ID da fatura alterada: %s\n", l.data.(string))
 	return nil
 }
