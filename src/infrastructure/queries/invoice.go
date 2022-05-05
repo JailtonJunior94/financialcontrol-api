@@ -119,4 +119,30 @@ const (
 							dbo.[InvoiceItem] (NOLOCK) II
 						WHERE
 							II.Id = @id`
+	GetInvoiceById = `SELECT
+						CAST(I.[Id] AS CHAR(36)) [Id],
+						CAST(I.[CardId] AS CHAR(36)) [CardId],
+						I.[Date],
+						I.[Total],
+						I.[CreatedAt],
+						I.[UpdatedAt],
+						I.[Active],
+						CAST(II.[Id] AS CHAR(36)) [Id],
+						CAST(II.[InvoiceId] AS CHAR(36)) [InvoiceId],
+						CAST(II.[CategoryId] AS CHAR(36)) [CategoryId],
+						II.[PurchaseDate],
+						II.[Description],
+						II.[TotalAmount],
+						II.[Installment],
+						II.[InstallmentValue],
+						II.[Tags],
+						II.[InvoiceControl],
+						II.[CreatedAt],
+						II.[UpdatedAt],
+						II.[Active]
+					FROM
+						dbo.Invoice I (NOLOCK)
+						INNER JOIN dbo.InvoiceItem II (NOLOCK) ON I.Id = II.InvoiceId
+					WHERE
+						I.Id = @id`
 )

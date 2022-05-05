@@ -1,8 +1,9 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
@@ -236,68 +237,92 @@ func (r *InvoiceRepository) GetInvoicesCategories(startDate, endDate time.Time, 
 	return invoiceCategories, nil
 }
 
-func (r *InvoiceRepository) DeleteAndAddInvoiceItem(invoiceControl int64) error {
-	ctx := context.Background()
+func (r *InvoiceRepository) AddManyInvoiceItems(invoiceItems []*entities.InvoiceItem) error {
+	query := []string{}
+	params := []interface{}{}
 
-	tx, err := r.Db.Connect().BeginTxx(ctx, nil)
+	for i, item := range invoiceItems {
+		query = append(query, fmt.Sprintf(`INSERT INTO dbo.[InvoiceItem] VALUES (@id%d, @invoiceId%d, @categoryId%d, @purchaseDate%d, @description%d, @totalAmount%d, @installment%d, @installmentValue%d, @tags%d,@createdAt%d, @updatedAt%d, @active%d, @invoiceControl%d)`, i, i, i, i, i, i, i, i, i, i, i, i, i))
+		params = append(params, sql.Named(fmt.Sprintf("id%d", i), item.ID))
+		params = append(params, sql.Named(fmt.Sprintf("invoiceId%d", i), item.InvoiceId))
+		params = append(params, sql.Named(fmt.Sprintf("categoryId%d", i), item.CategoryId))
+		params = append(params, sql.Named(fmt.Sprintf("purchaseDate%d", i), item.PurchaseDate))
+		params = append(params, sql.Named(fmt.Sprintf("description%d", i), item.Description))
+		params = append(params, sql.Named(fmt.Sprintf("totalAmount%d", i), item.TotalAmount))
+		params = append(params, sql.Named(fmt.Sprintf("installment%d", i), item.Installment))
+		params = append(params, sql.Named(fmt.Sprintf("installmentValue%d", i), item.InstallmentValue))
+		params = append(params, sql.Named(fmt.Sprintf("tags%d", i), item.Tags))
+		params = append(params, sql.Named(fmt.Sprintf("createdAt%d", i), item.CreatedAt))
+		params = append(params, sql.Named(fmt.Sprintf("updatedAt%d", i), item.UpdatedAt))
+		params = append(params, sql.Named(fmt.Sprintf("active%d", i), item.Active))
+		params = append(params, sql.Named(fmt.Sprintf("invoiceControl%d", i), item.InvoiceControl))
+	}
+
+	s, err := r.Db.OpenConnectionAndMountStatement(strings.Join(query, " "))
 	if err != nil {
 		return err
 	}
+	defer s.Close()
 
-	result, err := tx.ExecContext(ctx, "DELETE FROM dbo.InvoiceItem WHERE InvoiceControl = @invoiceControl", sql.Named("invoiceControl", invoiceControl))
+	result, err := s.Exec(params...)
+	if err := r.Db.ValidateResult(result, err); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error) {
+	var i = entities.Invoice{}
+	var ii = entities.InvoiceItem{}
+	var invoiceItems = make(map[string][]entities.InvoiceItem)
+
+	connection := r.Db.Connect()
+	rows, err := connection.Queryx(queries.GetInvoiceById, sql.Named("id", id))
 	if err != nil {
-		tx.Rollback()
-		return err
+		return nil, err
 	}
 
-	rows, err := result.RowsAffected()
-	if err != nil {
-		tx.Rollback()
-		return err
+	for rows.Next() {
+		if err := rows.Scan(
+			&i.ID,
+			&i.CardId,
+			&i.Date,
+			&i.Total,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Active,
+			&ii.ID,
+			&ii.InvoiceId,
+			&ii.CategoryId,
+			&ii.PurchaseDate,
+			&ii.Description,
+			&ii.TotalAmount,
+			&ii.Installment,
+			&ii.InstallmentValue,
+			&ii.Tags,
+			&ii.InvoiceControl,
+			&ii.CreatedAt,
+			&ii.UpdatedAt,
+			&ii.Active,
+		); err != nil {
+			return nil, err
+		}
+
+		if items, ok := invoiceItems[i.ID]; ok {
+			item := *entities.NewInvoiceItem(ii.InvoiceId, ii.CategoryId, ii.Description, ii.Tags, ii.PurchaseDate, ii.TotalAmount)
+			item.AddInstallment(ii.Installment, ii.InstallmentValue, ii.InvoiceControl)
+			invoiceItems[i.ID] = append(items, item)
+		} else {
+			item := *entities.NewInvoiceItem(ii.InvoiceId, ii.CategoryId, ii.Description, ii.Tags, ii.PurchaseDate, ii.TotalAmount)
+			item.AddInstallment(ii.Installment, ii.InstallmentValue, ii.InvoiceControl)
+			invoiceItems[i.ID] = []entities.InvoiceItem{item}
+		}
 	}
 
-	if rows <= 0 {
-		tx.Rollback()
-		return err
-	}
+	i.AddInvoiceItems(invoiceItems[id])
+	return &i, nil
+}
 
-	ii := entities.NewInvoiceItem("EADA1FB3-D3DC-4D25-903A-D7D385D5DAB1", "4A41F0DB-1F76-44CF-9139-9C52ECED3C3A", "Drogasil (Editado)", "-", time.Now(), 150)
-
-	resultInsert, err := tx.ExecContext(ctx, queries.AddInvoiceItem,
-		sql.Named("id", ii.ID),
-		sql.Named("invoiceId", ii.InvoiceId),
-		sql.Named("categoryId", ii.CategoryId),
-		sql.Named("purchaseDate", ii.PurchaseDate),
-		sql.Named("description", ii.Description),
-		sql.Named("totalAmount", ii.TotalAmount),
-		sql.Named("installment", ii.Installment),
-		sql.Named("installmentValue", ii.InstallmentValue),
-		sql.Named("tags", ii.Tags),
-		sql.Named("createdAt", ii.CreatedAt),
-		sql.Named("updatedAt", ii.UpdatedAt),
-		sql.Named("active", ii.Active),
-		sql.Named("invoiceControl", ii.InvoiceControl))
-
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	rowsInsert, err := resultInsert.RowsAffected()
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if rowsInsert <= 0 {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
+func (r *InvoiceRepository) UpdateManyInvoices(invoices []*entities.Invoice) error {
 	return nil
 }

@@ -101,6 +101,8 @@ func (u *InvoiceService) ImportInvoices(userId string, request *multipart.FileHe
 }
 
 func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
+	u.InvoiceRepository.GetInvoiceById("F66BE37B-B924-4E44-BB2E-98033BA6AD1E")
+
 	card, err := u.CardRepository.GetCardById(request.CardId, userId)
 	if err != nil {
 		return responses.BadRequest(nil)
@@ -131,8 +133,11 @@ func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest)
 		invoicesItems[i] = mappings.ToInvoiceItemEntity(request, invoice.ID, i+1, invoiceControl+1)
 	}
 
+	if err := u.InvoiceRepository.AddManyInvoiceItems(invoicesItems); err != nil {
+		return responses.BadRequest(err)
+	}
+
 	for _, invoiceItem := range invoicesItems {
-		u.InvoiceRepository.AddInvoiceItem(invoiceItem)
 		u.Dispatcher.Dispatch(events.NewInvoiceChangedEvent(invoiceItem.InvoiceId))
 	}
 
