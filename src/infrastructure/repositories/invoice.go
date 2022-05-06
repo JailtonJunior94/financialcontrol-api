@@ -272,8 +272,8 @@ func (r *InvoiceRepository) AddManyInvoiceItems(invoiceItems []*entities.Invoice
 }
 
 func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error) {
-	var i = entities.Invoice{}
-	var ii = entities.InvoiceItem{}
+	var i entities.Invoice
+	var ii entities.InvoiceItem
 	var invoiceItems = make(map[string][]entities.InvoiceItem)
 
 	connection := r.Db.Connect()

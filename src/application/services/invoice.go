@@ -101,16 +101,14 @@ func (u *InvoiceService) ImportInvoices(userId string, request *multipart.FileHe
 }
 
 func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest) *responses.HttpResponse {
-	u.InvoiceRepository.GetInvoiceById("F66BE37B-B924-4E44-BB2E-98033BA6AD1E")
-
 	card, err := u.CardRepository.GetCardById(request.CardId, userId)
 	if err != nil {
-		return responses.BadRequest(nil)
+		return responses.BadRequest(err)
 	}
 
 	invoiceControl, err := u.InvoiceRepository.GetLastInvoiceControl()
 	if err != nil {
-		return responses.ServerError()
+		return responses.BadRequest(err)
 	}
 
 	startDate, endDate := u.getDates(request.PurchaseDate, card.ClosingDay)
@@ -134,14 +132,14 @@ func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest)
 	}
 
 	if err := u.InvoiceRepository.AddManyInvoiceItems(invoicesItems); err != nil {
-		return responses.BadRequest(err)
+		return responses.ServerError()
 	}
 
 	for _, invoiceItem := range invoicesItems {
 		u.Dispatcher.Dispatch(events.NewInvoiceChangedEvent(invoiceItem.InvoiceId))
 	}
 
-	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
+	return responses.Created(nil)
 }
 
 func (u *InvoiceService) getDates(purchaseDate time.Time, closingDay int) (startDate, endDate time.Time) {
@@ -157,26 +155,4 @@ func (u *InvoiceService) getDates(purchaseDate time.Time, closingDay int) (start
 	}
 
 	return startDate, endDate
-}
-
-func (u *InvoiceService) addInvoiceItemAndUpdateTotal(invoice *entities.Invoice, request *requests.InvoiceRequest, installment int, invoiceControl int64, userId string) error {
-	_, err := u.InvoiceRepository.AddInvoiceItem(mappings.ToInvoiceItemEntity(request, invoice.ID, installment+1, invoiceControl+1))
-	if err != nil {
-		return err
-	}
-
-	items, err := u.InvoiceRepository.GetInvoiceItemByInvoiceId(invoice.ID, invoice.CardId, userId)
-	if err != nil {
-		return err
-	}
-
-	invoice.AddInvoiceItems(items)
-	invoice.UpdatingValues()
-
-	_, err = u.InvoiceRepository.UpdateInvoice(invoice)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
