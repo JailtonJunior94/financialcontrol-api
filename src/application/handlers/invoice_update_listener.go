@@ -1,13 +1,19 @@
 package handlers
 
-import "fmt"
+import (
+	"errors"
+	"log"
+
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
+)
 
 type invoiceChangedListener struct {
-	data interface{}
+	data              interface{}
+	InvoiceRepository interfaces.IInvoiceRepository
 }
 
-func NewInvoiceChangedListener() *invoiceChangedListener {
-	return &invoiceChangedListener{}
+func NewInvoiceChangedListener(i interfaces.IInvoiceRepository) *invoiceChangedListener {
+	return &invoiceChangedListener{InvoiceRepository: i}
 }
 
 func (l *invoiceChangedListener) SetData(data interface{}) {
@@ -15,6 +21,17 @@ func (l *invoiceChangedListener) SetData(data interface{}) {
 }
 
 func (l *invoiceChangedListener) Handle() error {
-	fmt.Printf("ID da fatura alterada: %s\n", l.data.(string))
+	invoice, err := l.InvoiceRepository.GetInvoiceById(l.data.(string))
+	if err != nil {
+		return errors.New("Não foi possível obter invoice por ID")
+	}
+
+	invoice.UpdatingValues()
+	_, err = l.InvoiceRepository.UpdateInvoice(invoice)
+	if err != nil {
+		return errors.New("Não foi possível obter invoice por ID")
+	}
+
+	log.Println("[Success] [Evento] [invoice_changed] [Processado com sucesso] ")
 	return nil
 }

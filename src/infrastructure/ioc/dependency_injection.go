@@ -62,7 +62,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 
 	/* Register Events */
 	EventDispatcher := events.NewEventDispatcher()
-	EventDispatcher.AddListener("invoice_changed", handlers.NewInvoiceChangedListener())
+	EventDispatcher.AddListener("invoice_changed", handlers.NewInvoiceChangedListener(InvoiceRepository))
 
 	/* Services */
 	UserService = services.NewUserService(UserRepository, HashAdapter)
