@@ -10,7 +10,7 @@ import (
 
 type IInvoiceService interface {
 	Invoices(userId, cardId string) *responses.HttpResponse
-	InvoiceById(userId, cardId, id string) *responses.HttpResponse
+	InvoiceById(userId, id string) *responses.HttpResponse
 	InvoiceCategories(startDate, endDate time.Time, cardId string) *responses.HttpResponse
 	CreateInvoice(userId string, request *requests.InvoiceRequest) *responses.HttpResponse
 	UpdateInvoice(id, userId string, request *requests.InvoiceRequest) *responses.HttpResponse

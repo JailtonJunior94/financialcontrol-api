@@ -35,13 +35,13 @@ func (u *InvoiceService) Invoices(userId string, cardId string) *responses.HttpR
 	return responses.Ok(mappings.ToManyInvoiceResponse(invoices))
 }
 
-func (u *InvoiceService) InvoiceById(userId, cardId, id string) *responses.HttpResponse {
-	invoiceItems, err := u.InvoiceRepository.GetInvoiceItemByInvoiceId(id, cardId, userId)
+func (u *InvoiceService) InvoiceById(userId, id string) *responses.HttpResponse {
+	invoiceItems, err := u.InvoiceRepository.GetInvoiceById(id)
 	if err != nil {
-		return responses.ServerError()
+		return responses.BadRequest(err)
 	}
 
-	return responses.Ok(mappings.ToManyInvoiceItemResponse(invoiceItems))
+	return responses.Ok(mappings.ToInvoiceResponse(invoiceItems))
 }
 
 func (u *InvoiceService) InvoiceCategories(startDate, endDate time.Time, cardId string) *responses.HttpResponse {

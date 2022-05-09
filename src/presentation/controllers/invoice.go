@@ -24,7 +24,7 @@ func (u *InvoiceController) Invoices(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 	}
 
-	response := u.Service.Invoices(*userId, c.Params("id"))
+	response := u.Service.Invoices(*userId, c.Query("cardId"))
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
@@ -34,7 +34,7 @@ func (u *InvoiceController) InvoiceById(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customErrors.InvalidTokenMessage})
 	}
 
-	response := u.Service.InvoiceById(*userId, c.Params("cardid"), c.Params("id"))
+	response := u.Service.InvoiceById(*userId, c.Params("id"))
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 

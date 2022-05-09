@@ -27,47 +27,67 @@ func ToInvoiceItemEntity(r *requests.InvoiceRequest, invoiceId string, installme
 	return entity
 }
 
-func ToManyInvoiceResponse(entities []entities.Invoice) (r []responses.InvoiceResponse) {
-	if len(entities) == 0 {
-		return make([]responses.InvoiceResponse, 0)
+func ToInvoiceResponse(entity *entities.Invoice) *responses.InvoiceResponse {
+	if entity == nil {
+		return nil
 	}
 
-	for _, e := range entities {
-		invoice := responses.InvoiceResponse{
-			ID:     e.ID,
-			CardId: e.CardId,
-			Date:   shared.NewTime(shared.Time{Date: e.Date}).FormatDate(),
-			Total:  e.Total,
-		}
-		r = append(r, invoice)
+	invoice := &responses.InvoiceResponse{
+		ID:           entity.ID,
+		CardId:       entity.CardId,
+		Date:         shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
+		Total:        entity.Total,
+		Card:         ToCardMinimalResponse(&entity.Card),
+		InvoiceItems: ToManyInvoiceItemResponse(entity.InvoiceItems),
 	}
 
-	return r
+	return invoice
 }
 
-func ToManyInvoiceItemResponse(entities []entities.InvoiceItem) (r []responses.InvoiceItemResponse) {
-	if len(entities) == 0 {
-		return make([]responses.InvoiceItemResponse, 0)
+func ToManyInvoiceResponse(entities []entities.Invoice) []*responses.InvoiceResponse {
+	invoices := make([]*responses.InvoiceResponse, len(entities), len(entities))
+	if len(invoices) == 0 {
+		return invoices
 	}
 
-	for _, e := range entities {
-		invoiceItem := responses.InvoiceItemResponse{
-			ID:               e.ID,
-			InvoiceControl:   e.InvoiceControl,
-			PurchaseDate:     shared.NewTime(shared.Time{Date: e.PurchaseDate}).FormatDate(),
-			Description:      e.Description,
-			TotalAmount:      e.TotalAmount,
-			Installment:      e.Installment,
-			InstallmentValue: e.InstallmentValue,
-			Tags:             e.Tags,
+	for index, entity := range entities {
+		invoice := &responses.InvoiceResponse{
+			ID:     entity.ID,
+			CardId: entity.CardId,
+			Date:   shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
+			Total:  entity.Total,
+		}
+
+		invoices[index] = invoice
+	}
+
+	return invoices
+}
+
+func ToManyInvoiceItemResponse(entities []entities.InvoiceItem) []*responses.InvoiceItemResponse {
+	items := make([]*responses.InvoiceItemResponse, len(entities), len(entities))
+	if len(items) == 0 {
+		return items
+	}
+
+	for index, entity := range entities {
+		item := &responses.InvoiceItemResponse{
+			ID:               entity.ID,
+			InvoiceControl:   entity.InvoiceControl,
+			PurchaseDate:     shared.NewTime(shared.Time{Date: entity.PurchaseDate}).FormatDate(),
+			Description:      entity.Description,
+			TotalAmount:      entity.TotalAmount,
+			Installment:      entity.Installment,
+			InstallmentValue: entity.InstallmentValue,
+			Tags:             entity.Tags,
 			Category: responses.CategoryResponse{
-				ID:     e.Category.ID,
-				Name:   e.Category.Name,
-				Active: e.Category.Active,
+				ID:     entity.Category.ID,
+				Name:   entity.Category.Name,
+				Active: entity.Category.Active,
 			},
 		}
-		r = append(r, invoiceItem)
+		items[index] = item
 	}
 
-	return r
+	return items
 }

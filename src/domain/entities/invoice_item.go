@@ -40,3 +40,13 @@ func (p *InvoiceItem) AddInstallment(installment int, installmentValue float64, 
 	p.InvoiceControl = invoiceControl
 	p.Installment = installment
 }
+
+func (p *InvoiceItem) AddCategory(id, name string, active bool) {
+	p.Category = Category{
+		Name: name,
+		Entity: Entity{
+			ID:     id,
+			Active: active,
+		},
+	}
+}

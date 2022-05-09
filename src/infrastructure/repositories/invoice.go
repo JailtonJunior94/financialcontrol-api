@@ -285,12 +285,13 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 	for rows.Next() {
 		if err := rows.Scan(
 			&i.ID,
-			&i.CardId,
 			&i.Date,
 			&i.Total,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Active,
+			&i.Card.ID,
+			&i.Card.Name,
 			&ii.ID,
 			&ii.InvoiceId,
 			&ii.CategoryId,
@@ -304,6 +305,9 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 			&ii.CreatedAt,
 			&ii.UpdatedAt,
 			&ii.Active,
+			&ii.Category.ID,
+			&ii.Category.Name,
+			&ii.Category.Active,
 		); err != nil {
 			return nil, err
 		}
@@ -311,10 +315,14 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 		if items, ok := invoiceItems[i.ID]; ok {
 			item := *entities.NewInvoiceItem(ii.InvoiceId, ii.CategoryId, ii.Description, ii.Tags, ii.PurchaseDate, ii.TotalAmount)
 			item.AddInstallment(ii.Installment, ii.InstallmentValue, ii.InvoiceControl)
+			item.AddCategory(ii.Category.ID, ii.Category.Name, ii.Category.Active)
+
 			invoiceItems[i.ID] = append(items, item)
 		} else {
 			item := *entities.NewInvoiceItem(ii.InvoiceId, ii.CategoryId, ii.Description, ii.Tags, ii.PurchaseDate, ii.TotalAmount)
 			item.AddInstallment(ii.Installment, ii.InstallmentValue, ii.InvoiceControl)
+			item.AddCategory(ii.Category.ID, ii.Category.Name, ii.Category.Active)
+
 			invoiceItems[i.ID] = []entities.InvoiceItem{item}
 		}
 	}

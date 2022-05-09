@@ -29,6 +29,13 @@ func ToCardResponse(e *entities.Card) (r *responses.CardResponse) {
 	}
 }
 
+func ToCardMinimalResponse(e *entities.Card) *responses.CardMinimalResponse {
+	return &responses.CardMinimalResponse{
+		ID:   e.ID,
+		Name: e.Name,
+	}
+}
+
 func ToManyCardResponse(entities []entities.Card) (r []responses.CardResponse) {
 	if len(entities) == 0 {
 		return make([]responses.CardResponse, 0)
