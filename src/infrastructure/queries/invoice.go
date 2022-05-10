@@ -152,4 +152,24 @@ const (
 						WHERE
 							I.Id = @id 
 						ORDER BY II.[PurchaseDate]`
+	GetInvoiceItemByInvoiceControl = `SELECT
+										CAST(II.[Id] AS CHAR(36)) [Id],
+										CAST(II.[InvoiceId] AS CHAR(36)) [InvoiceId],
+										CAST(II.[CategoryId] AS CHAR(36)) [CategoryId],
+										II.PurchaseDate,
+										II.Description,
+										II.TotalAmount,
+										II.Installment,
+										II.InstallmentValue,
+										II.Tags,
+										II.CreatedAt,
+										II.UpdatedAt,
+										II.Active,
+										II.InvoiceControl
+									FROM
+										dbo.InvoiceItem II (NOLOCK)
+									WHERE
+										II.InvoiceControl = @invoiceControl
+									ORDER BY
+										II.InvoiceControl`
 )

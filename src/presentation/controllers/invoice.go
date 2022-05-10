@@ -78,6 +78,11 @@ func (u *InvoiceController) UpdateInvoice(c *fiber.Ctx) error {
 	return c.Status(response.StatusCode).JSON(response.Data)
 }
 
+func (u *InvoiceController) DeleteInvoice(c *fiber.Ctx) error {
+	response := u.Service.DeleteInvoiceItem(c.Params("id"))
+	return c.Status(response.StatusCode).JSON(response.Data)
+}
+
 func (u *InvoiceController) ImportInvoices(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {

@@ -73,6 +73,28 @@ func (u *InvoiceService) UpdateInvoice(id, userId string, request *requests.Invo
 	return u.create(userId, request)
 }
 
+func (u *InvoiceService) DeleteInvoiceItem(id string) *responses.HttpResponse {
+	item, err := u.InvoiceRepository.GetInvoiceItemById(id)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	items, err := u.InvoiceRepository.GetInvoiceItemByInvoiceControl(item.InvoiceControl)
+	if err != nil {
+		return responses.ServerError()
+	}
+
+	if err := u.InvoiceRepository.DeleteInvoiceItem(item.InvoiceControl); err != nil {
+		return responses.ServerError()
+	}
+
+	for _, invoiceItem := range items {
+		u.Dispatcher.Dispatch(events.NewInvoiceChangedEvent(invoiceItem.InvoiceId))
+	}
+
+	return responses.NoContent()
+}
+
 func (u *InvoiceService) ImportInvoices(userId string, request *multipart.FileHeader) *responses.HttpResponse {
 	body, err := request.Open()
 	if err != nil {
@@ -139,7 +161,7 @@ func (u *InvoiceService) create(userId string, request *requests.InvoiceRequest)
 		u.Dispatcher.Dispatch(events.NewInvoiceChangedEvent(invoiceItem.InvoiceId))
 	}
 
-	return responses.Created(nil)
+	return responses.Created(map[string]string{"message": "Cadastrado com sucesso"})
 }
 
 func (u *InvoiceService) getDates(purchaseDate time.Time, closingDay int) (startDate, endDate time.Time) {

@@ -10,9 +10,11 @@ import (
 
 func AddInvoiceRouter(router fiber.Router) {
 	router.Get(constants.Invoices, middlewares.Protected(), ioc.InvoiceController.Invoices)
-	router.Get(constants.InvoicesById, middlewares.Protected(), ioc.InvoiceController.InvoiceById)
-	router.Get(constants.InvoicesCategories, middlewares.Protected(), ioc.InvoiceController.InvoiceCategories)
 	router.Post(constants.Invoices, middlewares.Protected(), ioc.InvoiceController.CreateInvoice)
-	router.Post(constants.InvoicesImport, middlewares.Protected(), ioc.InvoiceController.ImportInvoices)
+	router.Get(constants.InvoicesById, middlewares.Protected(), ioc.InvoiceController.InvoiceById)
+	router.Patch(constants.InvoicesById, middlewares.Protected(), ioc.InvoiceController.InvoiceById)
 	router.Put(constants.InvoicesItems, middlewares.Protected(), ioc.InvoiceController.UpdateInvoice)
+	router.Post(constants.InvoicesImport, middlewares.Protected(), ioc.InvoiceController.ImportInvoices)
+	router.Delete(constants.InvoicesItems, middlewares.Protected(), ioc.InvoiceController.DeleteInvoice)
+	router.Get(constants.InvoicesCategories, middlewares.Protected(), ioc.InvoiceController.InvoiceCategories)
 }

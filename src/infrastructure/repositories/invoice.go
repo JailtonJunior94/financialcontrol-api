@@ -313,16 +313,56 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 		}
 
 		if items, ok := invoiceItems[i.ID]; ok {
-			item := *entities.NewInvoiceItem(ii.InvoiceId, ii.CategoryId, ii.Description, ii.Tags, ii.PurchaseDate, ii.TotalAmount)
-			item.AddInstallment(ii.Installment, ii.InstallmentValue, ii.InvoiceControl)
-			item.AddCategory(ii.Category.ID, ii.Category.Name, ii.Category.Active)
-
+			item := entities.InvoiceItem{
+				InvoiceId:        ii.InvoiceId,
+				CategoryId:       ii.CategoryId,
+				Description:      ii.Description,
+				Tags:             ii.Tags,
+				PurchaseDate:     ii.PurchaseDate,
+				TotalAmount:      ii.TotalAmount,
+				Installment:      ii.Installment,
+				InstallmentValue: ii.InstallmentValue,
+				InvoiceControl:   ii.InvoiceControl,
+				Entity: entities.Entity{
+					ID:        ii.ID,
+					CreatedAt: ii.CreatedAt,
+					UpdatedAt: ii.UpdatedAt,
+					Active:    ii.Active,
+				},
+				Category: entities.Category{
+					Name: ii.Category.Name,
+					Entity: entities.Entity{
+						ID:     ii.Category.ID,
+						Active: ii.Category.Active,
+					},
+				},
+			}
 			invoiceItems[i.ID] = append(items, item)
 		} else {
-			item := *entities.NewInvoiceItem(ii.InvoiceId, ii.CategoryId, ii.Description, ii.Tags, ii.PurchaseDate, ii.TotalAmount)
-			item.AddInstallment(ii.Installment, ii.InstallmentValue, ii.InvoiceControl)
-			item.AddCategory(ii.Category.ID, ii.Category.Name, ii.Category.Active)
-
+			item := entities.InvoiceItem{
+				InvoiceId:        ii.InvoiceId,
+				CategoryId:       ii.CategoryId,
+				Description:      ii.Description,
+				Tags:             ii.Tags,
+				PurchaseDate:     ii.PurchaseDate,
+				TotalAmount:      ii.TotalAmount,
+				Installment:      ii.Installment,
+				InstallmentValue: ii.InstallmentValue,
+				InvoiceControl:   ii.InvoiceControl,
+				Entity: entities.Entity{
+					ID:        ii.ID,
+					CreatedAt: ii.CreatedAt,
+					UpdatedAt: ii.UpdatedAt,
+					Active:    ii.Active,
+				},
+				Category: entities.Category{
+					Name: ii.Category.Name,
+					Entity: entities.Entity{
+						ID:     ii.Category.ID,
+						Active: ii.Category.Active,
+					},
+				},
+			}
 			invoiceItems[i.ID] = []entities.InvoiceItem{item}
 		}
 	}
@@ -333,4 +373,15 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 
 func (r *InvoiceRepository) UpdateManyInvoices(invoices []*entities.Invoice) error {
 	return nil
+}
+
+func (r *InvoiceRepository) GetInvoiceItemByInvoiceControl(invoiceControl int64) ([]*entities.InvoiceItem, error) {
+	var items []*entities.InvoiceItem
+
+	connection := r.Db.Connect()
+	if err := connection.Select(&items, queries.GetInvoiceItemByInvoiceControl, sql.Named("invoiceControl", invoiceControl)); err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }
