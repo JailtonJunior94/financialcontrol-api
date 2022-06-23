@@ -35,3 +35,12 @@ docker image push jailtonjunior/financialcontrol:v1
 kubectl get certificate -n financialcontrol
 kubectl describe certificate -n financialcontrol
 kubectl get certificaterequest -n financialcontrol
+
+### Atualização de tabela 
+```
+ALTER TABLE dbo.Invoice 
+ADD MarkImportTransactions BIT NULL
+DEFAULT 0
+
+UPDATE dbo.Invoice SET MarkImportTransactions = 0
+```

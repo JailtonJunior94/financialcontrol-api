@@ -7,9 +7,10 @@ import (
 )
 
 type Invoice struct {
-	CardId string    `db:"CardId"`
-	Date   time.Time `db:"Date"`
-	Total  float64   `db:"Total"`
+	CardId                 string    `db:"CardId"`
+	Date                   time.Time `db:"Date"`
+	Total                  float64   `db:"Total"`
+	MarkImportTransactions bool      `db:"MarkImportTransactions"`
 	Entity
 	Card         Card
 	InvoiceItems []InvoiceItem

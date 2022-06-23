@@ -292,6 +292,8 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 			&i.Active,
 			&i.Card.ID,
 			&i.Card.Name,
+			&i.Card.UserId,
+			&i.MarkImportTransactions,
 			&ii.ID,
 			&ii.InvoiceId,
 			&ii.CategoryId,
@@ -312,57 +314,34 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 			return nil, err
 		}
 
-		if items, ok := invoiceItems[i.ID]; ok {
-			item := entities.InvoiceItem{
-				InvoiceId:        ii.InvoiceId,
-				CategoryId:       ii.CategoryId,
-				Description:      ii.Description,
-				Tags:             ii.Tags,
-				PurchaseDate:     ii.PurchaseDate,
-				TotalAmount:      ii.TotalAmount,
-				Installment:      ii.Installment,
-				InstallmentValue: ii.InstallmentValue,
-				InvoiceControl:   ii.InvoiceControl,
+		item := entities.InvoiceItem{
+			InvoiceId:        ii.InvoiceId,
+			CategoryId:       ii.CategoryId,
+			Description:      ii.Description,
+			Tags:             ii.Tags,
+			PurchaseDate:     ii.PurchaseDate,
+			TotalAmount:      ii.TotalAmount,
+			Installment:      ii.Installment,
+			InstallmentValue: ii.InstallmentValue,
+			InvoiceControl:   ii.InvoiceControl,
+			Entity: entities.Entity{
+				ID:        ii.ID,
+				CreatedAt: ii.CreatedAt,
+				UpdatedAt: ii.UpdatedAt,
+				Active:    ii.Active,
+			},
+			Category: entities.Category{
+				Name: ii.Category.Name,
 				Entity: entities.Entity{
-					ID:        ii.ID,
-					CreatedAt: ii.CreatedAt,
-					UpdatedAt: ii.UpdatedAt,
-					Active:    ii.Active,
+					ID:     ii.Category.ID,
+					Active: ii.Category.Active,
 				},
-				Category: entities.Category{
-					Name: ii.Category.Name,
-					Entity: entities.Entity{
-						ID:     ii.Category.ID,
-						Active: ii.Category.Active,
-					},
-				},
-			}
+			},
+		}
+
+		if items, ok := invoiceItems[i.ID]; ok {
 			invoiceItems[i.ID] = append(items, item)
 		} else {
-			item := entities.InvoiceItem{
-				InvoiceId:        ii.InvoiceId,
-				CategoryId:       ii.CategoryId,
-				Description:      ii.Description,
-				Tags:             ii.Tags,
-				PurchaseDate:     ii.PurchaseDate,
-				TotalAmount:      ii.TotalAmount,
-				Installment:      ii.Installment,
-				InstallmentValue: ii.InstallmentValue,
-				InvoiceControl:   ii.InvoiceControl,
-				Entity: entities.Entity{
-					ID:        ii.ID,
-					CreatedAt: ii.CreatedAt,
-					UpdatedAt: ii.UpdatedAt,
-					Active:    ii.Active,
-				},
-				Category: entities.Category{
-					Name: ii.Category.Name,
-					Entity: entities.Entity{
-						ID:     ii.Category.ID,
-						Active: ii.Category.Active,
-					},
-				},
-			}
 			invoiceItems[i.ID] = []entities.InvoiceItem{item}
 		}
 	}

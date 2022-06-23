@@ -4,16 +4,18 @@ import (
 	"errors"
 	"log"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 )
 
 type invoiceChangedListener struct {
-	data              interface{}
-	InvoiceRepository interfaces.IInvoiceRepository
+	data                  interface{}
+	InvoiceRepository     interfaces.IInvoiceRepository
+	TransactionRepository interfaces.ITransactionRepository
 }
 
-func NewInvoiceChangedListener(i interfaces.IInvoiceRepository) *invoiceChangedListener {
-	return &invoiceChangedListener{InvoiceRepository: i}
+func NewInvoiceChangedListener(i interfaces.IInvoiceRepository, t interfaces.ITransactionRepository) *invoiceChangedListener {
+	return &invoiceChangedListener{InvoiceRepository: i, TransactionRepository: t}
 }
 
 func (l *invoiceChangedListener) SetData(data interface{}) {
@@ -32,6 +34,25 @@ func (l *invoiceChangedListener) Handle() error {
 		return errors.New("Não foi possível obter invoice por ID")
 	}
 
-	log.Println("[Success] [Evento] [invoice_changed] [Processado com sucesso] ")
+	if err = l.updateTransactionValue(invoice); err != nil {
+		return err
+	}
+
+	log.Println("[Success] [Evento] [invoice_changed] [Processado com sucesso]")
+	return nil
+}
+
+func (l *invoiceChangedListener) updateTransactionValue(invoice *entities.Invoice) error {
+	if !invoice.MarkImportTransactions {
+		log.Println("[Success] [Fatura não marcada para importação nas transações]")
+		return nil
+	}
+
+	transaction, err := l.TransactionRepository.GetTransactionByDate(invoice.Date, invoice.Date, invoice.Card.UserId)
+	if err != nil {
+		return err
+	}
+
+	log.Println(transaction)
 	return nil
 }
