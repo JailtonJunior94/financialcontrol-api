@@ -3,19 +3,31 @@ package handlers
 import (
 	"errors"
 	"log"
+	"strings"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
 )
 
 type invoiceChangedListener struct {
 	data                  interface{}
 	InvoiceRepository     interfaces.IInvoiceRepository
 	TransactionRepository interfaces.ITransactionRepository
+	TransactionService    usecases.ITransactionService
 }
 
-func NewInvoiceChangedListener(i interfaces.IInvoiceRepository, t interfaces.ITransactionRepository) *invoiceChangedListener {
-	return &invoiceChangedListener{InvoiceRepository: i, TransactionRepository: t}
+func NewInvoiceChangedListener(i interfaces.IInvoiceRepository,
+	t usecases.ITransactionService,
+	tr interfaces.ITransactionRepository,
+) *invoiceChangedListener {
+	return &invoiceChangedListener{
+		InvoiceRepository:     i,
+		TransactionService:    t,
+		TransactionRepository: tr,
+	}
 }
 
 func (l *invoiceChangedListener) SetData(data interface{}) {
@@ -53,6 +65,15 @@ func (l *invoiceChangedListener) updateTransactionValue(invoice *entities.Invoic
 		return err
 	}
 
-	log.Println(transaction)
+	response := l.TransactionService.TransactionById(transaction.ID, transaction.UserId)
+	transactionResponse := response.Data.(*responses.TransactionResponse)
+
+	for _, i := range transactionResponse.Items {
+		if strings.Contains(i.Title, invoice.Card.Description) {
+			r := requests.NewTransactionItemRequest(invoice.Card.Description, "OUTCOME", invoice.Total)
+			l.TransactionService.UpdateTransactionItem(transaction.ID, i.ID, transaction.UserId, r)
+		}
+	}
+
 	return nil
 }

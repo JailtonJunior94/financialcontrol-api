@@ -47,40 +47,41 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	SqlConnection = sqlConnection
 
 	/* Adapters */
-	HashAdapter = adapters.NewHashAdapter()
 	JwtAdapter = adapters.NewJwtAdapter()
+	HashAdapter = adapters.NewHashAdapter()
 	UuidAdapter = adapters.NewUuidAdapter()
 
 	/* Repositories */
 	UserRepository = repositories.NewUserRepository(SqlConnection)
-	TransactionRepository = repositories.NewTransactionRepository(SqlConnection)
 	BillRepository = repositories.NewBillRepository(SqlConnection)
 	FlagRepository = repositories.NewFlagRepository(SqlConnection)
 	CardRepository = repositories.NewCardRepository(SqlConnection)
 	InvoiceRepository = repositories.NewInvoiceRepository(SqlConnection)
 	CategoryRepository = repositories.NewCategoryRepository(SqlConnection)
+	TransactionRepository = repositories.NewTransactionRepository(SqlConnection)
 
 	/* Register Events */
 	EventDispatcher := events.NewEventDispatcher()
-	EventDispatcher.AddListener("invoice_changed", handlers.NewInvoiceChangedListener(InvoiceRepository, TransactionRepository))
 
 	/* Services */
-	UserService = services.NewUserService(UserRepository, HashAdapter)
-	AuthService = services.NewAuthService(UserRepository, HashAdapter, JwtAdapter)
-	TransactionService = services.NewTransactionService(TransactionRepository)
 	BillService = services.NewBillService(BillRepository)
 	FlagService = services.NewFlagService(FlagRepository)
 	CardService = services.NewCardService(CardRepository)
-	InvoiceService = services.NewInvoiceService(CardRepository, InvoiceRepository, EventDispatcher)
 	CategoryService = services.NewCategoryService(CategoryRepository)
+	UserService = services.NewUserService(UserRepository, HashAdapter)
+	TransactionService = services.NewTransactionService(TransactionRepository)
+	AuthService = services.NewAuthService(UserRepository, HashAdapter, JwtAdapter)
+	InvoiceService = services.NewInvoiceService(CardRepository, InvoiceRepository, EventDispatcher)
+
+	EventDispatcher.AddListener("invoice_changed", handlers.NewInvoiceChangedListener(InvoiceRepository, TransactionService, TransactionRepository))
 
 	/* Controllers */
 	UserController = controllers.NewUserController(UserService)
-	AuthController = controllers.NewAuthController(AuthService, JwtAdapter)
-	TransactionController = controllers.NewTransactionController(JwtAdapter, TransactionService)
 	BillController = controllers.NewBillController(BillService)
 	FlagController = controllers.NewFlagController(FlagService)
-	CardController = controllers.NewCardController(CardService, JwtAdapter)
-	InvoiceController = controllers.NewInvoiceController(InvoiceService, JwtAdapter)
 	CategoryController = controllers.NewCategoryController(CategoryService)
+	CardController = controllers.NewCardController(CardService, JwtAdapter)
+	AuthController = controllers.NewAuthController(AuthService, JwtAdapter)
+	InvoiceController = controllers.NewInvoiceController(InvoiceService, JwtAdapter)
+	TransactionController = controllers.NewTransactionController(JwtAdapter, TransactionService)
 }

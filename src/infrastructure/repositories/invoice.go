@@ -292,6 +292,7 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 			&i.Active,
 			&i.Card.ID,
 			&i.Card.Name,
+			&i.Card.Description,
 			&i.Card.UserId,
 			&i.MarkImportTransactions,
 			&ii.ID,

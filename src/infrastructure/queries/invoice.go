@@ -128,6 +128,7 @@ const (
 							I.[Active],
 							CAST(C.[Id] AS CHAR(36)) [CardId],
 							C.[Name],
+							C.[Description],
 							CAST(C.[UserId] AS CHAR(36)) [UserId],
 							I.[MarkImportTransactions],
 							CAST(II.[Id] AS CHAR(36)) [Id],
