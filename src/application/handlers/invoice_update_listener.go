@@ -72,6 +72,7 @@ func (l *invoiceChangedListener) updateTransactionValue(invoice *entities.Invoic
 		if strings.Contains(i.Title, invoice.Card.Description) {
 			r := requests.NewTransactionItemRequest(invoice.Card.Description, "OUTCOME", invoice.Total)
 			l.TransactionService.UpdateTransactionItem(transaction.ID, i.ID, transaction.UserId, r)
+			log.Println("[Success] [Transação atualizada com sucesso]")
 		}
 	}
 
