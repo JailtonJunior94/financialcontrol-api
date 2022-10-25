@@ -3,6 +3,7 @@ package ioc
 import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/services"
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/events"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
@@ -10,6 +11,8 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/database"
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/repositories"
 	"github.com/jailtonjunior94/financialcontrol-api/src/presentation/controllers"
+
+	uc "github.com/jailtonjunior94/financialcontrol-api/src/application/usecase"
 )
 
 var (
@@ -40,6 +43,7 @@ var (
 	CardController        *controllers.CardController
 	InvoiceController     *controllers.InvoiceController
 	CategoryController    *controllers.CategoryController
+	UpdateUseCase         *usecase.UpdateTransactionUseCase
 )
 
 func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
@@ -84,4 +88,7 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 	AuthController = controllers.NewAuthController(AuthService, JwtAdapter)
 	InvoiceController = controllers.NewInvoiceController(InvoiceService, JwtAdapter)
 	TransactionController = controllers.NewTransactionController(JwtAdapter, TransactionService)
+
+	/* Use Cases */
+	UpdateUseCase = uc.NewUpdateTransactionUseCase(TransactionRepository, InvoiceRepository, TransactionService)
 }

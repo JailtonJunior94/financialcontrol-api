@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/database"
@@ -169,6 +170,34 @@ func (r *TransactionRepository) GetTransactionItemsById(transactionId, id string
 
 	t := new(entities.TransactionItem)
 	err = row.Scan(&t.ID, &t.TransactionId, &t.Title, &t.Value, &t.Type, &t.CreatedAt, &t.UpdatedAt, &t.IsPaid, &t.Active)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
+}
+
+func (r *TransactionRepository) FetchTransactionByDate(date time.Time, cardDescription string) (*dtos.TransactionQuery, error) {
+	query := `SELECT
+			CAST(t.Id AS CHAR(36)) [TransactionId],
+			CAST(ti.Id AS CHAR(36)) [Id],
+			CAST(t.UserId AS CHAR(36)) [UserId]
+		FROM
+		dbo.[Transaction] t
+		INNER JOIN dbo.TransactionItem ti ON ti.TransactionId = t.Id
+		WHERE
+		t.[Date] = CONVERT(DATETIME, @date)
+		AND ti.Title = @cardDescription`
+
+	connection := r.Db.Connect()
+	row := connection.QueryRow(query, sql.Named("date", date), sql.Named("cardDescription", cardDescription))
+
+	t := new(dtos.TransactionQuery)
+	err := row.Scan(&t.TransactionID, &t.ID, &t.UserID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

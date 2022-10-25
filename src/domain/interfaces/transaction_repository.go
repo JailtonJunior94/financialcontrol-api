@@ -3,6 +3,7 @@ package interfaces
 import (
 	"time"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 )
 
@@ -18,4 +19,6 @@ type ITransactionRepository interface {
 	AddTransactionItem(t *entities.TransactionItem) (transactionItem *entities.TransactionItem, err error)
 	AddRangeTransactionItems(t *entities.Transaction, ti []entities.TransactionItem) error
 	UpdateTransactionItem(t *entities.TransactionItem) (transactionItem *entities.TransactionItem, err error)
+
+	FetchTransactionByDate(date time.Time, cardDescription string) (*dtos.TransactionQuery, error)
 }

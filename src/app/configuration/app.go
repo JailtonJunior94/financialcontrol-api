@@ -24,5 +24,10 @@ func App() *fiber.App {
 	ioc.SetupDependencyInjection(sqlConnection)
 	SetupRoutes(app)
 
+	err := ioc.UpdateUseCase.Execute()
+	if err != nil {
+		panic(err)
+	}
+
 	return app
 }

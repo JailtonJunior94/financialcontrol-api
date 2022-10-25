@@ -1,6 +1,6 @@
 environment: Production
 mssql:
-  connectionString: "sqlserver://sa:@docker@2021@sqlserver-service?database=FinancialControlDB"
+  connectionString: "sqlserver://DB_A453C8_FinancialControl_admin:@stefany@1994@SQL5053.site4now.net?database=DB_A453C8_FinancialControl"
 security:
   expirationAt: 1
   jwtSecret: "RmluYW5jaWFsQ29udHJvbEFtYmllbnRlUHJvZHVjdGlvbg=="

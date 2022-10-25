@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/database"
@@ -360,6 +361,28 @@ func (r *InvoiceRepository) GetInvoiceItemByInvoiceControl(invoiceControl int64)
 
 	connection := r.Db.Connect()
 	if err := connection.Select(&items, queries.GetInvoiceItemByInvoiceControl, sql.Named("invoiceControl", invoiceControl)); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+func (r *InvoiceRepository) FetchInvoiceByCard(cardID string) ([]dtos.InvoiceQuery, error) {
+	var items []dtos.InvoiceQuery
+
+	query := `SELECT
+				i.[Date],
+				c.Description,
+				i.Total
+			FROM
+				dbo.Invoice i 
+				INNER JOIN dbo.Card c ON c.Id = i.CardId
+			WHERE c.Id = @cardID
+			ORDER BY
+				i.[Date]`
+
+	connection := r.Db.Connect()
+	if err := connection.Select(&items, query, sql.Named("cardID", cardID)); err != nil {
 		return nil, err
 	}
 

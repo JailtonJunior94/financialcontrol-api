@@ -3,6 +3,7 @@ package interfaces
 import (
 	"time"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 )
 
@@ -21,4 +22,6 @@ type IInvoiceRepository interface {
 	GetInvoiceByDate(startDate, endDate time.Time, cardId string) (invoice *entities.Invoice, err error)
 	GetInvoiceItemByInvoiceId(invoiceId, cardId, userId string) (items []entities.InvoiceItem, err error)
 	GetInvoicesCategories(startDate, endDate time.Time, cardId string) (invoiceCategories []entities.InvoiceCategories, err error)
+
+	FetchInvoiceByCard(cardID string) ([]dtos.InvoiceQuery, error)
 }
