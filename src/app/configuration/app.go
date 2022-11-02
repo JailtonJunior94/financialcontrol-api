@@ -14,7 +14,7 @@ func App() *fiber.App {
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "https://financialcontrol.netlify.app,http://localhost:3000,https://financeiro.limateixeira.site,http://financialweb-service",
+		AllowOrigins: "https://financialcontrol.azurewebsites.net,http://localhost:3000,https://financeiro.limateixeira.site,http://financialweb-service",
 	}))
 	app.Use(logger.New())
 
