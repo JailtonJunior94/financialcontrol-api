@@ -29,7 +29,6 @@ go tool cover --html=tests/coverage.out
 ```
 
 docker image build -t jailtonjunior/financialcontrol:v1 .
-
 docker image push jailtonjunior/financialcontrol:v1
 
 kubectl get certificate -n financialcontrol
