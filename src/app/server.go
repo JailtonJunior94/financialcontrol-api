@@ -11,6 +11,6 @@ import (
 func Run() {
 	app := configuration.App()
 
-	fmt.Printf("🚀 API is running on http://localhost:%v", os.Getenv("PORT"))
+	fmt.Printf("🚀 API is running on http://0.0.0.0:%v", os.Getenv("PORT"))
 	log.Fatal(app.Listen(fmt.Sprintf(":%v", os.Getenv("PORT"))))
 }
