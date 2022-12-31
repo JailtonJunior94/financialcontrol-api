@@ -183,15 +183,15 @@ func (r *TransactionRepository) GetTransactionItemsById(transactionId, id string
 
 func (r *TransactionRepository) FetchTransactionByDate(date time.Time, cardDescription string) (*dtos.TransactionQuery, error) {
 	query := `SELECT
-			CAST(t.Id AS CHAR(36)) [TransactionId],
-			CAST(ti.Id AS CHAR(36)) [Id],
-			CAST(t.UserId AS CHAR(36)) [UserId]
-		FROM
-		dbo.[Transaction] t
-		INNER JOIN dbo.TransactionItem ti ON ti.TransactionId = t.Id
-		WHERE
-		t.[Date] = CONVERT(DATETIME, @date)
-		AND ti.Title = @cardDescription`
+				CAST(t.Id AS CHAR(36)) [TransactionId],
+				CAST(ti.Id AS CHAR(36)) [Id],
+				CAST(t.UserId AS CHAR(36)) [UserId]
+			FROM
+			dbo.[Transaction] t
+			INNER JOIN dbo.TransactionItem ti ON ti.TransactionId = t.Id
+			WHERE
+			t.[Date] = CONVERT(DATETIME, @date)
+			AND ti.Title = @cardDescription`
 
 	connection := r.Db.Connect()
 	row := connection.QueryRow(query, sql.Named("date", date), sql.Named("cardDescription", cardDescription))

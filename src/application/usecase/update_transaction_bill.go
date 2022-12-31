@@ -8,37 +8,38 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/usecases"
 )
 
-type UpdateTransactionUseCase struct {
-	TransactionRepository interfaces.ITransactionRepository
-	InvoiceRepository     interfaces.IInvoiceRepository
+type UpdateTransactionBill struct {
+	BillRepository        interfaces.IBillRepository
 	TransactionService    usecases.ITransactionService
+	TransactionRepository interfaces.ITransactionRepository
 }
 
-func NewUpdateTransactionUseCase(r interfaces.ITransactionRepository,
-	i interfaces.IInvoiceRepository,
-	tt usecases.ITransactionService,
-) *UpdateTransactionUseCase {
-	return &UpdateTransactionUseCase{
-		TransactionRepository: r,
-		InvoiceRepository:     i,
-		TransactionService:    tt,
+func NewUpdateTransactionBill(
+	b interfaces.IBillRepository,
+	ts usecases.ITransactionService,
+	t interfaces.ITransactionRepository,
+) *UpdateTransactionBill {
+	return &UpdateTransactionBill{
+		BillRepository:        b,
+		TransactionService:    ts,
+		TransactionRepository: t,
 	}
 }
 
-func (u *UpdateTransactionUseCase) Execute(cardID string) error {
-	invoices, err := u.InvoiceRepository.FetchInvoiceByCard(cardID)
+func (u *UpdateTransactionBill) Execute() error {
+	bills, err := u.BillRepository.GetBills()
 	if err != nil {
 		return err
 	}
 
-	for _, invoice := range invoices {
-		transaction, err := u.TransactionRepository.FetchTransactionByDate(invoice.Date, invoice.Description)
+	for _, bill := range bills {
+		transaction, err := u.TransactionRepository.FetchTransactionByDate(bill.Date, "Casa (Despesas)")
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 
-		r := requests.NewTransactionItemRequest(invoice.Description, "OUTCOME", invoice.Total)
+		r := requests.NewTransactionItemRequest("Casa (Despesas)", "OUTCOME", bill.SixtyPercent)
 		if transaction == nil {
 			// t, _ := u.TransactionRepository.GetTransactionByDate(invoice.Date, invoice.Date, "F978F969-3EB6-4D0E-8E4E-3270A20F3513")
 

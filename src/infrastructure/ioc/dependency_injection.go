@@ -44,6 +44,7 @@ var (
 	InvoiceController     *controllers.InvoiceController
 	CategoryController    *controllers.CategoryController
 	UpdateUseCase         *usecase.UpdateTransactionUseCase
+	UpdateTransactionBill *usecase.UpdateTransactionBill
 )
 
 func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
@@ -91,4 +92,5 @@ func SetupDependencyInjection(sqlConnection database.ISqlConnection) {
 
 	/* Use Cases */
 	UpdateUseCase = uc.NewUpdateTransactionUseCase(TransactionRepository, InvoiceRepository, TransactionService)
+	UpdateTransactionBill = uc.NewUpdateTransactionBill(BillRepository, TransactionService, TransactionRepository)
 }
