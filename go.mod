@@ -1,6 +1,6 @@
 module github.com/jailtonjunior94/financialcontrol-api
 
-go 1.18
+go 1.21
 
 require (
 	github.com/denisenkom/go-mssqldb v0.12.0
