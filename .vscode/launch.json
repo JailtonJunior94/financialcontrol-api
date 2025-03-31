@@ -36,6 +36,20 @@
                 "ENVIRONMENT": "Production"
             },
             "args": []
+        },
+        {
+            "name": "Production (Budget)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Production"
+            },
+            "args": [
+                "budget"
+            ]
         }
     ]
 }

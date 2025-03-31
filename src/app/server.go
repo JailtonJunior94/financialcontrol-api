@@ -8,7 +8,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/src/app/configuration"
 )
 
-func Run() {
+func RunServer() {
 	app := configuration.App()
 
 	fmt.Printf("🚀 API is running on http://localhost:%v", os.Getenv("PORT"))

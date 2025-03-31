@@ -8,7 +8,9 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/gofiber/jwt/v2 v2.2.7
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/satori/go.uuid v1.2.0
+	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.36.0
@@ -23,6 +25,7 @@ require (
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
