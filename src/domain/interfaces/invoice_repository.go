@@ -24,4 +24,5 @@ type IInvoiceRepository interface {
 	GetInvoicesCategories(startDate, endDate time.Time, cardId string) (invoiceCategories []entities.InvoiceCategories, err error)
 
 	FetchInvoiceByCard(cardID string) ([]dtos.InvoiceQuery, error)
+	GetInvoices(date time.Time) (*dtos.InvoiceRead, error)
 }

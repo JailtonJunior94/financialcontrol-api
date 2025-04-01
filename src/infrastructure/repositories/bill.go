@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/src/infrastructure/database"
@@ -169,4 +170,51 @@ func (r *BillRepository) UpdateBillItem(p *entities.BillItem) (billItem *entitie
 		return nil, err
 	}
 	return p, nil
+}
+
+func (r *BillRepository) Get(date time.Time) (*dtos.BillQuery, error) {
+	query := `SELECT
+				CAST(b.Id AS CHAR(36)) [BillID],
+				b.Date,
+				CAST(bi.Id AS CHAR(36)) [BillItemID],
+				bi.Title,
+				bi.Value
+			  FROM
+				Bill b
+			  INNER JOIN BillItem bi ON bi.BillId = b.Id
+			  WHERE
+				b.[Date] = @date
+			  AND b.Active = 1`
+
+	rows, err := r.Db.Connect().Query(query, sql.Named("date", date))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var bill dtos.BillQuery
+	var billItem dtos.BillItemQuery
+	var billItemMap = make(map[string][]dtos.BillItemQuery)
+
+	for rows.Next() {
+		err = rows.Scan(
+			&bill.ID,
+			&bill.Date,
+			&billItem.ID,
+			&billItem.Description,
+			&billItem.Total,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := billItemMap[bill.ID]; !ok {
+			billItemMap[bill.ID] = []dtos.BillItemQuery{billItem}
+			continue
+		}
+		billItemMap[bill.ID] = append(billItemMap[bill.ID], billItem)
+	}
+
+	bill.Items = billItemMap[bill.ID]
+	return &bill, nil
 }

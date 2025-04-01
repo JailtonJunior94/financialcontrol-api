@@ -3,6 +3,7 @@ package interfaces
 import (
 	"time"
 
+	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/entities"
 )
 
@@ -16,4 +17,5 @@ type IBillRepository interface {
 	GetBillItemById(id, billId string) (billItem *entities.BillItem, err error)
 	AddBillItem(p *entities.BillItem) (billItem *entities.BillItem, err error)
 	UpdateBillItem(p *entities.BillItem) (billItem *entities.BillItem, err error)
+	Get(date time.Time) (*dtos.BillQuery, error)
 }

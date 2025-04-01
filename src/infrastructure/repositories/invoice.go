@@ -388,3 +388,66 @@ func (r *InvoiceRepository) FetchInvoiceByCard(cardID string) ([]dtos.InvoiceQue
 
 	return items, nil
 }
+
+func (q *InvoiceRepository) GetInvoices(date time.Time) (*dtos.InvoiceRead, error) {
+	query := `SELECT
+				CAST(i.Id AS CHAR(36)) [InvoiceID],
+				i.[Date],
+				i.Total,
+				CAST(ii.Id AS CHAR(36)) [InvoiceItemID],
+				ii.PurchaseDate,
+				ii.Description,
+				ii.TotalAmount,
+				ii.Installment,
+				ii.InstallmentValue,
+				ii.Tags,
+				CAST(c2.Id AS CHAR(36)) [CategoryID],
+				c2.Name
+			FROM
+				Invoice i
+				inner join InvoiceItem ii on ii.InvoiceId = i.Id
+				inner join Category c2 on c2.Id = ii.CategoryId
+			WHERE
+				i.Date = @date
+				AND ii.Tags != ''
+			ORDER BY ii.PurchaseDate`
+
+	rows, err := q.Db.Connect().Query(query, sql.Named("date", date))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invoice dtos.InvoiceRead
+	var invoiceItem dtos.InvoiceItemRead
+	var invoiceItemMap = make(map[string][]dtos.InvoiceItemRead)
+
+	for rows.Next() {
+		err = rows.Scan(
+			&invoice.ID,
+			&invoice.Date,
+			&invoice.Total,
+			&invoiceItem.ID,
+			&invoiceItem.PurchaseDate,
+			&invoiceItem.Description,
+			&invoiceItem.TotalAmount,
+			&invoiceItem.Installment,
+			&invoiceItem.InstallmentValue,
+			&invoiceItem.Tags,
+			&invoiceItem.Category.ID,
+			&invoiceItem.Category.Name,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := invoiceItemMap[invoice.ID]; !ok {
+			invoiceItemMap[invoice.ID] = []dtos.InvoiceItemRead{invoiceItem}
+			continue
+		}
+		invoiceItemMap[invoice.ID] = append(invoiceItemMap[invoice.ID], invoiceItem)
+	}
+
+	invoice.Items = invoiceItemMap[invoice.ID]
+	return &invoice, nil
+}
