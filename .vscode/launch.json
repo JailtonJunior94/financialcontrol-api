@@ -50,6 +50,20 @@
             "args": [
                 "budget"
             ]
+        },
+        {
+            "name": "Production (Budget Cards and Others)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Production"
+            },
+            "args": [
+                "budget-cards-and-others"
+            ]
         }
     ]
 }

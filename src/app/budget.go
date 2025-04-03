@@ -19,12 +19,12 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func RunBudget() {
+func RunBudget(dateParam time.Time) {
 	environments.SetupEnvironments()
 	db := database.NewConnection()
 	ioc.SetupDependencyInjection(db)
 
-	date := time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)
+	date := time.Date(dateParam.Year(), dateParam.Month(), 1, 0, 0, 0, 0, time.UTC)
 
 	budget := entities.NewBudget(date, vos.NewMoney(14_305.05))
 	budgetMetas := entities.NewBudgetItem(budget, "Metas", vos.NewPercentage(0.10))
@@ -110,6 +110,107 @@ func RunBudget() {
 	}
 
 	table.Render()
+}
+
+func RunBudgetCardAndOthers(dateParam time.Time) {
+	environments.SetupEnvironments()
+	db := database.NewConnection()
+	ioc.SetupDependencyInjection(db)
+
+	date := time.Date(dateParam.Year(), dateParam.Month(), 1, 0, 0, 0, 0, time.UTC)
+
+	invoices, err := ioc.InvoiceRepository.GetInvoices(date.AddDate(0, 1, 0))
+	if err != nil {
+		log.Fatalf("error fetching invoices: %v", err)
+	}
+
+	bills, err := ioc.BillRepository.Get(date)
+	if err != nil {
+		log.Fatalf("error fetching bills: %v", err)
+	}
+
+	conforto := linq.Filter(bills.Items, func(b dtos.BillItemQuery) bool {
+		return strings.Contains(b.Description, "Faxina")
+	})
+
+	confortoSoma := linq.Sum(conforto, func(i dtos.BillItemQuery) float64 {
+		return i.Total
+	})
+
+	custoFixo := linq.Filter(bills.Items, func(b dtos.BillItemQuery) bool {
+		return !strings.Contains(b.Description, "Faxina")
+	})
+
+	custoFixoSoma := linq.Sum(custoFixo, func(i dtos.BillItemQuery) float64 {
+		return i.Total
+	})
+
+	groupedByTag := linq.GroupBy(invoices.Items, func(i dtos.InvoiceItemRead) string {
+		return i.Tags
+	})
+
+	gastoPrazeres := &BudgetCardAndOthers{Date: date, Category: "Prazeres", TotalSpentOthers: vos.NewMoney(0)}
+	gastoConhecimento := &BudgetCardAndOthers{Date: date, Category: "Conhecimento", TotalSpentOthers: vos.NewMoney(0)}
+	gastoConforto := &BudgetCardAndOthers{Date: date, Category: "Conforto", TotalSpentOthers: vos.NewMoney(confortoSoma)}
+	gastoCustoFixos := &BudgetCardAndOthers{Date: date, Category: "Custos fixos", TotalSpentOthers: vos.NewMoney(custoFixoSoma)}
+
+	BudgetCard := &BudgetCard{
+		Items: []*BudgetCardAndOthers{
+			gastoConforto,
+			gastoPrazeres,
+			gastoCustoFixos,
+			gastoConhecimento,
+		},
+	}
+
+	for tag, group := range groupedByTag {
+		sum := linq.Sum(group, func(i dtos.InvoiceItemRead) float64 {
+			return i.InstallmentValue
+		})
+
+		for _, budget := range BudgetCard.Items {
+			if budget.Category == tag {
+				budget.AddAmountUsed(vos.NewMoney(sum))
+			}
+		}
+	}
+
+	data := [][]string{}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Mês", "Categoria", "Total Gasto (Cartão)", "Total Gasto (Outros)", "Total"})
+
+	for _, item := range BudgetCard.Items {
+		data = append(data, []string{
+			item.Date.Format("January 2006"),
+			item.Category,
+			formatMoney(item.TotalSpentCard),
+			formatMoney(item.TotalSpentOthers),
+			formatMoney(item.Total),
+		})
+	}
+
+	for _, v := range data {
+		table.Append(v)
+	}
+
+	table.Render()
+}
+
+type BudgetCard struct {
+	Items []*BudgetCardAndOthers
+}
+
+type BudgetCardAndOthers struct {
+	Date             time.Time
+	Category         string
+	TotalSpentCard   vos.Money
+	TotalSpentOthers vos.Money
+	Total            vos.Money
+}
+
+func (b *BudgetCardAndOthers) AddAmountUsed(amount vos.Money) {
+	b.TotalSpentCard = b.TotalSpentCard.Add(amount)
+	b.Total = b.TotalSpentCard.Add(b.TotalSpentOthers)
 }
 
 func formatMoney(value vos.Money) string {

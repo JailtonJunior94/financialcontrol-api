@@ -1,2 +1,4 @@
 .docker
 __debug*
+.env
+financial_control
