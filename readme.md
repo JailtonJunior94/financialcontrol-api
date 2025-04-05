@@ -44,3 +44,14 @@ DEFAULT 0
 
 UPDATE dbo.Invoice SET MarkImportTransactions = 0
 ```
+
+### Comandos CLI
+```bash
+make run ENVIRONMENT=Production
+
+make run_sync ENVIRONMENT=Production
+
+make run_budget ENVIRONMENT=Production DATE=01/04/2025
+
+make run_budget_cards_and_others ENVIRONMENT=Production DATE=01/04/2025
+```

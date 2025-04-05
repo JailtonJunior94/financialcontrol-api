@@ -59,7 +59,15 @@ func main() {
 	}
 	budgetCardsAndOthers.Flags().StringVarP(&dateParam, "date", "d", "", "Data no formato DD/MM/YYYY (opcional)")
 
-	root.AddCommand(budget, budgetCardsAndOthers)
+	sync := &cobra.Command{
+		Use:   "sync",
+		Short: "Sincroniza os dados",
+		Run: func(cmd *cobra.Command, args []string) {
+			app.RunSync()
+		},
+	}
+
+	root.AddCommand(budget, budgetCardsAndOthers, sync)
 	if err := root.Execute(); err != nil {
 		log.Fatal(err)
 	}

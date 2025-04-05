@@ -7,6 +7,10 @@ run:
 	@echo "Running the project..."
 	@ENVIRONMENT=${ENVIRONMENT} go run main.go
 
+run_sync: 
+	@echo "Running the project..."
+	@ENVIRONMENT=${ENVIRONMENT} go run main.go sync
+
 run_budget: 
 	@echo "Running the project..."
 	@ENVIRONMENT=${ENVIRONMENT} go run main.go budget --date=${DATE}
