@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
@@ -25,7 +26,9 @@ func NewUpdateTransactionUseCase(r interfaces.ITransactionRepository,
 	}
 }
 
-func (u *UpdateTransactionUseCase) Execute(cardID string) error {
+func (u *UpdateTransactionUseCase) Execute(wg *sync.WaitGroup, cardID string) error {
+	defer wg.Done()
+
 	invoices, err := u.InvoiceRepository.FetchInvoiceByCard(cardID)
 	if err != nil {
 		return err

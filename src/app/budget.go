@@ -29,10 +29,10 @@ func RunBudget(dateParam time.Time) {
 	budget := entities.NewBudget(date, vos.NewMoney(14_305.05))
 	budgetMetas := entities.NewBudgetItem(budget, "Metas", vos.NewPercentage(0.10))
 	bugetConforto := entities.NewBudgetItem(budget, "Conforto", vos.NewPercentage(0.10))
-	budgetPrazeres := entities.NewBudgetItem(budget, "Prazeres", vos.NewPercentage(0.10))
+	budgetPrazeres := entities.NewBudgetItem(budget, "Prazeres", vos.NewPercentage(0.15))
 	budgetCustoFixos := entities.NewBudgetItem(budget, "Custos fixos", vos.NewPercentage(0.40))
 	budgetConhecimento := entities.NewBudgetItem(budget, "Conhecimento", vos.NewPercentage(0.05))
-	budgetLiberdadeFinanceira := entities.NewBudgetItem(budget, "Liberdade Financeira", vos.NewPercentage(0.25))
+	budgetLiberdadeFinanceira := entities.NewBudgetItem(budget, "Liberdade Financeira", vos.NewPercentage(0.20))
 
 	budget.AddItems([]*entities.BudgetItem{
 		budgetCustoFixos,
@@ -43,7 +43,7 @@ func RunBudget(dateParam time.Time) {
 		budgetLiberdadeFinanceira,
 	})
 
-	budgetLiberdadeFinanceira.AddAmountUsed(vos.NewMoney(3_576.26))
+	budgetLiberdadeFinanceira.AddAmountUsed(vos.NewMoney(2_861.01))
 
 	invoices, err := ioc.InvoiceRepository.GetInvoices(date.AddDate(0, 1, 0))
 	if err != nil {

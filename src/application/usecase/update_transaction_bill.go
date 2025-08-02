@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/jailtonjunior94/financialcontrol-api/src/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/src/domain/interfaces"
@@ -42,7 +43,8 @@ func NewTransaction(year int, total, income, outcome float64) *Transaction {
 	}
 }
 
-func (u *UpdateTransactionBill) Execute() error {
+func (u *UpdateTransactionBill) Execute(wg *sync.WaitGroup) error {
+	defer wg.Done()
 	// transactions, _ := u.TransactionRepository.GetTransactions("F978F969-3EB6-4D0E-8E4E-3270A20F3513")
 	// transactionsGroup := make(map[int][]*Transaction)
 
