@@ -91,7 +91,7 @@ func RunBudget(dateParam time.Time) {
 
 	data := [][]string{}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Mês", "Total a Gastar (Mensal)", "Orçamento", "Orçamento %", "Devo Gastar", "Valor Gasto", "Ainda Posso Gastar"})
+	table.Header([]string{"Mês", "Total a Gastar (Mensal)", "Orçamento", "Orçamento %", "Devo Gastar", "Valor Gasto", "Ainda Posso Gastar"})
 
 	for _, item := range budget.Items {
 		data = append(data, []string{
@@ -177,7 +177,7 @@ func RunBudgetCardAndOthers(dateParam time.Time) {
 
 	data := [][]string{}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Mês", "Categoria", "Total Gasto (Cartão)", "Total Gasto (Outros)", "Total"})
+	table.Header([]string{"Mês", "Categoria", "Total Gasto (Cartão)", "Total Gasto (Outros)", "Total"})
 
 	for _, item := range BudgetCard.Items {
 		data = append(data, []string{
