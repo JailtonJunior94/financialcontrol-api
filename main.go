@@ -67,7 +67,90 @@ func main() {
 		},
 	}
 
-	root.AddCommand(budget, budgetCardsAndOthers, sync)
+	budgetUnified := &cobra.Command{
+		Use:   "budget-unified",
+		Short: "Visão unificada: orçamento, cartão e outros em uma tabela",
+		Run: func(cmd *cobra.Command, args []string) {
+			var date time.Time
+
+			if dateParam == "" {
+				date = time.Now()
+			}
+
+			if dateParam != "" {
+				date, _ = time.Parse("02/01/2006", dateParam)
+			}
+
+			app.RunBudgetUnified(date)
+		},
+	}
+	budgetUnified.Flags().StringVarP(&dateParam, "date", "d", "", "Data no formato DD/MM/YYYY (opcional)")
+
+	budgetFull := &cobra.Command{
+		Use:   "budget-full",
+		Short: "Visão completa do orçamento com detalhamento por cartão e outros",
+		Run: func(cmd *cobra.Command, args []string) {
+			var date time.Time
+
+			if dateParam == "" {
+				date = time.Now()
+			}
+
+			if dateParam != "" {
+				date, _ = time.Parse("02/01/2006", dateParam)
+			}
+
+			app.RunBudgetFullView(date)
+		},
+	}
+	budgetFull.Flags().StringVarP(&dateParam, "date", "d", "", "Data no formato DD/MM/YYYY (opcional)")
+
+	balance := &cobra.Command{
+		Use:   "balance",
+		Short: "Saldo disponível real por categoria e detalhamento do cartão por subcategoria",
+		Run: func(cmd *cobra.Command, args []string) {
+			var date time.Time
+
+			if dateParam == "" {
+				date = time.Now()
+			}
+
+			if dateParam != "" {
+				date, _ = time.Parse("02/01/2006", dateParam)
+			}
+
+			app.RunBalance(date)
+		},
+	}
+	balance.Flags().StringVarP(&dateParam, "date", "d", "", "Data no formato DD/MM/YYYY (opcional)")
+
+	var categoryParam string
+
+	budgetByCategory := &cobra.Command{
+		Use:   "budget-category",
+		Short: "Lista todos os itens de uma categoria com valores e data da compra",
+		Run: func(cmd *cobra.Command, args []string) {
+			var date time.Time
+
+			if dateParam == "" {
+				date = time.Now()
+			}
+
+			if dateParam != "" {
+				date, _ = time.Parse("02/01/2006", dateParam)
+			}
+
+			if categoryParam == "" {
+				log.Fatal("a flag --category é obrigatória")
+			}
+
+			app.RunBudgetByCategory(date, categoryParam)
+		},
+	}
+	budgetByCategory.Flags().StringVarP(&dateParam, "date", "d", "", "Data no formato DD/MM/YYYY (opcional)")
+	budgetByCategory.Flags().StringVarP(&categoryParam, "category", "c", "", "Categoria para filtrar (obrigatório)")
+
+	root.AddCommand(budget, budgetCardsAndOthers, budgetUnified, budgetFull, balance, budgetByCategory, sync)
 	if err := root.Execute(); err != nil {
 		log.Fatal(err)
 	}

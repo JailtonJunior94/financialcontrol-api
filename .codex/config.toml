@@ -1,0 +1,35 @@
+[[skills.config]]
+path = ".agents/skills/agent-governance"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/go-implementation"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/analyze-project"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/create-prd"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/create-technical-specification"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/create-tasks"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/execute-task"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/refactor"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/review"
+enabled = true
