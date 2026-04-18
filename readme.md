@@ -6,52 +6,145 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=JailtonJunior94_financialcontrol-api&metric=code_smells)](https://sonarcloud.io/dashboard?id=JailtonJunior94_financialcontrol-api)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=JailtonJunior94_financialcontrol-api&metric=coverage)](https://sonarcloud.io/dashboard?id=JailtonJunior94_financialcontrol-api)
 
-## Sobre
-Projeto backend de controle de finanças pessoais.
+API backend para controle de financas pessoais, organizada em um layout Go-like com entrypoint unico em `cmd/financialcontrol-api`.
 
-## Tecnologias Utilizadas 🚀
-* **[Golang](https://golang.org/)**
-* **[Heroku](https://dashboard.heroku.com/)**
-* **[GitHub Actions](https://docs.github.com/pt/actions)**
-* **[Docker](https://www.docker.com/)**
-* **[SQL Server](https://www.microsoft.com/pt-br/sql-server/sql-server-2019)**
+## Visao geral da estrutura
 
-## Testes de Unidade
-Para gerar o arquivo coverage da aplicação
+```text
+.
+|-- cmd/
+|   |-- financialcontrol-api/   # entrypoint do binario principal
+|   `-- test-permissions/       # binario auxiliar de teste
+|-- configs/                    # config.<ENV>.yaml
+|-- deployments/
+|   |-- docker/                 # Dockerfile e compose
+|   `-- k8s/                    # manifests Kubernetes
+|-- internal/
+|   |-- application/            # DTOs, services, handlers e use cases
+|   |-- bootstrap/              # wiring de CLI, HTTP e container
+|   |-- domain/                 # entidades, eventos e contratos
+|   |-- http/                   # controllers, routes, middlewares e constantes HTTP
+|   |-- infrastructure/         # config, banco, queries e repositories
+|   `-- shared/                 # utilitarios internos do servico
+|-- tests/                      # artefatos auxiliares de teste e coverage
+|-- Makefile
+`-- .github/workflows/ci-cd.yml
 ```
-go test --coverprofile tests/coverage.txt ./...
-go test --coverprofile tests/coverage.out ./...
+
+## Entry point e fluxo de execucao
+
+- Binario principal: `cmd/financialcontrol-api/main.go`
+- Bootstrap de CLI: `internal/bootstrap/cli`
+- Bootstrap HTTP: `internal/bootstrap/http`
+- Composicao de dependencias: `internal/bootstrap/container`
+
+O binario sobe a API por padrao e tambem expoe os comandos operacionais `sync`, `budget`, `budget-cards-and-others`, `budget-unified`, `budget-full`, `balance` e `budget-category`.
+
+Para listar os comandos disponiveis:
+
+```bash
+go run ./cmd/financialcontrol-api --help
 ```
-Para gerar html com informações detalhadas do teste
+
+## Configuracao
+
+Os arquivos de configuracao ficam em `configs/`:
+
+- `configs/config.Development.yaml`
+- `configs/config.Staging.yaml`
+- `configs/config.Production.yaml`
+
+O runtime exige a variavel `ENVIRONMENT` com um dos nomes acima. O loader resolve os arquivos a partir de `configs/` e falha cedo quando o arquivo nao existe.
+
+Exemplos:
+
+```bash
+ENVIRONMENT=Development go run ./cmd/financialcontrol-api
+ENVIRONMENT=Production go run ./cmd/financialcontrol-api sync
 ```
-go tool cover --html=tests/coverage.txt
+
+## Desenvolvimento local
+
+Build do binario:
+
+```bash
+make build
+```
+
+Subir a API localmente:
+
+```bash
+make run ENVIRONMENT=Development
+```
+
+Executar sync:
+
+```bash
+make run_sync ENVIRONMENT=Production
+```
+
+Executar comandos de orcamento:
+
+```bash
+make run_budget ENVIRONMENT=Production DATE=01/04/2025
+make run_budget_cards_and_others ENVIRONMENT=Production DATE=01/04/2025
+make run_budget_unified ENVIRONMENT=Production DATE=01/04/2025
+make run_budget_full ENVIRONMENT=Production DATE=01/04/2025
+make run_balance ENVIRONMENT=Production DATE=01/04/2025
+make run_budget_category ENVIRONMENT=Production DATE=01/04/2025 CATEGORY=Alimentacao
+```
+
+## Validacao
+
+Rodar a suite de testes:
+
+```bash
+make test
+```
+
+Rodar validacao estatica disponivel no projeto:
+
+```bash
+make vet
+```
+
+Gerar HTML de cobertura com base no artefato produzido pelo `make test`:
+
+```bash
 go tool cover --html=tests/coverage.out
 ```
 
-docker image build -t jailtonjunior/financialcontrol:v1 .
+## Docker e operacao
 
-docker image push jailtonjunior/financialcontrol:v1
+Os artefatos operacionais agora ficam em `deployments/`:
 
-kubectl get certificate -n financialcontrol
-kubectl describe certificate -n financialcontrol
-kubectl get certificaterequest -n financialcontrol
+- Dockerfile: `deployments/docker/Dockerfile`
+- Compose: `deployments/docker/docker-compose.yml`
+- Kubernetes: `deployments/k8s/`
 
-### Atualização de tabela 
-```
-ALTER TABLE dbo.Invoice 
-ADD MarkImportTransactions BIT NULL
-DEFAULT 0
+Build da imagem local:
 
-UPDATE dbo.Invoice SET MarkImportTransactions = 0
-```
-
-### Comandos CLI
 ```bash
-make run ENVIRONMENT=Production
-
-make run_sync ENVIRONMENT=Production
-
-make run_budget ENVIRONMENT=Production DATE=01/04/2025
-
-make run_budget_cards_and_others ENVIRONMENT=Production DATE=01/04/2025
+docker build -f deployments/docker/Dockerfile -t financialcontrol-api:local .
 ```
+
+Subir stack local com Docker Compose:
+
+```bash
+docker compose -f deployments/docker/docker-compose.yml up --build
+```
+
+## CI/CD
+
+O workflow em `.github/workflows/ci-cd.yml` executa:
+
+1. `make build`
+2. `make test`
+3. SonarCloud scan
+4. substituicao de variaveis em `configs/config.Production.yaml`
+5. build e push da imagem a partir de `deployments/docker/Dockerfile`
+6. deploy dos manifests em `deployments/k8s/`
+
+## Contrato HTTP
+
+O contrato publico permanece sob o prefixo `/api/v1`. Os testes de bootstrap e registro de rotas em `internal/bootstrap/http/http_test.go` e `internal/http/routes/register_test.go` ajudam a garantir a preservacao dos endpoints durante a reorganizacao estrutural.
