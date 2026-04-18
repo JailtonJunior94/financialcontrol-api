@@ -8,102 +8,105 @@ Use estas instrucoes para manter consistencia, seguranca e qualidade ao trabalha
 
 ## Arquitetura: microservico
 
-O projeto e um microservico independente de controle financeiro pessoal, com deploy isolado em Kubernetes via Docker. Expoe uma API REST (Fiber) e comandos CLI (Cobra) para geracao de orcamentos. Usa SQL Server (MSSQL) como banco de dados.
+O projeto aparenta ser um microservico independente, com foco em contrato de API, inicializacao, dependencias externas e seguranca operacional. A governanca deve preservar o escopo do servico e o seu deploy independente.
 
-Stack detectada: Go 1.25.
-Frameworks detectados: Fiber v2 (HTTP), Cobra (CLI), Viper (configuracao), sqlx + go-mssqldb (persistencia).
-Infraestrutura: Docker, Kubernetes, GitHub Actions CI/CD, SonarCloud, Artillery (load testing).
+Stack detectada: Go.
+Frameworks detectados: Fiber.
 
 ## Estrutura de Pastas
 
 ```
 .
-├── main.go                              # Entrypoint: CLI (Cobra) com comandos server, budget, sync
-├── go.mod / go.sum                      # Dependencias Go 1.25
-├── Makefile                             # Atalhos: build, run, run_sync, run_budget, etc.
-├── Dockerfile                           # Multi-stage build (golang → alpine)
-├── docker-compose.yml                   # API + SQL Server local
-├── config.{Development,Staging,Production}.yaml  # Configuracao por ambiente (Viper)
-├── sonar-project.properties             # SonarCloud
-├── cmd/
-│   └── test-permissions/                # Utilitario auxiliar
-├── src/
-│   ├── domain/                          # Camada de dominio (sem dependencias externas)
-│   │   ├── entities/                    # Entidades: bill, card, category, flag, invoice, transaction, user, budget
-│   │   ├── interfaces/                  # Contratos de repositorio (IBillRepository, ICardRepository, etc.)
-│   │   ├── usecases/                    # Contratos de servico (IBillService, IAuthService, etc.)
-│   │   ├── events/                      # Event dispatcher + invoice_changed_event
-│   │   ├── customErrors/                # Erros de dominio tipados
-│   │   └── constants/                   # Constantes e rotas
-│   ├── application/                     # Camada de aplicacao (orquestracao)
-│   │   ├── services/                    # Implementacoes dos usecases (BillService, AuthService, etc.)
-│   │   ├── usecase/                     # Casos de uso especificos (UpdateTransactionUseCase, etc.)
-│   │   ├── handlers/                    # Listeners de eventos (InvoiceChangedListener)
-│   │   ├── dtos/
-│   │   │   ├── requests/                # DTOs de entrada
-│   │   │   └── responses/               # DTOs de saida + HttpResponse padrao
-│   │   └── mappings/                    # Mapeamento entidade ↔ DTO
-│   ├── infrastructure/                  # Camada de infraestrutura
-│   │   ├── repositories/                # Implementacoes dos contratos de repositorio
-│   │   ├── adapters/                    # Adapters: hash (bcrypt), jwt, uuid
-│   │   ├── database/                    # Conexao SQL (ISqlConnection)
-│   │   ├── queries/                     # Queries SQL raw por entidade
-│   │   ├── environments/                # Leitura de configuracao (Viper)
-│   │   └── ioc/                         # Composicao de dependencias (manual DI)
-│   ├── presentation/                    # Camada de apresentacao (HTTP)
-│   │   ├── controllers/                 # Controllers Fiber por recurso
-│   │   └── middlewares/                 # Middleware de autenticacao JWT
-│   ├── app/                             # Bootstrap e setup do servidor
-│   │   ├── server.go                    # RunServer (Fiber)
-│   │   ├── budget.go                    # Comandos CLI de orcamento
-│   │   ├── sync.go                      # Comando CLI de sincronizacao
-│   │   ├── configuration/               # App factory + setup de rotas
-│   │   └── routes/                      # Definicao de rotas por recurso
-│   └── shared/                          # Utilitarios compartilhados (time, filter)
-├── tests/
-│   ├── artillery.yaml                   # Testes de carga
-│   └── coverage.out                     # Cobertura de testes
-├── .k8s/                                # Manifests Kubernetes
-│   ├── deployments/                     # Deployment da API
-│   ├── services/                        # Service (ClusterIP/NodePort)
-│   ├── hpas/                            # HorizontalPodAutoscaler
-│   ├── ingress/                         # Ingress
-│   ├── certmanager/                     # Cert-Manager issuer (TLS)
-│   └── namespaces/                      # Namespace financialcontrol
-└── .github/
-    ├── workflows/ci-cd.yml              # CI: test → SonarCloud → Docker build → K8s deploy
-    ├── agents/                          # Wrappers de agentes (Copilot)
-    └── skills/                          # Skills de governanca
+cmd
+cmd/test-permissions
+tasks
+tasks/prd-reestruturacao-estrutura-go-like
+tasks/prd-reestruturacao-estrutura-go-like/prd.md
+tasks/prd-reestruturacao-estrutura-go-like/tasks
+tasks/prd-reestruturacao-estrutura-go-like/tasks/02-mover-presentation-e-routes-para-internal-http.md
+tasks/prd-reestruturacao-estrutura-go-like/tasks/01-criar-entrypoint-e-bootstrap.md
+tasks/prd-reestruturacao-estrutura-go-like/tasks/04-mover-configs-docker-e-manifests.md
+tasks/prd-reestruturacao-estrutura-go-like/tasks/03-mover-domain-application-infrastructure-shared.md
+tasks/prd-reestruturacao-estrutura-go-like/tasks/05-atualizar-makefile-workflows-docs-e-testes.md
+tasks/prd-reestruturacao-estrutura-go-like/adr-001-layout-internal-first.md
+tasks/prd-reestruturacao-estrutura-go-like/adr-002-single-binary-bootstrap-split.md
+tasks/prd-reestruturacao-estrutura-go-like/techspec.md
+tasks/prd-reestruturacao-estrutura-go-like/adr-003-operational-assets-migration.md
+go.mod
+config.Production.yaml
+Dockerfile
+Makefile
+tests
+tests/artillery.yaml
+tests/coverage.out
+.k8s
+.k8s/ingress
+.k8s/ingress/ingress.yaml
+.k8s/hpas
+.k8s/hpas/financialapi-hpa.yaml
+.k8s/namespaces
+.k8s/namespaces/financialcontrol.yaml
+.k8s/certmanager
+.k8s/certmanager/issuer.yaml
+.k8s/services
+.k8s/services/financialapi-svc.yaml
+.k8s/deployments
+.k8s/deployments/financialapi-dp.yaml
+go.sum
+docs
+readme.md
+config.Development.yaml
+sonar-project.properties
+.gitignore
+.env
+.github
+.github/workflows
+.github/workflows/ci-cd.yml
+.github/agents
+.github/agents/reviewer.agent.md
+.github/agents/refactorer.agent.md
+.github/agents/task-executor.agent.md
+.github/agents/project-analyzer.agent.md
+.github/agents/prd-writer.agent.md
+.github/agents/technical-specification-writer.agent.md
+.github/agents/task-planner.agent.md
+.github/copilot-instructions.md
+.github/skills
+.github/skills/create-prd
+.github/skills/analyze-project
+.github/skills/execute-task
+.github/skills/review
+.github/skills/create-tasks
+.github/skills/create-technical-specification
+.github/skills/refactor
+docker-compose.yml
+config.Staging.yaml
+AGENTS.md
+.vscode
+.vscode/launch.json
+financial_control
+main.go
+CLAUDE.md
+src
+src/app
+src/app/configuration
+src/app/configuration/app.go
+src/app/configuration/routes.go
+src/app/server.go
+src/app/sync.go
+src/app/budget.go
+src/app/routes
 ```
 
 ## Padrao Arquitetural
 
-Arquitetura em camadas (Layered Architecture) com influencias de Clean Architecture. As camadas sao bem definidas e o fluxo de dependencias aponta para dentro (dominio no centro).
-
-### Camadas
-
-| Camada | Pacote | Responsabilidade |
-|---|---|---|
-| **Domain** | `src/domain/` | Entidades, interfaces de repositorio, contratos de servico (usecases), eventos e erros de dominio. Sem dependencias externas. |
-| **Application** | `src/application/` | Implementa contratos de servico, orquestra logica de negocio, define DTOs, mapeamentos e handlers de eventos. |
-| **Infrastructure** | `src/infrastructure/` | Implementa contratos de repositorio e adapters. Contem queries SQL, conexao de banco, leitura de config e composicao de dependencias (IoC manual). |
-| **Presentation** | `src/presentation/` | Controllers Fiber e middlewares HTTP. Depende apenas de contratos de servico do dominio. |
-| **App/Bootstrap** | `src/app/` | Inicializacao do servidor, setup de rotas e comandos CLI. Ponto de composicao. |
+Padrao arquitetural nao inferido com alta confianca; assumir composicao simples e dependencias explicitas.
 
 ### Fluxo de Dependencias
 
-```
-presentation/controllers → domain/usecases (interfaces de servico)
-application/services     → domain/interfaces (interfaces de repositorio)
-infrastructure/repos     → domain/interfaces (implementa contratos)
-infrastructure/ioc       → todas as camadas (composicao raiz)
-domain/                  → nenhuma dependencia externa
-```
-
-- Controllers dependem de interfaces de servico (`usecases`), nunca de implementacoes.
-- Services dependem de interfaces de repositorio (`interfaces`), nunca de implementacoes.
-- A camada de dominio e pura: sem imports de framework, banco ou HTTP.
-- A composicao de dependencias ocorre em `infrastructure/ioc/dependency_injection.go` (manual, sem framework DI).
+- Transporte e adapters devem depender de casos de uso ou servicos explicitos, nao do contrario.
+- Dominio nao deve conhecer detalhes de HTTP, banco, filas, serializacao ou drivers.
+- Infraestrutura pode implementar contratos consumidos pela aplicacao, preservando dependencia para dentro.
 
 ## Modo de trabalho
 
@@ -127,15 +130,9 @@ domain/                  → nenhuma dependencia externa
 
 ## Regras por Arquitetura
 
-1. Preservar contratos publicados e compatibilidade de integracao (rotas `/api/v1/*`).
+1. Preservar contratos publicados e compatibilidade de integracao.
 2. Manter inicializacao, observabilidade e shutdown como parte do comportamento do servico.
 3. Nao acoplar o servico a convencoes de outros servicos sem contrato explicito.
-4. Respeitar a separacao de camadas: dominio nunca importa pacotes de infraestrutura, aplicacao ou apresentacao.
-5. Novos repositorios devem definir contrato em `domain/interfaces/` e implementacao em `infrastructure/repositories/`.
-6. Novos servicos devem definir contrato em `domain/usecases/` e implementacao em `application/services/`.
-7. Registrar novas dependencias em `infrastructure/ioc/dependency_injection.go`.
-8. Queries SQL ficam em `infrastructure/queries/`, nao espalhadas nos repositorios.
-9. DTOs de request/response ficam em `application/dtos/`, nao no dominio.
 
 ## Regras por Linguagem
 
@@ -186,9 +183,8 @@ Antes de concluir uma alteracao:
 ## Restricoes
 
 1. Nao inventar contexto ausente.
-2. Nao assumir versao de linguagem, framework ou runtime sem verificar (Go 1.25, Fiber v2).
+2. Nao assumir versao de linguagem, framework ou runtime sem verificar.
 3. Nao alterar comportamento publico sem deixar isso explicito.
 4. Nao usar exemplos como copia cega; adaptar ao contexto real.
+
 5. Nao alterar contratos externos, readiness, observabilidade ou semantica operacional sem explicitar a mudanca.
-6. Nao introduzir framework de DI; o projeto usa composicao manual em `ioc/`.
-7. Nao mover queries SQL para dentro dos repositorios; manter em `infrastructure/queries/`.
