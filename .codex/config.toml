@@ -3,7 +3,19 @@ path = ".agents/skills/agent-governance"
 enabled = true
 
 [[skills.config]]
-path = ".agents/skills/go-implementation"
+path = ".agents/skills/bugfix"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/review"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/refactor"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/execute-task"
 enabled = true
 
 [[skills.config]]
@@ -23,13 +35,18 @@ path = ".agents/skills/create-tasks"
 enabled = true
 
 [[skills.config]]
-path = ".agents/skills/execute-task"
+path = ".agents/skills/go-implementation"
 enabled = true
 
 [[skills.config]]
-path = ".agents/skills/refactor"
+path = ".agents/skills/object-calisthenics-go"
 enabled = true
 
 [[skills.config]]
-path = ".agents/skills/review"
+path = ".agents/skills/node-implementation"
 enabled = true
+
+[[skills.config]]
+path = ".agents/skills/python-implementation"
+enabled = true
+

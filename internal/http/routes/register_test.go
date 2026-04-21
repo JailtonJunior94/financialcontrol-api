@@ -6,20 +6,23 @@ import (
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	bootstraphttp "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/http"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/http/controllers"
+	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
+	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
+	identityhttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/http"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestRegisterPreservesHTTPContract(t *testing.T) {
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
-		UserController:        &controllers.UserController{},
-		AuthController:        &controllers.AuthController{},
+		UserController:        &identityhttp.UserController{},
+		AuthController:        &identityhttp.AuthController{},
 		TransactionController: &controllers.TransactionController{},
 		BillController:        &controllers.BillController{},
-		FlagController:        &controllers.FlagController{},
-		CardController:        &controllers.CardController{},
+		FlagController:        &cataloghttp.FlagController{},
+		CardController:        &cardshttp.CardController{},
 		InvoiceController:     &controllers.InvoiceController{},
-		CategoryController:    &controllers.CategoryController{},
+		CategoryController:    &cataloghttp.CategoryController{},
 	})
 
 	routes := app.GetRoutes(true)

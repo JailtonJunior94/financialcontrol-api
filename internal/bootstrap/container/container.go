@@ -12,36 +12,46 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/repositories"
+	cardsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application"
+	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
+	cardsinfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure"
+	catalogapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/application"
+	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
+	cataloginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/infrastructure"
+	identityapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application"
+	identityhttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/http"
+	identityinfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure"
+	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/internal/platform/security"
 )
 
 type Container struct {
 	SqlConnection         database.ISqlConnection
-	HashAdapter           adapters.IHashAdapter
-	JwtAdapter            adapters.IJwtAdapter
+	HashAdapter           platformsecurity.HashAdapter
+	JwtAdapter            platformsecurity.TokenAdapter
 	UuidAdapter           adapters.IUuidAdapter
-	UserRepository        interfaces.IUserRepository
+	UserRepository        identityapp.UserRepository
 	TransactionRepository interfaces.ITransactionRepository
 	BillRepository        interfaces.IBillRepository
-	FlagRepository        interfaces.IFlagRepository
-	CardRepository        interfaces.ICardRepository
+	FlagRepository        catalogapp.FlagRepository
+	CardRepository        cardsapp.CardRepository
 	InvoiceRepository     interfaces.IInvoiceRepository
-	CategoryRepository    interfaces.ICategoryRepository
-	UserService           domainusecases.IUserService
-	AuthService           domainusecases.IAuthService
+	CategoryRepository    catalogapp.CategoryRepository
+	UserService           identityapp.UserService
+	AuthService           identityapp.AuthService
 	TransactionService    domainusecases.ITransactionService
 	BillService           domainusecases.IBillService
-	FlagService           domainusecases.IFlagService
-	CardService           domainusecases.ICardService
+	FlagService           catalogapp.FlagService
+	CardService           cardsapp.CardService
 	InvoiceService        domainusecases.IInvoiceService
-	CategoryService       domainusecases.ICategoryService
-	UserController        *controllers.UserController
-	AuthController        *controllers.AuthController
+	CategoryService       catalogapp.CategoryService
+	UserController        *identityhttp.UserController
+	AuthController        *identityhttp.AuthController
 	TransactionController *controllers.TransactionController
 	BillController        *controllers.BillController
-	FlagController        *controllers.FlagController
-	CardController        *controllers.CardController
+	FlagController        *cataloghttp.FlagController
+	CardController        *cardshttp.CardController
 	InvoiceController     *controllers.InvoiceController
-	CategoryController    *controllers.CategoryController
+	CategoryController    *cataloghttp.CategoryController
 	UpdateUseCase         *appusecase.UpdateTransactionUseCase
 	UpdateTransactionBill *appusecase.UpdateTransactionBill
 }
@@ -49,28 +59,28 @@ type Container struct {
 func Build(sqlConnection database.ISqlConnection) *Container {
 	c := &Container{
 		SqlConnection: sqlConnection,
-		HashAdapter:   adapters.NewHashAdapter(),
-		JwtAdapter:    adapters.NewJwtAdapter(),
+		HashAdapter:   platformsecurity.NewHashAdapter(),
+		JwtAdapter:    platformsecurity.NewJWTAdapter(),
 		UuidAdapter:   adapters.NewUuidAdapter(),
 	}
 
-	c.UserRepository = repositories.NewUserRepository(c.SqlConnection)
+	c.UserRepository = identityinfra.NewUserRepository(c.SqlConnection)
 	c.BillRepository = repositories.NewBillRepository(c.SqlConnection)
-	c.FlagRepository = repositories.NewFlagRepository(c.SqlConnection)
-	c.CardRepository = repositories.NewCardRepository(c.SqlConnection)
+	c.FlagRepository = cataloginfra.NewFlagRepository(c.SqlConnection)
+	c.CardRepository = cardsinfra.NewCardRepository(c.SqlConnection)
 	c.InvoiceRepository = repositories.NewInvoiceRepository(c.SqlConnection)
-	c.CategoryRepository = repositories.NewCategoryRepository(c.SqlConnection)
+	c.CategoryRepository = cataloginfra.NewCategoryRepository(c.SqlConnection)
 	c.TransactionRepository = repositories.NewTransactionRepository(c.SqlConnection)
 
 	eventDispatcher := events.NewEventDispatcher()
 
 	c.BillService = services.NewBillService(c.BillRepository)
-	c.FlagService = services.NewFlagService(c.FlagRepository)
-	c.CardService = services.NewCardService(c.CardRepository)
-	c.CategoryService = services.NewCategoryService(c.CategoryRepository)
-	c.UserService = services.NewUserService(c.UserRepository, c.HashAdapter)
+	c.FlagService = catalogapp.NewFlagService(c.FlagRepository)
+	c.CardService = cardsapp.NewCardService(c.CardRepository)
+	c.CategoryService = catalogapp.NewCategoryService(c.CategoryRepository)
+	c.UserService = identityapp.NewUserService(c.UserRepository, c.HashAdapter)
 	c.TransactionService = services.NewTransactionService(c.TransactionRepository)
-	c.AuthService = services.NewAuthService(c.UserRepository, c.HashAdapter, c.JwtAdapter)
+	c.AuthService = identityapp.NewAuthService(c.UserRepository, c.HashAdapter, c.JwtAdapter)
 	c.InvoiceService = services.NewInvoiceService(c.CardRepository, c.InvoiceRepository, eventDispatcher)
 
 	eventDispatcher.AddListener("invoice_changed", handlers.NewInvoiceChangedListener(
@@ -79,12 +89,12 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 		c.TransactionRepository,
 	))
 
-	c.UserController = controllers.NewUserController(c.UserService)
+	c.UserController = identityhttp.NewUserController(c.UserService)
 	c.BillController = controllers.NewBillController(c.BillService)
-	c.FlagController = controllers.NewFlagController(c.FlagService)
-	c.CategoryController = controllers.NewCategoryController(c.CategoryService)
-	c.CardController = controllers.NewCardController(c.CardService, c.JwtAdapter)
-	c.AuthController = controllers.NewAuthController(c.AuthService, c.JwtAdapter)
+	c.FlagController = cataloghttp.NewFlagController(c.FlagService)
+	c.CategoryController = cataloghttp.NewCategoryController(c.CategoryService)
+	c.CardController = cardshttp.NewCardController(c.CardService, cardshttp.NewClaimsResolver(c.JwtAdapter))
+	c.AuthController = identityhttp.NewAuthController(c.AuthService, identityhttp.NewClaimsResolver(c.JwtAdapter))
 	c.InvoiceController = controllers.NewInvoiceController(c.InvoiceService, c.JwtAdapter)
 	c.TransactionController = controllers.NewTransactionController(c.JwtAdapter, c.TransactionService)
 

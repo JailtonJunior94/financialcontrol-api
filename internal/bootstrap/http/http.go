@@ -5,7 +5,7 @@ import (
 	"os"
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/http/routes"
+	platformhttp "github.com/jailtonjunior94/financialcontrol-api/internal/platform/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -37,6 +37,5 @@ func RunServer() error {
 }
 
 func RegisterRoutes(app *fiber.App, container *bootstrapcontainer.Container) {
-	v1 := app.Group("/api/v1")
-	routes.Register(v1, container)
+	platformhttp.RegisterRoutes(app, container)
 }

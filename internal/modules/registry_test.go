@@ -1,0 +1,41 @@
+package modules_test
+
+import (
+	"testing"
+
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestRegistrationsExposeExpectedFoundationModules(t *testing.T) {
+	registrations := modules.Registrations()
+	names := make([]string, 0, len(registrations))
+
+	for _, registration := range registrations {
+		names = append(names, registration.Name)
+	}
+
+	require.Equal(t, 7, len(registrations))
+	require.ElementsMatch(t, []string{
+		"identity",
+		"catalog",
+		"cards",
+		"billing",
+		"transactions",
+		"invoicing",
+		"planning",
+	}, names)
+}
+
+func TestRegistrationsSeparateHTTPAndCLIHooks(t *testing.T) {
+	for _, registration := range modules.Registrations() {
+		switch registration.Name {
+		case "planning":
+			require.Nil(t, registration.RegisterHTTP)
+			require.NotNil(t, registration.RegisterCLI)
+		default:
+			require.NotNil(t, registration.RegisterHTTP)
+		}
+	}
+}
