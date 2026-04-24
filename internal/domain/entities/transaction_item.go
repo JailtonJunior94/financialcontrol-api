@@ -19,7 +19,7 @@ func NewTransactionItem(transactionId, title, typ string, value float64) *Transa
 		Type:          typ,
 		IsPaid:        false,
 	}
-	transactionItem.Entity.NewEntity()
+	transactionItem.NewEntity()
 
 	return transactionItem
 }

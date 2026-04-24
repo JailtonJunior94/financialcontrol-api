@@ -1,19 +1,5 @@
 package requests
 
-import (
-	"time"
+import transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
-)
-
-type TransactionRequest struct {
-	Date time.Time `json:"date"`
-}
-
-func (u *TransactionRequest) IsValid() error {
-	if u.Date == time.Now() {
-		return customerrors.DateIsRequired
-	}
-
-	return nil
-}
+type TransactionRequest = transactionsapp.TransactionRequest

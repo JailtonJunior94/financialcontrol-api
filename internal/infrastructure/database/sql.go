@@ -55,7 +55,7 @@ func (s *SqlConnection) Disconnect() {
 }
 
 func (s *SqlConnection) OpenConnectionAndMountStatement(query string) (*sql.Stmt, error) {
-	stmt, err := s.DB.DB.Prepare(query)
+	stmt, err := s.DB.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (s *SqlConnection) Rollback() error {
 }
 
 func (s *SqlConnection) Commit() error {
-	return s.TX.Rollback()
+	return s.TX.Commit()
 }
 
 func (s *SqlConnection) End(txFunc func() error) error {
@@ -93,10 +93,10 @@ func (s *SqlConnection) End(txFunc func() error) error {
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			panic(p)
 		} else if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 		} else {
 			err = tx.Commit()
 		}

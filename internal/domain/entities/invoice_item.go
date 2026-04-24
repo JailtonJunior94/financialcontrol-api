@@ -31,7 +31,7 @@ func NewInvoiceItem(invoiceId, categoryId, description, tags string, purchaseDat
 		PurchaseDate: shared.NewTime(shared.Time{Date: purchaseDate}).FormatDate(),
 	}
 
-	invoiceItem.Entity.NewEntity()
+	invoiceItem.NewEntity()
 	return invoiceItem
 }
 

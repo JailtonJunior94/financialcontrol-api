@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
 )
 
@@ -19,37 +19,37 @@ func NewAuthService(userRepository UserRepository, hashAdapter HashAdapter, toke
 	}
 }
 
-func (a *DefaultAuthService) Authenticate(request *AuthRequest) *responses.HttpResponse {
+func (a *DefaultAuthService) Authenticate(request *AuthRequest) *web.HttpResponse {
 	user, err := a.userRepository.GetByEmail(request.Email)
 	if err != nil {
-		return responses.ServerError()
+		return web.ServerError()
 	}
 
 	if user == nil {
-		return responses.BadRequest(customerrors.InvalidUserOrPassword)
+		return web.BadRequest(customerrors.InvalidUserOrPassword)
 	}
 
 	if isValid := a.hashAdapter.CheckHash(user.Password, request.Password); !isValid {
-		return responses.BadRequest(customerrors.InvalidUserOrPassword)
+		return web.BadRequest(customerrors.InvalidUserOrPassword)
 	}
 
 	token, err := a.tokenAdapter.GenerateTokenJWT(user.ID, user.Email)
 	if err != nil {
-		return responses.ServerError()
+		return web.ServerError()
 	}
 
-	return responses.Ok(NewAuthResponse(token))
+	return web.Ok(NewAuthResponse(token))
 }
 
-func (a *DefaultAuthService) Me(userID string) *responses.HttpResponse {
+func (a *DefaultAuthService) Me(userID string) *web.HttpResponse {
 	user, err := a.userRepository.GetByID(userID)
 	if err != nil {
-		return responses.ServerError()
+		return web.ServerError()
 	}
 
 	if user == nil {
-		return responses.BadRequest(customerrors.InvalidUserOrPassword)
+		return web.BadRequest(customerrors.InvalidUserOrPassword)
 	}
 
-	return responses.Ok(ToUserResponse(user))
+	return web.Ok(ToUserResponse(user))
 }

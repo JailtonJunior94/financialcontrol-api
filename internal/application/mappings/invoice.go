@@ -45,7 +45,7 @@ func ToInvoiceResponse(entity *entities.Invoice) *responses.InvoiceResponse {
 }
 
 func ToManyInvoiceResponse(entities []entities.Invoice) []*responses.InvoiceResponse {
-	invoices := make([]*responses.InvoiceResponse, len(entities), len(entities))
+	invoices := make([]*responses.InvoiceResponse, len(entities))
 	if len(invoices) == 0 {
 		return invoices
 	}
@@ -65,7 +65,7 @@ func ToManyInvoiceResponse(entities []entities.Invoice) []*responses.InvoiceResp
 }
 
 func ToManyInvoiceItemResponse(entities []entities.InvoiceItem) []*responses.InvoiceItemResponse {
-	items := make([]*responses.InvoiceItemResponse, len(entities), len(entities))
+	items := make([]*responses.InvoiceItemResponse, len(entities))
 	if len(items) == 0 {
 		return items
 	}

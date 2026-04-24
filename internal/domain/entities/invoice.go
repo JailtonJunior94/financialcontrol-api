@@ -22,7 +22,7 @@ func NewInvoice(cardId string, date time.Time, total float64) *Invoice {
 		Date:   shared.NewTime(shared.Time{Date: date}).FormatDate(),
 		Total:  total,
 	}
-	invoice.Entity.NewEntity()
+	invoice.NewEntity()
 
 	return invoice
 }

@@ -3,75 +3,77 @@ package mappings
 import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/requests"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+	transactionsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
 )
 
-func ToTransactionEntity(r *requests.TransactionRequest, userId string) (e *entities.Transaction) {
-	transaction := entities.NewTransaction(userId, r.Date)
-	return transaction
+func ToTransactionEntity(request *requests.TransactionRequest, userID string) *transactionsdomain.Transaction {
+	return transactionsdomain.NewTransaction(userID, request.Date)
 }
 
-func ToTransactionResponse(e *entities.Transaction) (r *responses.TransactionResponse) {
+func ToTransactionResponse(entity *transactionsdomain.Transaction) *responses.TransactionResponse {
 	return &responses.TransactionResponse{
-		ID:      e.ID,
-		Date:    shared.NewTime(shared.Time{Date: e.Date}).FormatDate(),
-		Total:   e.Total,
-		Income:  e.Income,
-		Outcome: e.Outcome,
-		Active:  e.Active,
-		Items:   ToManyTransactionItemResponse(e.TransactionItems),
+		ID:      entity.ID,
+		Date:    shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
+		Total:   entity.Total,
+		Income:  entity.Income,
+		Outcome: entity.Outcome,
+		Active:  entity.Active,
+		Items:   ToManyTransactionItemResponse(entity.TransactionItems),
 	}
 }
 
-func ToManyTransactionResponse(entities []entities.Transaction) (r []responses.TransactionResponse) {
+func ToManyTransactionResponse(entities []transactionsdomain.Transaction) []responses.TransactionResponse {
 	if len(entities) == 0 {
 		return make([]responses.TransactionResponse, 0)
 	}
 
-	for _, e := range entities {
-		transaction := responses.TransactionResponse{
-			ID:      e.ID,
-			Date:    shared.NewTime(shared.Time{Date: e.Date}).FormatDate(),
-			Total:   e.Total,
-			Income:  e.Income,
-			Outcome: e.Outcome,
-			Active:  e.Active,
-		}
-		r = append(r, transaction)
+	response := make([]responses.TransactionResponse, 0, len(entities))
+	for _, entity := range entities {
+		response = append(response, responses.TransactionResponse{
+			ID:      entity.ID,
+			Date:    shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
+			Total:   entity.Total,
+			Income:  entity.Income,
+			Outcome: entity.Outcome,
+			Active:  entity.Active,
+		})
 	}
 
-	return r
+	return response
 }
 
-func ToTransactionItemEntity(r *requests.TransactionItemRequest, transactionId string) (e *entities.TransactionItem) {
-	transactionItem := entities.NewTransactionItem(transactionId, r.Title, r.Type, r.Value)
-	return transactionItem
+func ToTransactionItemEntity(request *requests.TransactionItemRequest, transactionID string) *transactionsdomain.TransactionItem {
+	return transactionsdomain.NewTransactionItem(transactionID, request.Title, request.Type, request.Value)
 }
 
-func ToTransactionItemResponse(e *entities.TransactionItem) (r *responses.TransactionItemResponse) {
+func ToTransactionItemResponse(entity *transactionsdomain.TransactionItem) *responses.TransactionItemResponse {
 	return &responses.TransactionItemResponse{
-		ID:     e.ID,
-		Title:  e.Title,
-		Value:  e.Value,
-		Type:   e.Type,
-		IsPaid: e.IsPaid,
-		Active: e.Active,
+		ID:     entity.ID,
+		Title:  entity.Title,
+		Value:  entity.Value,
+		Type:   entity.Type,
+		IsPaid: entity.IsPaid,
+		Active: entity.Active,
 	}
 }
 
-func ToManyTransactionItemResponse(entities []entities.TransactionItem) (r []responses.TransactionItemResponse) {
-	for _, e := range entities {
-		item := responses.TransactionItemResponse{
-			ID:     e.ID,
-			Title:  e.Title,
-			Value:  e.Value,
-			Type:   e.Type,
-			IsPaid: e.IsPaid,
-			Active: e.Active,
-		}
-		r = append(r, item)
+func ToManyTransactionItemResponse(entities []transactionsdomain.TransactionItem) []responses.TransactionItemResponse {
+	if len(entities) == 0 {
+		return make([]responses.TransactionItemResponse, 0)
 	}
 
-	return r
+	response := make([]responses.TransactionItemResponse, 0, len(entities))
+	for _, entity := range entities {
+		response = append(response, responses.TransactionItemResponse{
+			ID:     entity.ID,
+			Title:  entity.Title,
+			Value:  entity.Value,
+			Type:   entity.Type,
+			IsPaid: entity.IsPaid,
+			Active: entity.Active,
+		})
+	}
+
+	return response
 }

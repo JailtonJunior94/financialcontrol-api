@@ -1,7 +1,7 @@
 {
-  "version": "0.10.3",
+  "version": "0.13.0",
   "created_at": "2026-04-21T07:09:20.262348-03:00",
-  "updated_at": "2026-04-21T07:09:33.227724-03:00",
+  "updated_at": "2026-04-22T17:32:38.961102-03:00",
   "source_dir": "/var/folders/hg/97c4drd559zgx8mztt_4b6fw0000gn/T/ai-spec-harness-embedded-3638163315",
   "link_mode": "copy",
   "tools": [
@@ -60,5 +60,29 @@
     "semantic-commit": "ea289b301d4afae4f798a8a394eb74aaa943fd5990307fc0c86da07036167280",
     "us-to-prd": "8c31fdbbb41087347c4fad1c14deb4420d577f139a439ee6221b3f003073f622"
   },
-  "codex_profile": "full"
+  "codex_profile": "full",
+  "skill_versions": {
+    "agent-governance": "1.0.0",
+    "analyze-project": "1.0.0",
+    "bugfix": "1.0.0",
+    "confluence-changelog-publisher": "1.0.0",
+    "create-prd": "1.0.0",
+    "create-tasks": "1.0.0",
+    "create-technical-specification": "1.0.0",
+    "execute-task": "1.0.0",
+    "github-diff-changelog-publisher": "1.0.0",
+    "github-pr-comment-triage": "1.0.0",
+    "github-release-publication-flow": "1.0.0",
+    "go-implementation": "1.0.0",
+    "jira-tasks": "1.0.0",
+    "object-calisthenics-go": "1.0.0",
+    "otel-grafana-dashboards": "1.0.0",
+    "postman-collection-generator": "1.0.0",
+    "prompt-enricher": "1.0.0",
+    "pull-request": "1.0.0",
+    "refactor": "1.0.0",
+    "review": "1.0.0",
+    "semantic-commit": "1.0.0",
+    "us-to-prd": "1.0.0"
+  }
 }

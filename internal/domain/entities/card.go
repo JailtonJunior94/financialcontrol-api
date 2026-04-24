@@ -30,7 +30,7 @@ func NewCard(userId, flagId, name, description, number string, closingDay int, e
 		ClosingDay:     closingDay,
 		ExpirationDate: expirationDate,
 	}
-	card.Entity.NewEntity()
+	card.NewEntity()
 
 	return card
 }

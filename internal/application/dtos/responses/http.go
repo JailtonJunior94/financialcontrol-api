@@ -1,52 +1,15 @@
+// Package responses re-exports the HTTP response helpers from internal/platform/web
+// for transitional legacy code. New modules must import from internal/platform/web directly.
 package responses
 
-import (
-	"fmt"
-	"net/http"
+import "github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
-)
+type HttpResponse = web.HttpResponse
 
-type HttpResponse struct {
-	StatusCode int         `json:"statusCode"`
-	Data       interface{} `json:"data"`
-}
-
-func newHttpResponse(statusCode int, data interface{}) *HttpResponse {
-	return &HttpResponse{StatusCode: statusCode, Data: data}
-}
-
-func formatError(message interface{}) map[string]string {
-	mapError := make(map[string]string)
-	mapError["error"] = fmt.Sprintf("%v", message)
-
-	return mapError
-}
-
-func Ok(data interface{}) *HttpResponse {
-	return newHttpResponse(http.StatusOK, data)
-}
-
-func Created(data interface{}) *HttpResponse {
-	return newHttpResponse(http.StatusCreated, data)
-}
-
-func NoContent() *HttpResponse {
-	return newHttpResponse(http.StatusNoContent, nil)
-}
-
-func BadRequest(data interface{}) *HttpResponse {
-	return newHttpResponse(http.StatusBadRequest, formatError(data))
-}
-
-func Unauthorized(data interface{}) *HttpResponse {
-	return newHttpResponse(http.StatusUnauthorized, formatError(customerrors.InvalidTokenMessage))
-}
-
-func NotFound(data interface{}) *HttpResponse {
-	return newHttpResponse(http.StatusNotFound, formatError(data))
-}
-
-func ServerError() *HttpResponse {
-	return newHttpResponse(http.StatusInternalServerError, formatError(customerrors.InternalServerError))
-}
+var Ok = web.Ok
+var Created = web.Created
+var NoContent = web.NoContent
+var BadRequest = web.BadRequest
+var Unauthorized = web.Unauthorized
+var NotFound = web.NotFound
+var ServerError = web.ServerError

@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
 )
 
@@ -17,17 +17,17 @@ func NewUserService(userRepository UserRepository, hashAdapter HashAdapter) User
 	}
 }
 
-func (u *DefaultUserService) CreateUser(request *UserRequest) *responses.HttpResponse {
+func (u *DefaultUserService) CreateUser(request *UserRequest) *web.HttpResponse {
 	passwordHash, err := u.hashAdapter.GenerateHash(request.Password)
 	if err != nil {
-		return responses.BadRequest(customerrors.ErrorCreateUserMessage)
+		return web.BadRequest(customerrors.ErrorCreateUserMessage)
 	}
 
 	newUser := ToUserEntity(request, passwordHash)
 	user, err := u.userRepository.Add(newUser)
 	if err != nil {
-		return responses.ServerError()
+		return web.ServerError()
 	}
 
-	return responses.Created(ToUserResponse(user))
+	return web.Created(ToUserResponse(user))
 }

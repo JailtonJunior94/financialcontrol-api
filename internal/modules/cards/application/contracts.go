@@ -1,8 +1,8 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
 )
 
 type CardRepository interface {
@@ -13,11 +13,11 @@ type CardRepository interface {
 }
 
 type CardService interface {
-	Cards(userID string) *responses.HttpResponse
-	CardById(id, userID string) *responses.HttpResponse
-	CreateCard(userID string, request *CardRequest) *responses.HttpResponse
-	UpdateCard(id, userID string, request *CardRequest) *responses.HttpResponse
-	RemoveCard(id, userID string) *responses.HttpResponse
+	Cards(userID string) *web.HttpResponse
+	CardById(id, userID string) *web.HttpResponse
+	CreateCard(userID string, request *CardRequest) *web.HttpResponse
+	UpdateCard(id, userID string, request *CardRequest) *web.HttpResponse
+	RemoveCard(id, userID string) *web.HttpResponse
 }
 
 type ClaimsResolver interface {

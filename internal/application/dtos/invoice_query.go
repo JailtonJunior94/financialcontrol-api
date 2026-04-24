@@ -1,48 +1,12 @@
+// Package dtos re-exports persistence query types for transitional legacy code.
+// New code must import from internal/platform/persistence directly.
 package dtos
 
-import "time"
+import "github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
 
-type InvoiceQuery struct {
-	Date        time.Time `db:"Date"`
-	Description string    `db:"Description"`
-	Total       float64   `db:"Total"`
-}
-
-type (
-	InvoiceRead struct {
-		ID    string
-		Date  time.Time
-		Total float64
-		Items []InvoiceItemRead
-	}
-
-	InvoiceItemRead struct {
-		ID               string
-		PurchaseDate     time.Time
-		Description      string
-		TotalAmount      float64
-		Installment      int
-		InstallmentValue float64
-		Tags             string
-		Category         CategoryRead
-	}
-
-	CategoryRead struct {
-		ID   string
-		Name string
-	}
-)
-
-type (
-	BillQuery struct {
-		ID    string
-		Date  time.Time
-		Items []BillItemQuery
-	}
-
-	BillItemQuery struct {
-		ID          string
-		Description string
-		Total       float64
-	}
-)
+type InvoiceQuery = persistence.InvoiceQuery
+type InvoiceRead = persistence.InvoiceRead
+type InvoiceItemRead = persistence.InvoiceItemRead
+type CategoryRead = persistence.CategoryRead
+type BillQuery = persistence.BillQuery
+type BillItemQuery = persistence.BillItemQuery

@@ -1,8 +1,8 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
 )
 
 type FlagRepository interface {
@@ -14,9 +14,9 @@ type CategoryRepository interface {
 }
 
 type FlagService interface {
-	Flags() *responses.HttpResponse
+	Flags() *web.HttpResponse
 }
 
 type CategoryService interface {
-	Categories() *responses.HttpResponse
+	Categories() *web.HttpResponse
 }

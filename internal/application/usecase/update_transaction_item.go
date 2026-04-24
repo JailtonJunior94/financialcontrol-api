@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/requests"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/interfaces"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/usecases"
+	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
+	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 )
 
 type UpdateTransactionUseCase struct {
-	TransactionRepository interfaces.ITransactionRepository
-	InvoiceRepository     interfaces.IInvoiceRepository
-	TransactionService    usecases.ITransactionService
+	TransactionRepository transactionsapp.TransactionRepository
+	InvoiceRepository     invoicingapp.InvoiceRepository
+	TransactionService    transactionsapp.TransactionAppService
 }
 
-func NewUpdateTransactionUseCase(r interfaces.ITransactionRepository,
-	i interfaces.IInvoiceRepository,
-	tt usecases.ITransactionService,
+func NewUpdateTransactionUseCase(
+	r transactionsapp.TransactionRepository,
+	i invoicingapp.InvoiceRepository,
+	tt transactionsapp.TransactionAppService,
 ) *UpdateTransactionUseCase {
 	return &UpdateTransactionUseCase{
 		TransactionRepository: r,
@@ -41,12 +41,8 @@ func (u *UpdateTransactionUseCase) Execute(wg *sync.WaitGroup, cardID string) er
 			continue
 		}
 
-		r := requests.NewTransactionItemRequest(invoice.Description, "OUTCOME", invoice.Total)
+		r := transactionsapp.NewTransactionItemRequest(invoice.Description, "OUTCOME", invoice.Total)
 		if transaction == nil {
-			// t, _ := u.TransactionRepository.GetTransactionByDate(invoice.Date, invoice.Date, "F978F969-3EB6-4D0E-8E4E-3270A20F3513")
-
-			// res := u.TransactionService.CreateTransactionItem(r, t.ID, t.UserId)
-			// fmt.Printf("[StatusCode] [%d] [Message] [%v]\n", res.StatusCode, res.Data)
 			continue
 		}
 

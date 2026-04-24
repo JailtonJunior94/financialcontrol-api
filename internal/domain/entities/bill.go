@@ -17,7 +17,7 @@ type Bill struct {
 }
 
 func (b *Bill) NewBill(date time.Time) {
-	b.Entity.NewEntity()
+	b.NewEntity()
 	b.Date = shared.NewTime(shared.Time{Date: date}).FormatDate()
 }
 

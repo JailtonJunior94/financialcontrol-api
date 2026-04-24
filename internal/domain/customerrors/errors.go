@@ -2,6 +2,7 @@ package customerrors
 
 import "errors"
 
+//nolint:staticcheck // Legacy messages are part of the current public error contract.
 var (
 	InternalServerError     = errors.New(InternalServerErrorMessage)
 	InvalidToken            = errors.New(InvalidTokenMessage)

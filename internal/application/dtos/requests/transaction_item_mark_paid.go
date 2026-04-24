@@ -1,5 +1,5 @@
 package requests
 
-type TransactionMarkAsPaid struct {
-	MarkAsPaid bool `json:"markAsPaid"`
-}
+import transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
+
+type TransactionMarkAsPaid = transactionsapp.TransactionMarkAsPaid

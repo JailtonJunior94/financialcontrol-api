@@ -13,7 +13,7 @@ func NewUser(name, email, password string) *User {
 		Email:    email,
 		Password: password,
 	}
-	user.Entity.NewEntity()
+	user.NewEntity()
 
 	return user
 }

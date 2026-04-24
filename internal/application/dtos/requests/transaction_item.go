@@ -1,35 +1,9 @@
 package requests
 
-import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
-)
+import transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 
-type TransactionItemRequest struct {
-	Title string  `json:"title"`
-	Value float64 `json:"Value"`
-	Type  string  `json:"Type"`
-}
+type TransactionItemRequest = transactionsapp.TransactionItemRequest
 
-func (t *TransactionItemRequest) IsValid() error {
-	if t.Title == "" {
-		return customerrors.TitleIsRequired
-	}
-
-	if t.Value == 0 {
-		return customerrors.ValueIsRequired
-	}
-
-	if t.Type == "" {
-		return customerrors.TypeIsRequired
-	}
-
-	return nil
-}
-
-func NewTransactionItemRequest(title, typeTransaction string, value float64) *TransactionItemRequest {
-	return &TransactionItemRequest{
-		Title: title,
-		Type:  typeTransaction,
-		Value: value,
-	}
+func NewTransactionItemRequest(title, transactionType string, value float64) *TransactionItemRequest {
+	return transactionsapp.NewTransactionItemRequest(title, transactionType, value)
 }

@@ -1,7 +1,5 @@
 package dtos
 
-type TransactionQuery struct {
-	ID            string `db:"Id"`
-	TransactionID string `db:"TransactionId"`
-	UserID        string `db:"UserId"`
-}
+import "github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
+
+type TransactionQuery = persistence.TransactionQuery

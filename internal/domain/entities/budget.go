@@ -41,33 +41,41 @@ func (b *Budget) AddItems(items []*BudgetItem) bool {
 }
 
 func (b *Budget) CalculateAmountUsed() {
+	zero, _ := vos.NewMoney(0, vos.CurrencyBRL)
+	b.AmountUsed = zero
 	for _, item := range b.Items {
-		b.AmountUsed = b.AmountUsed.Add(item.AmountUsed)
+		b.AmountUsed, _ = b.AmountUsed.Add(item.AmountUsed)
 	}
 }
 
 func (b *Budget) CalculatePercentageUsed() {
+	b.PercentageUsed = vos.Percentage{}
 	for _, item := range b.Items {
-		b.PercentageUsed = b.PercentageUsed.Add(item.PercentageUsed)
+		b.PercentageUsed, _ = b.PercentageUsed.Add(item.PercentageUsed)
 	}
 }
 
 func (b *Budget) CalculatePercentageTotal() bool {
 	var total vos.Percentage
 	for _, item := range b.Items {
-		total = total.Add(item.PercentageGoal)
+		total, _ = total.Add(item.PercentageGoal)
 	}
-	return total.Equals(vos.NewPercentage(100))
+	hundredPercent, _ := vos.NewPercentage(100000) // 100.000%
+	return total.Equals(hundredPercent)
 }
 
 func NewBudgetItem(budget *Budget, category string, percentageGoal vos.Percentage) *BudgetItem {
+	zero, _ := vos.NewMoney(0, vos.CurrencyBRL)
+	zeroP, _ := vos.NewPercentage(0)
+	hundredP, _ := vos.NewPercentage(100000)
+
 	budgetItem := &BudgetItem{
 		Budget:          budget,
 		Category:        category,
 		PercentageGoal:  percentageGoal,
-		AmountUsed:      vos.NewMoney(0),
-		PercentageUsed:  vos.NewPercentage(0),
-		PercentageTotal: vos.NewPercentage(100),
+		AmountUsed:      zero,
+		PercentageUsed:  zeroP,
+		PercentageTotal: hundredP,
 	}
 
 	budgetItem.CalculateAmountGoal()
@@ -75,13 +83,16 @@ func NewBudgetItem(budget *Budget, category string, percentageGoal vos.Percentag
 }
 
 func (b *BudgetItem) CalculateAmountGoal() {
-	b.AmountGoal = b.Budget.AmountGoal.Mul(b.PercentageGoal.Percentage())
+	b.AmountGoal, _ = b.PercentageGoal.Apply(b.Budget.AmountGoal)
 }
 
 func (b *BudgetItem) AddAmountUsed(amount vos.Money) {
-	b.AmountUsed = b.AmountUsed.Add(amount)
-	b.PercentageUsed = b.PercentageUsed.Add(b.PercentageGoal)
+	b.AmountUsed, _ = b.AmountUsed.Add(amount)
+	b.PercentageUsed, _ = b.PercentageUsed.Add(b.PercentageGoal)
 
-	total, _ := b.AmountUsed.Div(b.Budget.AmountGoal.Money())
-	b.PercentageTotal = vos.NewPercentage(total.Mul(100).Money())
+	goalCents := b.Budget.AmountGoal.Cents()
+	if goalCents > 0 {
+		ratioPercent := float64(b.AmountUsed.Cents()) / float64(goalCents) * 100.0
+		b.PercentageTotal, _ = vos.NewPercentageFromFloat(ratioPercent)
+	}
 }

@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
 	identitydomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 )
 
@@ -22,10 +22,10 @@ type TokenAdapter interface {
 }
 
 type AuthService interface {
-	Authenticate(request *AuthRequest) *responses.HttpResponse
-	Me(userID string) *responses.HttpResponse
+	Authenticate(request *AuthRequest) *web.HttpResponse
+	Me(userID string) *web.HttpResponse
 }
 
 type UserService interface {
-	CreateUser(request *UserRequest) *responses.HttpResponse
+	CreateUser(request *UserRequest) *web.HttpResponse
 }

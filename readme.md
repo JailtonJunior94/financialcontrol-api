@@ -23,7 +23,7 @@ API backend para controle de financas pessoais, organizada em um layout Go-like 
 |   |-- application/            # DTOs, services, handlers e use cases
 |   |-- bootstrap/              # wiring de CLI, HTTP e container
 |   |-- domain/                 # entidades, eventos e contratos
-|   |-- http/                   # controllers, routes, middlewares e constantes HTTP
+|   |-- http/                   # middlewares e constantes HTTP compartilhadas
 |   |-- infrastructure/         # config, banco, queries e repositories
 |   `-- shared/                 # utilitarios internos do servico
 |-- tests/                      # artefatos auxiliares de teste e coverage
@@ -147,4 +147,4 @@ O workflow em `.github/workflows/ci-cd.yml` executa:
 
 ## Contrato HTTP
 
-O contrato publico permanece sob o prefixo `/api/v1`. Os testes de bootstrap e registro de rotas em `internal/bootstrap/http/http_test.go` e `internal/http/routes/register_test.go` ajudam a garantir a preservacao dos endpoints durante a reorganizacao estrutural.
+O contrato publico permanece sob o prefixo `/api/v1`. Os testes de bootstrap e de registro no composition point ativo em `internal/bootstrap/http/http_test.go` e `internal/platform/http/router_test.go` ajudam a garantir a preservacao dos endpoints durante a reorganizacao estrutural.

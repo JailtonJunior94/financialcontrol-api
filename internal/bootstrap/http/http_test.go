@@ -5,11 +5,13 @@ import (
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	bootstraphttp "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/http"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/http/controllers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
+	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
 	identityhttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/http"
+	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
+	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
 
 	"github.com/stretchr/testify/require"
 )
@@ -18,11 +20,11 @@ func TestNewAppRegistersAPIBootstrapRoutes(t *testing.T) {
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
 		UserController:        &identityhttp.UserController{},
 		AuthController:        &identityhttp.AuthController{},
-		TransactionController: &controllers.TransactionController{},
-		BillController:        &controllers.BillController{},
+		TransactionController: &transactionshttp.TransactionController{},
+		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},
 		CardController:        &cardshttp.CardController{},
-		InvoiceController:     &controllers.InvoiceController{},
+		InvoiceController:     &invoicinghttp.InvoiceController{},
 		CategoryController:    &cataloghttp.CategoryController{},
 	})
 
@@ -55,11 +57,11 @@ func TestNewAppBootstrapsWithRuntimeConfigLoaded(t *testing.T) {
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
 		UserController:        &identityhttp.UserController{},
 		AuthController:        &identityhttp.AuthController{},
-		TransactionController: &controllers.TransactionController{},
-		BillController:        &controllers.BillController{},
+		TransactionController: &transactionshttp.TransactionController{},
+		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},
 		CardController:        &cardshttp.CardController{},
-		InvoiceController:     &controllers.InvoiceController{},
+		InvoiceController:     &invoicinghttp.InvoiceController{},
 		CategoryController:    &cataloghttp.CategoryController{},
 	})
 

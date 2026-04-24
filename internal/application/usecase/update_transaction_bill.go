@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/requests"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/interfaces"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/usecases"
+	billingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/application"
+	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 )
 
 type UpdateTransactionBill struct {
-	BillRepository        interfaces.IBillRepository
-	TransactionService    usecases.ITransactionService
-	TransactionRepository interfaces.ITransactionRepository
+	BillRepository        billingapp.BillRepository
+	TransactionService    transactionsapp.TransactionAppService
+	TransactionRepository transactionsapp.TransactionRepository
 }
 
 func NewUpdateTransactionBill(
-	b interfaces.IBillRepository,
-	ts usecases.ITransactionService,
-	t interfaces.ITransactionRepository,
+	b billingapp.BillRepository,
+	ts transactionsapp.TransactionAppService,
+	t transactionsapp.TransactionRepository,
 ) *UpdateTransactionBill {
 	return &UpdateTransactionBill{
 		BillRepository:        b,
@@ -45,22 +44,6 @@ func NewTransaction(year int, total, income, outcome float64) *Transaction {
 
 func (u *UpdateTransactionBill) Execute(wg *sync.WaitGroup) error {
 	defer wg.Done()
-	// transactions, _ := u.TransactionRepository.GetTransactions("F978F969-3EB6-4D0E-8E4E-3270A20F3513")
-	// transactionsGroup := make(map[int][]*Transaction)
-
-	// for _, t := range transactions {
-	// 	if v, exists := transactionsGroup[t.Date.Year()]; exists {
-	// 		transactionsGroup[t.Date.Year()] = append(v, NewTransaction(t.Date.Year(), t.Total, t.Income, t.Outcome))
-	// 		continue
-	// 	}
-	// 	transactionsGroup[t.Date.Year()] = append(transactionsGroup[t.Date.Year()], NewTransaction(t.Date.Year(), t.Total, t.Income, t.Outcome))
-	// }
-
-	// for _, t := range transactionsGroup {
-	// 	for _, tt := range t {
-	// 		fmt.Printf("ANO: %d | Porcentagem de despesa %v%%\n", tt.Year, math.Round((tt.Outcome/tt.Income)*100))
-	// 	}
-	// }
 
 	bills, err := u.BillRepository.GetBills()
 	if err != nil {
@@ -83,12 +66,8 @@ func (u *UpdateTransactionBill) Execute(wg *sync.WaitGroup) error {
 			value = bill.Total
 		}
 
-		r := requests.NewTransactionItemRequest("Casa (Despesas)", "OUTCOME", value)
+		r := transactionsapp.NewTransactionItemRequest("Casa (Despesas)", "OUTCOME", value)
 		if transaction == nil {
-			// t, _ := u.TransactionRepository.GetTransactionByDate(invoice.Date, invoice.Date, "F978F969-3EB6-4D0E-8E4E-3270A20F3513")
-
-			// res := u.TransactionService.CreateTransactionItem(r, t.ID, t.UserId)
-			// fmt.Printf("[StatusCode] [%d] [Message] [%v]\n", res.StatusCode, res.Data)
 			continue
 		}
 

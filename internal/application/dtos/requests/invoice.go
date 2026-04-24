@@ -32,7 +32,7 @@ func NewInvoiceRequest(purchaseDate, totalAmount, quantityInvoice, cardId, categ
 		log.Fatalln("[ERROR] [Não foi possível converter Data da Compra]")
 	}
 
-	total, err := strconv.ParseFloat(totalAmount, 8)
+	total, err := strconv.ParseFloat(totalAmount, 64)
 	if err != nil {
 		log.Fatalln("[ERROR] [Não foi possível converter Total da Compra]")
 	}

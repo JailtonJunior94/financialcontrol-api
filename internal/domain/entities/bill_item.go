@@ -9,7 +9,7 @@ type BillItem struct {
 }
 
 func (b *BillItem) NewBillItem(billId, title string, value float64) {
-	b.Entity.NewEntity()
+	b.NewEntity()
 	b.BillId = billId
 	b.Title = title
 	b.Value = value

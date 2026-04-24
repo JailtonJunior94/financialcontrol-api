@@ -11,7 +11,7 @@ type BillRequest struct {
 }
 
 func (b *BillRequest) IsValid() error {
-	if b.Date == time.Now() {
+	if b.Date.IsZero() {
 		return customerrors.DateIsRequired
 	}
 

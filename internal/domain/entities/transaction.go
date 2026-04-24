@@ -23,7 +23,7 @@ func NewTransaction(userId string, date time.Time) *Transaction {
 		UserId: userId,
 		Date:   shared.NewTime(shared.Time{Date: date}).FormatDate(),
 	}
-	transaction.Entity.NewEntity()
+	transaction.NewEntity()
 
 	return transaction
 }
@@ -36,7 +36,7 @@ func NewTransactionWithValues(date time.Time, userId string, total, income, outc
 		Income:  income,
 		Outcome: outcome,
 	}
-	transaction.Entity.NewEntity()
+	transaction.NewEntity()
 
 	return transaction
 }
