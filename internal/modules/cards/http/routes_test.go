@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	cardsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application"
 	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
 

@@ -3,10 +3,9 @@ package infrastructure
 import (
 	"database/sql"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/queries"
 	identityapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application"
 	identitydomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 )
 
 type UserRepository struct {
@@ -18,7 +17,7 @@ func NewUserRepository(db database.ISqlConnection) identityapp.UserRepository {
 }
 
 func (u *UserRepository) Add(user *identitydomain.User) (*identitydomain.User, error) {
-	statement, err := u.db.OpenConnectionAndMountStatement(queries.AddUser)
+	statement, err := u.db.OpenConnectionAndMountStatement(addUser)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +43,7 @@ func (u *UserRepository) Add(user *identitydomain.User) (*identitydomain.User, e
 
 func (u *UserRepository) GetByEmail(email string) (*identitydomain.User, error) {
 	connection := u.db.Connect()
-	row := connection.QueryRow(queries.GetByEmail, sql.Named("email", email))
+	row := connection.QueryRow(getUserByEmail, sql.Named("email", email))
 
 	user := new(identitydomain.User)
 	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt, &user.Active); err != nil {
@@ -56,7 +55,7 @@ func (u *UserRepository) GetByEmail(email string) (*identitydomain.User, error) 
 
 func (u *UserRepository) GetByID(id string) (*identitydomain.User, error) {
 	connection := u.db.Connect()
-	row := connection.QueryRow(queries.GetByID, sql.Named("id", id))
+	row := connection.QueryRow(getUserByID, sql.Named("id", id))
 
 	user := new(identitydomain.User)
 	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt, &user.Active); err != nil {

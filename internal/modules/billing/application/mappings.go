@@ -1,7 +1,6 @@
 package application
 
 import (
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
 	billingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
 )
@@ -12,8 +11,8 @@ func ToBillEntity(request *BillRequest) *billingdomain.Bill {
 	return entity
 }
 
-func ToBillResponse(entity *billingdomain.Bill) *appresponses.BillResponse {
-	return &appresponses.BillResponse{
+func ToBillResponse(entity *billingdomain.Bill) *BillResponse {
+	return &BillResponse{
 		ID:           entity.ID,
 		Date:         shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
 		Total:        entity.Total,
@@ -24,14 +23,14 @@ func ToBillResponse(entity *billingdomain.Bill) *appresponses.BillResponse {
 	}
 }
 
-func ToManyBillResponse(entities []billingdomain.Bill) []appresponses.BillResponse {
+func ToManyBillResponse(entities []billingdomain.Bill) []BillResponse {
 	if len(entities) == 0 {
-		return make([]appresponses.BillResponse, 0)
+		return make([]BillResponse, 0)
 	}
 
-	response := make([]appresponses.BillResponse, 0, len(entities))
+	response := make([]BillResponse, 0, len(entities))
 	for _, entity := range entities {
-		response = append(response, appresponses.BillResponse{
+		response = append(response, BillResponse{
 			ID:           entity.ID,
 			Date:         shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
 			Total:        entity.Total,
@@ -50,8 +49,8 @@ func ToBillItemEntity(request *BillItemRequest, billID string) *billingdomain.Bi
 	return entity
 }
 
-func ToBillItemResponse(entity *billingdomain.BillItem) *appresponses.BillItemResponse {
-	return &appresponses.BillItemResponse{
+func ToBillItemResponse(entity *billingdomain.BillItem) *BillItemResponse {
+	return &BillItemResponse{
 		ID:     entity.ID,
 		Title:  entity.Title,
 		Value:  entity.Value,
@@ -59,10 +58,10 @@ func ToBillItemResponse(entity *billingdomain.BillItem) *appresponses.BillItemRe
 	}
 }
 
-func ToManyBillItemResponse(entities []billingdomain.BillItem) []appresponses.BillItemResponse {
-	response := make([]appresponses.BillItemResponse, 0, len(entities))
+func ToManyBillItemResponse(entities []billingdomain.BillItem) []BillItemResponse {
+	response := make([]BillItemResponse, 0, len(entities))
 	for _, entity := range entities {
-		response = append(response, appresponses.BillItemResponse{
+		response = append(response, BillItemResponse{
 			ID:     entity.ID,
 			Title:  entity.Title,
 			Value:  entity.Value,

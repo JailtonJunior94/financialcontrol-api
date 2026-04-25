@@ -3,7 +3,7 @@ package application_test
 import (
 	"testing"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	identityapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application"
 
 	"github.com/stretchr/testify/require"

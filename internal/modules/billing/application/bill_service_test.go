@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	appdtos "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos"
+	pkgpersistence "github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 	billingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/domain"
 	billingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/application"
 
@@ -65,7 +65,7 @@ func (f *fakeBillRepository) UpdateBillItem(item *billingdomain.BillItem) (*bill
 
 	return item, f.updateItemErr
 }
-func (f *fakeBillRepository) Get(_ time.Time) (*appdtos.BillQuery, error) { return nil, nil }
+func (f *fakeBillRepository) Get(_ time.Time) (*pkgpersistence.BillQuery, error) { return nil, nil }
 
 func TestCreateBillRejectsExistingReferenceMonth(t *testing.T) {
 	service := billingapp.NewBillService(&fakeBillRepository{

@@ -1,4 +1,4 @@
-package constants
+package routes
 
 const (
 	Token                  = "/token"

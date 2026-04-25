@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/jmoiron/sqlx"

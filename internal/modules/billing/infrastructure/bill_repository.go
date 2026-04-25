@@ -5,7 +5,7 @@ import (
 	"time"
 
 	billingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 )
 

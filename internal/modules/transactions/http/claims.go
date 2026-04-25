@@ -1,16 +1,16 @@
 package http
 
-import "github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/adapters"
+import platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 
 type ClaimsResolver interface {
 	UserID(authorizationHeader string) (string, error)
 }
 
 type claimsResolver struct {
-	jwtAdapter adapters.IJwtAdapter
+	jwtAdapter platformsecurity.TokenAdapter
 }
 
-func NewClaimsResolver(jwtAdapter adapters.IJwtAdapter) ClaimsResolver {
+func NewClaimsResolver(jwtAdapter platformsecurity.TokenAdapter) ClaimsResolver {
 	return &claimsResolver{jwtAdapter: jwtAdapter}
 }
 

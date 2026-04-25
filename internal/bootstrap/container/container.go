@@ -1,11 +1,6 @@
 package container
 
 import (
-	appusecase "github.com/jailtonjunior94/financialcontrol-api/internal/application/usecase"
-	platformevents "github.com/jailtonjunior94/financialcontrol-api/pkg/events"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/adapters"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
 	billingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/application"
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	billinginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/infrastructure"
@@ -21,10 +16,15 @@ import (
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
 	invoicinginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/infrastructure"
+	planningsync "github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning/sync"
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
 	transactionsinfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/infrastructure"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
+	platformevents "github.com/jailtonjunior94/financialcontrol-api/pkg/events"
 	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
+	pkguuid "github.com/jailtonjunior94/financialcontrol-api/pkg/uuid"
 )
 
 // Container holds every wired dependency for the application.
@@ -33,7 +33,7 @@ type Container struct {
 	SqlConnection         database.ISqlConnection
 	HashAdapter           platformsecurity.HashAdapter
 	JwtAdapter            platformsecurity.TokenAdapter
-	UuidAdapter           adapters.IUuidAdapter
+	UuidAdapter           pkguuid.IUuidAdapter
 	UserRepository        identityapp.UserRepository
 	TransactionRepository transactionsapp.TransactionRepository
 	BillRepository        billingapp.BillRepository
@@ -57,8 +57,8 @@ type Container struct {
 	CardController        *cardshttp.CardController
 	InvoiceController     *invoicinghttp.InvoiceController
 	CategoryController    *cataloghttp.CategoryController
-	UpdateUseCase         *appusecase.UpdateTransactionUseCase
-	UpdateTransactionBill *appusecase.UpdateTransactionBill
+	UpdateUseCase         *planningsync.UpdateTransactionUseCase
+	UpdateTransactionBill *planningsync.UpdateTransactionBill
 }
 
 // invoicingCardRepositoryAdapter adapts the cards repository to the invoicing
@@ -81,7 +81,7 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 		SqlConnection: sqlConnection,
 		HashAdapter:   platformsecurity.NewHashAdapter(),
 		JwtAdapter:    platformsecurity.NewJWTAdapter(),
-		UuidAdapter:   adapters.NewUuidAdapter(),
+		UuidAdapter:   pkguuid.NewUuidAdapter(),
 	}
 
 	c.UserRepository = identityinfra.NewUserRepository(c.SqlConnection)
@@ -121,12 +121,12 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	c.InvoiceController = invoicinghttp.NewInvoiceController(c.InvoiceService, invoicinghttp.NewClaimsResolver(c.JwtAdapter))
 	c.TransactionController = transactionshttp.NewTransactionController(c.TransactionService, transactionshttp.NewClaimsResolver(c.JwtAdapter))
 
-	c.UpdateUseCase = appusecase.NewUpdateTransactionUseCase(
+	c.UpdateUseCase = planningsync.NewUpdateTransactionUseCase(
 		c.TransactionRepository,
 		c.InvoiceRepository,
 		c.TransactionService,
 	)
-	c.UpdateTransactionBill = appusecase.NewUpdateTransactionBill(
+	c.UpdateTransactionBill = planningsync.NewUpdateTransactionBill(
 		c.BillRepository,
 		c.TransactionService,
 		c.TransactionRepository,

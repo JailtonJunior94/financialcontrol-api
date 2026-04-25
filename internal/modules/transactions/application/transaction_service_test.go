@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos"
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	pkgpersistence "github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 	transactionsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/domain"
 
@@ -72,7 +72,7 @@ func (s *transactionRepositoryStub) UpdateTransactionItem(item *transactionsdoma
 	return item, s.updateItemErr
 }
 
-func (s *transactionRepositoryStub) FetchTransactionByDate(time.Time, string) (*dtos.TransactionQuery, error) {
+func (s *transactionRepositoryStub) FetchTransactionByDate(time.Time, string) (*pkgpersistence.TransactionQuery, error) {
 	return nil, nil
 }
 

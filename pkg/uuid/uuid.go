@@ -1,4 +1,4 @@
-package adapters
+package uuid
 
 import uuid "github.com/satori/go.uuid"
 

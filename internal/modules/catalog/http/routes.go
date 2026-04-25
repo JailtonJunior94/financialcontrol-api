@@ -1,16 +1,16 @@
 package http
 
 import (
-	routeconstants "github.com/jailtonjunior94/financialcontrol-api/internal/http/constants"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/http/middlewares"
+	pkgroutes "github.com/jailtonjunior94/financialcontrol-api/pkg/routes"
+	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func AddFlagRouter(router fiber.Router, controller *FlagController) {
-	router.Get(routeconstants.Flags, middlewares.Protected(), controller.Flags)
+	router.Get(pkgroutes.Flags, platformsecurity.Protected(), controller.Flags)
 }
 
 func AddCategoryRouter(router fiber.Router, controller *CategoryController) {
-	router.Get(routeconstants.Categories, middlewares.Protected(), controller.Categories)
+	router.Get(pkgroutes.Categories, platformsecurity.Protected(), controller.Categories)
 }

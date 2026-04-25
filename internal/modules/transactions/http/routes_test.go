@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
 

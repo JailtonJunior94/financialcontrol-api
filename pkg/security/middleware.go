@@ -1,7 +1,7 @@
 package security
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
 
 	"github.com/gofiber/fiber/v2"

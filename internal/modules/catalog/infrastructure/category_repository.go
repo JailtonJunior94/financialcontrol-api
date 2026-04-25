@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 )
 
 type CategoryRepository struct {

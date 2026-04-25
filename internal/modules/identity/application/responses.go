@@ -3,7 +3,7 @@ package application
 import (
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 )
 
 type AuthResponse struct {

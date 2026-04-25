@@ -1,7 +1,7 @@
-package queries
+package infrastructure
 
 const (
-	GetByEmail = `SELECT
+	getUserByEmail = `SELECT
 					CAST([Id] AS CHAR(36)) [Id],
 					[Name],
 					[Email],
@@ -13,8 +13,8 @@ const (
 					dbo.[User] (NOLOCK)
 				WHERE [Email] = @email
 				AND [Active] = 1`
-	AddUser = `INSERT INTO dbo.[User] VALUES (@id, @name, @email, @password, @createdAt, @updatedAt, @active)`
-	GetByID = `SELECT
+	addUser     = `INSERT INTO dbo.[User] VALUES (@id, @name, @email, @password, @createdAt, @updatedAt, @active)`
+	getUserByID = `SELECT
 					CAST([Id] AS CHAR(36)) [Id],
 					[Name],
 					[Email],

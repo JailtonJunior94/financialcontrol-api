@@ -1,9 +1,9 @@
 package infrastructure
 
 import (
-	"sync"
+	gosync "sync"
 
-	appusecase "github.com/jailtonjunior94/financialcontrol-api/internal/application/usecase"
+	planningsync "github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning/sync"
 )
 
 // SyncAdapter implements planning.SyncPort by orchestrating the legacy
@@ -14,14 +14,14 @@ import (
 // They live here (infrastructure) rather than in business logic because they
 // are deployment-specific identifiers, not domain rules.
 type SyncAdapter struct {
-	updateBill *appusecase.UpdateTransactionBill
-	updateTx   *appusecase.UpdateTransactionUseCase
+	updateBill *planningsync.UpdateTransactionBill
+	updateTx   *planningsync.UpdateTransactionUseCase
 	cardIDs    []string
 }
 
 func NewSyncAdapter(
-	updateBill *appusecase.UpdateTransactionBill,
-	updateTx *appusecase.UpdateTransactionUseCase,
+	updateBill *planningsync.UpdateTransactionBill,
+	updateTx *planningsync.UpdateTransactionUseCase,
 ) *SyncAdapter {
 	return &SyncAdapter{
 		updateBill: updateBill,
@@ -36,7 +36,7 @@ func NewSyncAdapter(
 }
 
 func (a *SyncAdapter) Sync() error {
-	var wg sync.WaitGroup
+	var wg gosync.WaitGroup
 	wg.Add(1 + len(a.cardIDs))
 
 	go func() { _ = a.updateBill.Execute(&wg) }()

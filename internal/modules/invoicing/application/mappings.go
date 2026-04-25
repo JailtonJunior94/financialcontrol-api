@@ -3,7 +3,6 @@ package invoicingapp
 import (
 	"time"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
 	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
 )
@@ -25,12 +24,12 @@ func ToInvoiceItemEntity(request *InvoiceRequest, invoiceID string, installment 
 	return entity
 }
 
-func ToInvoiceResponse(entity *invoicingdomain.Invoice) *appresponses.InvoiceResponse {
+func ToInvoiceResponse(entity *invoicingdomain.Invoice) *InvoiceResponse {
 	if entity == nil {
 		return nil
 	}
 
-	return &appresponses.InvoiceResponse{
+	return &InvoiceResponse{
 		ID:           entity.ID,
 		CardId:       entity.CardId,
 		Date:         shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
@@ -40,10 +39,10 @@ func ToInvoiceResponse(entity *invoicingdomain.Invoice) *appresponses.InvoiceRes
 	}
 }
 
-func ToManyInvoiceResponse(entities []invoicingdomain.Invoice) []*appresponses.InvoiceResponse {
-	response := make([]*appresponses.InvoiceResponse, len(entities))
+func ToManyInvoiceResponse(entities []invoicingdomain.Invoice) []*InvoiceResponse {
+	response := make([]*InvoiceResponse, len(entities))
 	for i, entity := range entities {
-		response[i] = &appresponses.InvoiceResponse{
+		response[i] = &InvoiceResponse{
 			ID:     entity.ID,
 			CardId: entity.CardId,
 			Date:   shared.NewTime(shared.Time{Date: entity.Date}).FormatDate(),
@@ -54,10 +53,10 @@ func ToManyInvoiceResponse(entities []invoicingdomain.Invoice) []*appresponses.I
 	return response
 }
 
-func ToManyInvoiceItemResponse(entities []invoicingdomain.InvoiceItem) []*appresponses.InvoiceItemResponse {
-	response := make([]*appresponses.InvoiceItemResponse, len(entities))
+func ToManyInvoiceItemResponse(entities []invoicingdomain.InvoiceItem) []*InvoiceItemResponse {
+	response := make([]*InvoiceItemResponse, len(entities))
 	for i, entity := range entities {
-		response[i] = &appresponses.InvoiceItemResponse{
+		response[i] = &InvoiceItemResponse{
 			ID:               entity.ID,
 			InvoiceControl:   entity.InvoiceControl,
 			PurchaseDate:     shared.NewTime(shared.Time{Date: entity.PurchaseDate}).FormatDate(),
@@ -66,7 +65,7 @@ func ToManyInvoiceItemResponse(entities []invoicingdomain.InvoiceItem) []*appres
 			Installment:      entity.Installment,
 			InstallmentValue: entity.InstallmentValue,
 			Tags:             entity.Tags,
-			Category: appresponses.CategoryResponse{
+			Category: CategoryResponse{
 				ID:     entity.Category.ID,
 				Name:   entity.Category.Name,
 				Active: entity.Category.Active,
@@ -77,8 +76,8 @@ func ToManyInvoiceItemResponse(entities []invoicingdomain.InvoiceItem) []*appres
 	return response
 }
 
-func toCardMinimalResponse(entity *invoicingdomain.Card) *appresponses.CardMinimalResponse {
-	return &appresponses.CardMinimalResponse{
+func toCardMinimalResponse(entity *invoicingdomain.Card) *CardMinimalResponse {
+	return &CardMinimalResponse{
 		ID:     entity.ID,
 		Name:   entity.Name,
 		Active: entity.Active,

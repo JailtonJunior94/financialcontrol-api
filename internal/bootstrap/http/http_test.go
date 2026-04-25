@@ -5,7 +5,7 @@ import (
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	bootstraphttp "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/http"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"

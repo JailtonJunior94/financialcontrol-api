@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos"
+	pkgpersistence "github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
 	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
 
@@ -92,10 +92,10 @@ func (f *fakeInvoiceRepository) GetInvoiceItemByInvoiceId(_, _, _ string) ([]inv
 func (f *fakeInvoiceRepository) GetInvoicesCategories(_, _ time.Time, _ string) ([]invoicingdomain.InvoiceCategories, error) {
 	return nil, nil
 }
-func (f *fakeInvoiceRepository) FetchInvoiceByCard(_ string) ([]dtos.InvoiceQuery, error) {
+func (f *fakeInvoiceRepository) FetchInvoiceByCard(_ string) ([]pkgpersistence.InvoiceQuery, error) {
 	return nil, nil
 }
-func (f *fakeInvoiceRepository) GetInvoices(_ time.Time) (*dtos.InvoiceRead, error) { return nil, nil }
+func (f *fakeInvoiceRepository) GetInvoices(_ time.Time) (*pkgpersistence.InvoiceRead, error) { return nil, nil }
 
 // flaggedInvoice returns a minimal invoice that triggers the publish path.
 func flaggedInvoice(id string) *invoicingdomain.Invoice {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	identityapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application"
 	identitydomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 

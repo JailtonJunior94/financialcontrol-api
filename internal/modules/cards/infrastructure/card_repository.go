@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 )
 
 type CardRepository struct {

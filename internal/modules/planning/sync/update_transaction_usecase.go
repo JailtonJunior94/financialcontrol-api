@@ -1,4 +1,4 @@
-package usecase
+package sync
 
 import (
 	"fmt"
