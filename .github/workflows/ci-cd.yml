@@ -17,10 +17,10 @@ jobs:
       - name: Checkout GithubActions
         uses: actions/checkout@v2
 
-      # - name: "Golang Linter"
-      #   uses: golangci/golangci-lint-action@v2
-      #   with:
-      #     version: v1.29
+      - name: "Golang Linter"
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.1
 
       - name: Build
         run: make build

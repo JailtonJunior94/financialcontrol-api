@@ -16,8 +16,9 @@ type fakeDispatcher struct {
 	dispatched []platformevents.Event
 }
 
-func (f *fakeDispatcher) Dispatch(event platformevents.Event) {
+func (f *fakeDispatcher) Dispatch(event platformevents.Event) error {
 	f.dispatched = append(f.dispatched, event)
+	return nil
 }
 
 func (f *fakeDispatcher) AddListener(_ string, _ platformevents.Listener) {}

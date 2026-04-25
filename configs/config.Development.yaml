@@ -1,6 +1,6 @@
 environment: Development
 mssql:
-  connectionString: "sqlserver://sa:@docker@2022@localhost:1433?database=FinancialControlDB"
+  connectionString: "${MSSQL_CONNECTION_STRING}"
 security:
   expirationAt: 1
-  jwtSecret: "RmluYW5jaWFsQ29udHJvbEFtYmllbnRlRGV2ZWxvcA=="
+  jwtSecret: "${JWT_SECRET}"

@@ -1,6 +1,6 @@
 environment: Staging
 mssql:
-  connectionString: "sqlserver://sa:@docker@2021@mssql?database=FinancialControlDB"
+  connectionString: "${MSSQL_CONNECTION_STRING}"
 security:
   expirationAt: 1
-  jwtSecret: "RmluYW5jaWFsQ29udHJvbEFtYmllbnRlU3RhZ2luZw=="
+  jwtSecret: "${JWT_SECRET}"

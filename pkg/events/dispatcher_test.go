@@ -1,6 +1,7 @@
 package events_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/events"
@@ -24,10 +25,11 @@ func (e *stubEvent) GetData() any   { return e.data }
 type stubListener struct {
 	data    any
 	handled int
+	err     error
 }
 
 func (l *stubListener) SetData(data any) { l.data = data }
-func (l *stubListener) Handle() error    { l.handled++; return nil }
+func (l *stubListener) Handle() error    { l.handled++; return l.err }
 
 func TestInProcessDispatcherSatisfiesEventDispatcher(t *testing.T) {
 	var d events.EventDispatcher = events.NewInProcessDispatcher()
@@ -36,11 +38,12 @@ func TestInProcessDispatcherSatisfiesEventDispatcher(t *testing.T) {
 
 func TestInProcessDispatcher_Dispatch(t *testing.T) {
 	tests := []struct {
-		name          string
-		setup         func(d *events.InProcessDispatcher) *stubListener
-		event         *stubEvent
-		wantHandled   int
-		wantData      any
+		name        string
+		setup       func(d *events.InProcessDispatcher) *stubListener
+		event       *stubEvent
+		wantHandled int
+		wantData    any
+		wantErr     bool
 	}{
 		{
 			name: "dispatches event to registered listener",
@@ -86,13 +89,30 @@ func TestInProcessDispatcher_Dispatch(t *testing.T) {
 			wantHandled: 1,
 			wantData:    "inv-42",
 		},
+		{
+			name: "listener error is propagated",
+			setup: func(d *events.InProcessDispatcher) *stubListener {
+				l := &stubListener{err: errors.New("handler failed")}
+				d.AddListener("order.created", l)
+				return l
+			},
+			event:       &stubEvent{key: "order.created", data: "order-3"},
+			wantHandled: 1,
+			wantData:    "order-3",
+			wantErr:     true,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			d := events.NewInProcessDispatcher()
 			listener := tc.setup(d)
-			d.Dispatch(tc.event)
+			err := d.Dispatch(tc.event)
+			if tc.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 			assert.Equal(t, tc.wantHandled, listener.handled)
 			assert.Equal(t, tc.wantData, listener.data)
 		})

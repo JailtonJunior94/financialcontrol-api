@@ -3,6 +3,8 @@
 // inside each module that owns them.
 package events
 
+import "fmt"
+
 // Listener is implemented by any handler that wants to receive events from
 // the dispatcher. SetData delivers the raw payload; Handle performs the action.
 type Listener interface {
@@ -20,7 +22,7 @@ type Event interface {
 // publish or subscribe to domain events. It is intentionally small so that
 // both synchronous and future asynchronous implementations can satisfy it.
 type EventDispatcher interface {
-	Dispatch(event Event)
+	Dispatch(event Event) error
 	AddListener(event string, listener Listener)
 }
 
@@ -45,13 +47,16 @@ func (d *InProcessDispatcher) AddListener(event string, listener Listener) {
 	d.listeners[event] = append(d.listeners[event], listener)
 }
 
-func (d *InProcessDispatcher) Dispatch(event Event) {
+func (d *InProcessDispatcher) Dispatch(event Event) error {
 	if d.listeners == nil {
-		return
+		return nil
 	}
 
 	for _, listener := range d.listeners[event.GetKey()] {
 		listener.SetData(event.GetData())
-		_ = listener.Handle()
+		if err := listener.Handle(); err != nil {
+			return fmt.Errorf("dispatch %s: %w", event.GetKey(), err)
+		}
 	}
+	return nil
 }

@@ -25,6 +25,5 @@ func (p *InvoiceChangedEventPublisher) PublishInvoiceChanged(_ context.Context, 
 	if payload.InvoiceID == "" {
 		return fmt.Errorf("invoice_changed publisher: InvoiceID must not be empty")
 	}
-	p.dispatcher.Dispatch(invoicingdomain.NewInvoiceChangedEvent(payload))
-	return nil
+	return p.dispatcher.Dispatch(invoicingdomain.NewInvoiceChangedEvent(payload))
 }

@@ -1,4 +1,4 @@
-.PHONY: build test vet run run_sync run_budget run_budget_cards_and_others run_budget_unified run_budget_full run_balance run_budget_category
+.PHONY: build test vet lint run run_sync run_budget run_budget_cards_and_others run_budget_unified run_budget_full run_balance run_budget_category
 
 ENTRYPOINT := ./cmd/financialcontrol-api
 BINARY := financial_control
@@ -15,6 +15,10 @@ test:
 vet:
 	@echo "Running go vet..."
 	@go vet ./...
+
+lint:
+	@echo "Running golangci-lint..."
+	@golangci-lint run ./...
 
 run:
 	@echo "Running the project..."

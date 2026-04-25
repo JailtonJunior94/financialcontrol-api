@@ -42,6 +42,9 @@ func Load() error {
 		return fmt.Errorf("read config file %q: %w", configPath, err)
 	}
 
+	_ = v.BindEnv("mssql.connectionString", "MSSQL_CONNECTION_STRING")
+	_ = v.BindEnv("security.jwtSecret", "JWT_SECRET")
+
 	Environment = v.GetString("environment")
 	SqlConnectionString = v.GetString("mssql.connectionString")
 	JwtSecret = v.GetString("security.jwtSecret")
