@@ -9,7 +9,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions"
-	platformmodules "github.com/jailtonjunior94/financialcontrol-api/internal/platform/modules"
+	platformmodules "github.com/jailtonjunior94/financialcontrol-api/pkg/modules"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"

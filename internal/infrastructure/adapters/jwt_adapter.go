@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -42,7 +42,7 @@ func (j *JwtAdapter) ExtractClaims(tokenString string) (id *string, err error) {
 	tokenString = strings.Split(tokenString, " ")[1]
 	hmacSecret := []byte(config.JwtSecret)
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		return hmacSecret, nil
 	})
 

@@ -3,10 +3,10 @@ package application
 import (
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	transactionsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
 )
 
 type DefaultTransactionService struct {
@@ -33,7 +33,7 @@ func (s *DefaultTransactionService) TransactionById(id, userID string) *HttpResp
 	}
 
 	if transaction == nil {
-		return web.NotFound(customerrors.TransactionItemNotFound)
+		return web.NotFound(transactionsdomain.TransactionItemNotFound)
 	}
 
 	items, err := s.repository.GetItemByTransactionId(id)
@@ -52,7 +52,7 @@ func (s *DefaultTransactionService) CreateTransaction(request *TransactionReques
 	}
 
 	if exists {
-		return web.BadRequest(customerrors.TransactionExists)
+		return web.BadRequest(transactionsdomain.TransactionExists)
 	}
 
 	transaction, err := s.repository.AddTransaction(ToTransactionEntity(request, userID))
@@ -70,7 +70,7 @@ func (s *DefaultTransactionService) CloneTransaction(id, userID string) *HttpRes
 	}
 
 	if transaction == nil {
-		return web.NotFound(customerrors.TransactionItemNotFound)
+		return web.NotFound(transactionsdomain.TransactionItemNotFound)
 	}
 
 	items, err := s.repository.GetItemByTransactionId(transaction.ID)
@@ -84,7 +84,7 @@ func (s *DefaultTransactionService) CloneTransaction(id, userID string) *HttpRes
 	}
 
 	if exists {
-		return web.BadRequest(customerrors.TransactionExists)
+		return web.BadRequest(transactionsdomain.TransactionExists)
 	}
 
 	clonedTransaction := transactionsdomain.NewTransactionWithValues(
@@ -114,7 +114,7 @@ func (s *DefaultTransactionService) TransactionItemById(transactionID, id string
 	}
 
 	if item == nil {
-		return web.NotFound(customerrors.TransactionItemNotFound)
+		return web.NotFound(transactionsdomain.TransactionItemNotFound)
 	}
 
 	return web.Ok(ToTransactionItemResponse(item))
@@ -140,7 +140,7 @@ func (s *DefaultTransactionService) UpdateTransactionItem(transactionID, id, use
 	}
 
 	if item == nil {
-		return web.NotFound(customerrors.TransactionItemNotFound)
+		return web.NotFound(transactionsdomain.TransactionItemNotFound)
 	}
 
 	item.UpdateTransactionItem(request.Title, request.Type, request.Value)
@@ -163,7 +163,7 @@ func (s *DefaultTransactionService) MarkAsPaidTransactionItem(transactionID, id,
 	}
 
 	if item == nil {
-		return web.NotFound(customerrors.TransactionItemNotFound)
+		return web.NotFound(transactionsdomain.TransactionItemNotFound)
 	}
 
 	item.MarkAsPaid(request.MarkAsPaid)
@@ -185,7 +185,7 @@ func (s *DefaultTransactionService) RemoveTransactionItem(transactionID, id, use
 	}
 
 	if item == nil {
-		return web.NotFound(customerrors.TransactionItemNotFound)
+		return web.NotFound(transactionsdomain.TransactionItemNotFound)
 	}
 
 	item.UpdateStatus(false)

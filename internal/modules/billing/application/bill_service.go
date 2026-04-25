@@ -1,9 +1,9 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
+	billingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type DefaultBillService struct {
@@ -30,7 +30,7 @@ func (s *DefaultBillService) BillById(id string) *HttpResponse {
 	}
 
 	if bill == nil {
-		return web.NotFound(customerrors.BillNotFound)
+		return web.NotFound(billingdomain.BillNotFound)
 	}
 
 	items, err := s.repository.GetBillItemByBillId(id)
@@ -51,7 +51,7 @@ func (s *DefaultBillService) CreateBill(request *BillRequest) *HttpResponse {
 	}
 
 	if exists != nil {
-		return web.BadRequest(customerrors.BillExists)
+		return web.BadRequest(billingdomain.BillExists)
 	}
 
 	bill, err := s.repository.AddBill(ToBillEntity(request))
@@ -69,7 +69,7 @@ func (s *DefaultBillService) BillItemById(id, billID string) *HttpResponse {
 	}
 
 	if item == nil {
-		return web.NotFound(customerrors.BillItemNotFound)
+		return web.NotFound(billingdomain.BillItemNotFound)
 	}
 
 	return web.Ok(ToBillItemResponse(item))
@@ -95,7 +95,7 @@ func (s *DefaultBillService) UpdateBillItem(billID, id string, request *BillItem
 	}
 
 	if item == nil {
-		return web.NotFound(customerrors.BillItemNotFound)
+		return web.NotFound(billingdomain.BillItemNotFound)
 	}
 
 	item.Update(request.Title, request.Value)
@@ -118,7 +118,7 @@ func (s *DefaultBillService) RemoveBillItem(billID, id string) *HttpResponse {
 	}
 
 	if item == nil {
-		return web.NotFound(customerrors.BillItemNotFound)
+		return web.NotFound(billingdomain.BillItemNotFound)
 	}
 
 	item.UpdateStatus(false)

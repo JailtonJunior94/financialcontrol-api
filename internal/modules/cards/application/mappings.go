@@ -1,9 +1,9 @@
 package application
 
-import "github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+import "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
 
-func ToCardEntity(request *CardRequest, userID string) *entities.Card {
-	return entities.NewCard(
+func ToCardEntity(request *CardRequest, userID string) *domain.Card {
+	return domain.NewCard(
 		userID,
 		request.FlagID,
 		request.Name,
@@ -14,7 +14,7 @@ func ToCardEntity(request *CardRequest, userID string) *entities.Card {
 	)
 }
 
-func ToCardResponse(card *entities.Card) *CardResponse {
+func ToCardResponse(card *domain.Card) *CardResponse {
 	return &CardResponse{
 		ID:             card.ID,
 		Name:           card.Name,
@@ -32,7 +32,7 @@ func ToCardResponse(card *entities.Card) *CardResponse {
 	}
 }
 
-func ToManyCardResponse(cards []entities.Card) []CardResponse {
+func ToManyCardResponse(cards []domain.Card) []CardResponse {
 	if len(cards) == 0 {
 		return make([]CardResponse, 0)
 	}

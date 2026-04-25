@@ -1,16 +1,16 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type FlagRepository interface {
-	GetFlags() ([]entities.Flag, error)
+	GetFlags() ([]domain.Flag, error)
 }
 
 type CategoryRepository interface {
-	GetCategories() ([]entities.Category, error)
+	GetCategories() ([]domain.Category, error)
 }
 
 type FlagService interface {

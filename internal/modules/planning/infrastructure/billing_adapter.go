@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 )
 
 // billDataSource is the minimal interface the billing adapter requires from the

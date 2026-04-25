@@ -1,7 +1,7 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	identitydomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 )
 

@@ -17,8 +17,6 @@ func TestResolveConfigPath(t *testing.T) {
 	}
 
 	for environment, expectedFile := range testCases {
-		environment := environment
-		expectedFile := expectedFile
 
 		t.Run(environment, func(t *testing.T) {
 			t.Parallel()
@@ -57,7 +55,6 @@ func TestLoadReadsEnvironmentConfigFromConfigsDirectory(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
 			resetGlobals()

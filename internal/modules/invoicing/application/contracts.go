@@ -5,38 +5,45 @@ import (
 	"mime/multipart"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type HttpResponse = web.HttpResponse
 
+// CardView carries the card fields needed by the invoicing module.
+// It is a local type to avoid cross-module domain imports.
+type CardView struct {
+	ID         string
+	ClosingDay int
+}
+
 type CardRepository interface {
-	GetCardById(id, userID string) (*entities.Card, error)
+	GetCardById(id, userID string) (*CardView, error)
 }
 
 type InvoiceRepository interface {
 	DeleteInvoiceItem(invoiceControl int64) error
-	GetInvoiceById(id string) (*entities.Invoice, error)
-	UpdateManyInvoices(invoices []*entities.Invoice) error
+	GetInvoiceById(id string) (*invoicingdomain.Invoice, error)
+	UpdateManyInvoices(invoices []*invoicingdomain.Invoice) error
 	GetLastInvoiceControl() (int64, error)
-	AddManyInvoiceItems(invoiceItems []*entities.InvoiceItem) error
-	GetInvoiceItemById(id string) (*entities.InvoiceItem, error)
-	AddInvoice(invoice *entities.Invoice) (*entities.Invoice, error)
-	UpdateInvoice(invoice *entities.Invoice) (*entities.Invoice, error)
-	GetInvoiceByCardId(userID, cardID string) ([]entities.Invoice, error)
-	AddInvoiceItem(item *entities.InvoiceItem) (*entities.InvoiceItem, error)
-	GetInvoiceItemByInvoiceControl(invoiceControl int64) ([]*entities.InvoiceItem, error)
-	GetInvoiceByDate(startDate, endDate time.Time, cardID string) (*entities.Invoice, error)
-	GetInvoiceItemByInvoiceId(invoiceID, cardID, userID string) ([]entities.InvoiceItem, error)
-	GetInvoicesCategories(startDate, endDate time.Time, cardID string) ([]entities.InvoiceCategories, error)
+	AddManyInvoiceItems(invoiceItems []*invoicingdomain.InvoiceItem) error
+	GetInvoiceItemById(id string) (*invoicingdomain.InvoiceItem, error)
+	AddInvoice(invoice *invoicingdomain.Invoice) (*invoicingdomain.Invoice, error)
+	UpdateInvoice(invoice *invoicingdomain.Invoice) (*invoicingdomain.Invoice, error)
+	GetInvoiceByCardId(userID, cardID string) ([]invoicingdomain.Invoice, error)
+	AddInvoiceItem(item *invoicingdomain.InvoiceItem) (*invoicingdomain.InvoiceItem, error)
+	GetInvoiceItemByInvoiceControl(invoiceControl int64) ([]*invoicingdomain.InvoiceItem, error)
+	GetInvoiceByDate(startDate, endDate time.Time, cardID string) (*invoicingdomain.Invoice, error)
+	GetInvoiceItemByInvoiceId(invoiceID, cardID, userID string) ([]invoicingdomain.InvoiceItem, error)
+	GetInvoicesCategories(startDate, endDate time.Time, cardID string) ([]invoicingdomain.InvoiceCategories, error)
 	FetchInvoiceByCard(cardID string) ([]persistence.InvoiceQuery, error)
 	GetInvoices(date time.Time) (*persistence.InvoiceRead, error)
 }
 
 type InvoiceChangedPublisher interface {
-	PublishInvoiceChanged(ctx context.Context, invoiceID string) error
+	PublishInvoiceChanged(ctx context.Context, payload invoicingdomain.InvoiceChangedPayload) error
 }
 
 type InvoiceService interface {

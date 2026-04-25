@@ -6,29 +6,29 @@ import (
 	"time"
 
 	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
 	cardsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application"
+	cardsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
 
 	"github.com/stretchr/testify/require"
 )
 
 type cardRepositoryStub struct {
-	cards       []entities.Card
-	cardByID    *entities.Card
-	addedCard   *entities.Card
-	updatedCard *entities.Card
+	cards       []cardsdomain.Card
+	cardByID    *cardsdomain.Card
+	addedCard   *cardsdomain.Card
+	updatedCard *cardsdomain.Card
 	err         error
 }
 
-func (s *cardRepositoryStub) GetCards(userID string) ([]entities.Card, error) {
+func (s *cardRepositoryStub) GetCards(userID string) ([]cardsdomain.Card, error) {
 	return s.cards, s.err
 }
 
-func (s *cardRepositoryStub) GetCardById(id, userID string) (*entities.Card, error) {
+func (s *cardRepositoryStub) GetCardById(id, userID string) (*cardsdomain.Card, error) {
 	return s.cardByID, s.err
 }
 
-func (s *cardRepositoryStub) AddCard(card *entities.Card) (*entities.Card, error) {
+func (s *cardRepositoryStub) AddCard(card *cardsdomain.Card) (*cardsdomain.Card, error) {
 	s.addedCard = card
 	if s.err != nil {
 		return nil, s.err
@@ -37,7 +37,7 @@ func (s *cardRepositoryStub) AddCard(card *entities.Card) (*entities.Card, error
 	return card, nil
 }
 
-func (s *cardRepositoryStub) UpdateCard(card *entities.Card) (*entities.Card, error) {
+func (s *cardRepositoryStub) UpdateCard(card *cardsdomain.Card) (*cardsdomain.Card, error) {
 	s.updatedCard = card
 	if s.err != nil {
 		return nil, s.err
@@ -71,8 +71,8 @@ func TestCardByIdReturnsNotFoundWhenRepositoryReturnsNil(t *testing.T) {
 
 func TestRemoveCardMarksEntityAsInactive(t *testing.T) {
 	repository := &cardRepositoryStub{
-		cardByID: &entities.Card{
-			Entity: entities.Entity{ID: "card-id", Active: true},
+		cardByID: &cardsdomain.Card{
+			Entity: cardsdomain.Entity{ID: "card-id", Active: true},
 			Name:   "Cartao XP",
 		},
 	}

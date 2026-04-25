@@ -1,8 +1,8 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
+	identitydomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type DefaultAuthService struct {
@@ -26,11 +26,11 @@ func (a *DefaultAuthService) Authenticate(request *AuthRequest) *web.HttpRespons
 	}
 
 	if user == nil {
-		return web.BadRequest(customerrors.InvalidUserOrPassword)
+		return web.BadRequest(identitydomain.InvalidUserOrPassword)
 	}
 
 	if isValid := a.hashAdapter.CheckHash(user.Password, request.Password); !isValid {
-		return web.BadRequest(customerrors.InvalidUserOrPassword)
+		return web.BadRequest(identitydomain.InvalidUserOrPassword)
 	}
 
 	token, err := a.tokenAdapter.GenerateTokenJWT(user.ID, user.Email)
@@ -48,7 +48,7 @@ func (a *DefaultAuthService) Me(userID string) *web.HttpResponse {
 	}
 
 	if user == nil {
-		return web.BadRequest(customerrors.InvalidUserOrPassword)
+		return web.BadRequest(identitydomain.InvalidUserOrPassword)
 	}
 
 	return web.Ok(ToUserResponse(user))

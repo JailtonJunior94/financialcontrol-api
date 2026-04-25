@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules"
-	platformmodules "github.com/jailtonjunior94/financialcontrol-api/internal/platform/modules"
+	platformmodules "github.com/jailtonjunior94/financialcontrol-api/pkg/modules"
 	"github.com/spf13/cobra"
 )
 

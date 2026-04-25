@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 )
 
 // invoiceDataSource is the minimal interface the invoicing adapter requires.

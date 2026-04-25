@@ -1,8 +1,8 @@
 package application
 
-import "github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+import "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/domain"
 
-func ToManyFlagResponse(items []entities.Flag) []FlagResponse {
+func ToManyFlagResponse(items []domain.Flag) []FlagResponse {
 	if len(items) == 0 {
 		return make([]FlagResponse, 0)
 	}
@@ -19,7 +19,7 @@ func ToManyFlagResponse(items []entities.Flag) []FlagResponse {
 	return result
 }
 
-func ToManyCategoryResponse(items []entities.Category) []CategoryResponse {
+func ToManyCategoryResponse(items []domain.Category) []CategoryResponse {
 	if len(items) == 0 {
 		return make([]CategoryResponse, 0)
 	}

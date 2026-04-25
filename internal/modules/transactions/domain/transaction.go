@@ -3,8 +3,7 @@ package domain
 import (
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/constants"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
 )
 
 type Transaction struct {
@@ -57,7 +56,7 @@ func (t *Transaction) GetTotal() float64 {
 func (t *Transaction) SumIncomes() float64 {
 	var income float64
 	for _, item := range t.TransactionItems {
-		if item.Type != constants.Income {
+		if item.Type != Income {
 			continue
 		}
 
@@ -75,7 +74,7 @@ func (t *Transaction) AddIncome(income float64) float64 {
 func (t *Transaction) SumOutcome() float64 {
 	var outcome float64
 	for _, item := range t.TransactionItems {
-		if item.Type != constants.Outcome {
+		if item.Type != Outcome {
 			continue
 		}
 

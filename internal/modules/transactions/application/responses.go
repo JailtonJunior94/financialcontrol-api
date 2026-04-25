@@ -3,7 +3,7 @@ package application
 import (
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type HttpResponse = web.HttpResponse

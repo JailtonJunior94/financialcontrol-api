@@ -1,8 +1,8 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type DefaultCardService struct {
@@ -29,7 +29,7 @@ func (s *DefaultCardService) CardById(id, userID string) *web.HttpResponse {
 	}
 
 	if card == nil {
-		return web.NotFound(customerrors.CardNotFound)
+		return web.NotFound(domain.CardNotFound)
 	}
 
 	return web.Ok(ToCardResponse(card))
@@ -51,7 +51,7 @@ func (s *DefaultCardService) UpdateCard(id, userID string, request *CardRequest)
 	}
 
 	if card == nil {
-		return web.NotFound(customerrors.CardNotFound)
+		return web.NotFound(domain.CardNotFound)
 	}
 
 	card.Update(request.FlagID, request.Name, request.Description, request.Number, request.ClosingDay, request.ExpirationDate)
@@ -69,7 +69,7 @@ func (s *DefaultCardService) RemoveCard(id, userID string) *web.HttpResponse {
 	}
 
 	if card == nil {
-		return web.NotFound(customerrors.CardNotFound)
+		return web.NotFound(domain.CardNotFound)
 	}
 
 	card.UpdateStatus(false)

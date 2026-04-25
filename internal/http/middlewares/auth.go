@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/internal/platform/security"
+	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 
 	"github.com/gofiber/fiber/v2"
 )

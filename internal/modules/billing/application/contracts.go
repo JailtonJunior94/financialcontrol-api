@@ -3,23 +3,23 @@ package application
 import (
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+	billingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type HttpResponse = web.HttpResponse
 
 type BillRepository interface {
-	GetBills() ([]entities.Bill, error)
-	GetBillById(id string) (*entities.Bill, error)
-	GetBillByDate(startDate, endDate time.Time) (*entities.Bill, error)
-	AddBill(bill *entities.Bill) (*entities.Bill, error)
-	UpdateBill(bill *entities.Bill) (*entities.Bill, error)
-	GetBillItemByBillId(billID string) ([]entities.BillItem, error)
-	GetBillItemById(id, billID string) (*entities.BillItem, error)
-	AddBillItem(item *entities.BillItem) (*entities.BillItem, error)
-	UpdateBillItem(item *entities.BillItem) (*entities.BillItem, error)
+	GetBills() ([]billingdomain.Bill, error)
+	GetBillById(id string) (*billingdomain.Bill, error)
+	GetBillByDate(startDate, endDate time.Time) (*billingdomain.Bill, error)
+	AddBill(bill *billingdomain.Bill) (*billingdomain.Bill, error)
+	UpdateBill(bill *billingdomain.Bill) (*billingdomain.Bill, error)
+	GetBillItemByBillId(billID string) ([]billingdomain.BillItem, error)
+	GetBillItemById(id, billID string) (*billingdomain.BillItem, error)
+	AddBillItem(item *billingdomain.BillItem) (*billingdomain.BillItem, error)
+	UpdateBillItem(item *billingdomain.BillItem) (*billingdomain.BillItem, error)
 	Get(date time.Time) (*persistence.BillQuery, error)
 }
 

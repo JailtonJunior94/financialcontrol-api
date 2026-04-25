@@ -48,12 +48,15 @@ var moduleDirs = []string{
 	"internal/modules/planning",
 }
 
-// crossModuleRestricted are import paths that should not appear in modular
-// packages once the capability is fully migrated.
+// crossModuleRestricted are import paths that must not appear in modular
+// packages. All 7 modules are covered following the completed migration.
 var crossModuleRestricted = map[string][]string{
-	"transactions": {"internal/infrastructure/repositories"},
+	"identity":     {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"catalog":      {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"cards":        {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"billing":      {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"transactions": {"internal/infrastructure/repositories", "internal/application/handlers"},
 	"invoicing":    {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"billing":      {"internal/infrastructure/repositories"},
 	"planning":     {"internal/infrastructure/repositories", "internal/application/handlers"},
 }
 
@@ -124,11 +127,11 @@ func TestRefactorProgress_ModuleRoutesRegisteredFromModules(t *testing.T) {
 	}
 	repoRoot := filepath.Join(filepath.Dir(currentFile), "..", "..")
 
-	// Verify that the platform/http adapter delegates route registration to
+	// Verify that the pkg/http adapter delegates route registration to
 	// modules rather than importing route files from internal/http/routes.
-	// The bootstrap/http layer delegates to platform/http, which is the actual
+	// The bootstrap/http layer delegates to pkg/http, which is the actual
 	// composition point for module-level route registration.
-	platformHTTP := filepath.Join(repoRoot, "internal", "platform", "http", "router.go")
+	platformHTTP := filepath.Join(repoRoot, "pkg", "http", "router.go")
 	imports := parseFileImports(t, platformHTTP)
 
 	usesModuleRegistry := false
@@ -185,7 +188,7 @@ func TestRefactorProgress_LegacyEquivalentArtifactsRemoved(t *testing.T) {
 		},
 		{
 			name:        "modular platform router preserved",
-			relative:    "internal/platform/http/router.go",
+			relative:    "pkg/http/router.go",
 			shouldExist: true,
 		},
 		{

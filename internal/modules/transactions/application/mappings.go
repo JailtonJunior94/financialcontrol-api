@@ -2,7 +2,7 @@ package application
 
 import (
 	transactionsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
 )
 
 func ToTransactionEntity(request *TransactionRequest, userID string) *transactionsdomain.Transaction {

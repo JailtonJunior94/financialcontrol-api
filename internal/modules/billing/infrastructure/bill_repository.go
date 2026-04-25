@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+	billingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 )
 
 type BillRepository struct {
@@ -17,8 +17,8 @@ func NewBillRepository(db database.ISqlConnection) *BillRepository {
 	return &BillRepository{db: db}
 }
 
-func (r *BillRepository) GetBills() ([]entities.Bill, error) {
-	var bills []entities.Bill
+func (r *BillRepository) GetBills() ([]billingdomain.Bill, error) {
+	var bills []billingdomain.Bill
 	if err := r.db.Connect().Select(&bills, getBills); err != nil {
 		return nil, err
 	}
@@ -26,10 +26,10 @@ func (r *BillRepository) GetBills() ([]entities.Bill, error) {
 	return bills, nil
 }
 
-func (r *BillRepository) GetBillById(id string) (*entities.Bill, error) {
+func (r *BillRepository) GetBillById(id string) (*billingdomain.Bill, error) {
 	row := r.db.Connect().QueryRow(getBillByID, sql.Named("id", id))
 
-	bill := new(entities.Bill)
+	bill := new(billingdomain.Bill)
 	err := row.Scan(&bill.ID, &bill.Date, &bill.Total, &bill.SixtyPercent, &bill.FortyPercent, &bill.CreatedAt, &bill.UpdatedAt, &bill.Active)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -41,10 +41,10 @@ func (r *BillRepository) GetBillById(id string) (*entities.Bill, error) {
 	return bill, nil
 }
 
-func (r *BillRepository) GetBillByDate(startDate, endDate time.Time) (*entities.Bill, error) {
+func (r *BillRepository) GetBillByDate(startDate, endDate time.Time) (*billingdomain.Bill, error) {
 	row := r.db.Connect().QueryRow(getBillByDate, sql.Named("startDate", startDate), sql.Named("endDate", endDate))
 
-	bill := new(entities.Bill)
+	bill := new(billingdomain.Bill)
 	err := row.Scan(&bill.ID, &bill.Date, &bill.Total, &bill.SixtyPercent, &bill.FortyPercent, &bill.CreatedAt, &bill.UpdatedAt, &bill.Active)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -56,7 +56,7 @@ func (r *BillRepository) GetBillByDate(startDate, endDate time.Time) (*entities.
 	return bill, nil
 }
 
-func (r *BillRepository) AddBill(bill *entities.Bill) (*entities.Bill, error) {
+func (r *BillRepository) AddBill(bill *billingdomain.Bill) (*billingdomain.Bill, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(addBill)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (r *BillRepository) AddBill(bill *entities.Bill) (*entities.Bill, error) {
 	return bill, nil
 }
 
-func (r *BillRepository) UpdateBill(bill *entities.Bill) (*entities.Bill, error) {
+func (r *BillRepository) UpdateBill(bill *billingdomain.Bill) (*billingdomain.Bill, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(updateBill)
 	if err != nil {
 		return nil, err
@@ -105,8 +105,8 @@ func (r *BillRepository) UpdateBill(bill *entities.Bill) (*entities.Bill, error)
 	return bill, nil
 }
 
-func (r *BillRepository) GetBillItemByBillId(billID string) ([]entities.BillItem, error) {
-	var items []entities.BillItem
+func (r *BillRepository) GetBillItemByBillId(billID string) ([]billingdomain.BillItem, error) {
+	var items []billingdomain.BillItem
 	if err := r.db.Connect().Select(&items, getBillItemByBillID, sql.Named("billId", billID)); err != nil {
 		return nil, err
 	}
@@ -114,10 +114,10 @@ func (r *BillRepository) GetBillItemByBillId(billID string) ([]entities.BillItem
 	return items, nil
 }
 
-func (r *BillRepository) GetBillItemById(id, billID string) (*entities.BillItem, error) {
+func (r *BillRepository) GetBillItemById(id, billID string) (*billingdomain.BillItem, error) {
 	row := r.db.Connect().QueryRow(getBillItemByID, sql.Named("id", id), sql.Named("billId", billID))
 
-	item := new(entities.BillItem)
+	item := new(billingdomain.BillItem)
 	err := row.Scan(&item.ID, &item.BillId, &item.Title, &item.Value, &item.CreatedAt, &item.UpdatedAt, &item.Active)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -129,7 +129,7 @@ func (r *BillRepository) GetBillItemById(id, billID string) (*entities.BillItem,
 	return item, nil
 }
 
-func (r *BillRepository) AddBillItem(item *entities.BillItem) (*entities.BillItem, error) {
+func (r *BillRepository) AddBillItem(item *billingdomain.BillItem) (*billingdomain.BillItem, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(addBillItem)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (r *BillRepository) AddBillItem(item *entities.BillItem) (*entities.BillIte
 	return item, nil
 }
 
-func (r *BillRepository) UpdateBillItem(item *entities.BillItem) (*entities.BillItem, error) {
+func (r *BillRepository) UpdateBillItem(item *billingdomain.BillItem) (*billingdomain.BillItem, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(updateBillItem)
 	if err != nil {
 		return nil, err

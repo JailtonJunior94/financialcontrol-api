@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning"
 
 	"github.com/JailtonJunior94/devkit-go/pkg/linq"
@@ -466,20 +465,20 @@ func mustPercentage(v float64) vos.Percentage {
 // newDefaultBudget creates a Budget with the default goals and item map for
 // fast lookup. Returns both the Budget (for ordered iteration) and the item
 // map (for category lookup by name).
-func newDefaultBudget(date time.Time) (*entities.Budget, map[string]*entities.BudgetItem) {
-	budget := entities.NewBudget(date, mustMoneyBRL(13_874.40))
+func newDefaultBudget(date time.Time) (*Budget, map[string]*BudgetItem) {
+	budget := newBudget(date, mustMoneyBRL(13_874.40))
 
-	custoFixos := entities.NewBudgetItem(budget, "Custos fixos", mustPercentage(40.0))
-	conforto := entities.NewBudgetItem(budget, "Conforto", mustPercentage(10.0))
-	metas := entities.NewBudgetItem(budget, "Metas", mustPercentage(15.0))
-	prazeres := entities.NewBudgetItem(budget, "Prazeres", mustPercentage(10.0))
-	conhecimento := entities.NewBudgetItem(budget, "Conhecimento", mustPercentage(5.0))
-	liberdade := entities.NewBudgetItem(budget, "Liberdade Financeira", mustPercentage(20.0))
+	custoFixos := newBudgetItem(budget, "Custos fixos", mustPercentage(40.0))
+	conforto := newBudgetItem(budget, "Conforto", mustPercentage(10.0))
+	metas := newBudgetItem(budget, "Metas", mustPercentage(15.0))
+	prazeres := newBudgetItem(budget, "Prazeres", mustPercentage(10.0))
+	conhecimento := newBudgetItem(budget, "Conhecimento", mustPercentage(5.0))
+	liberdade := newBudgetItem(budget, "Liberdade Financeira", mustPercentage(20.0))
 	liberdade.AddAmountUsed(mustMoneyBRL(2_774.88))
 
-	budget.AddItems([]*entities.BudgetItem{custoFixos, conforto, metas, prazeres, conhecimento, liberdade})
+	budget.addItems([]*BudgetItem{custoFixos, conforto, metas, prazeres, conhecimento, liberdade})
 
-	items := map[string]*entities.BudgetItem{
+	items := map[string]*BudgetItem{
 		"Custos fixos":         custoFixos,
 		"Conforto":             conforto,
 		"Metas":                metas,
@@ -490,7 +489,7 @@ func newDefaultBudget(date time.Time) (*entities.Budget, map[string]*entities.Bu
 	return budget, items
 }
 
-func applyBillsToBudget(bills *planning.MonthlyBillsReadModel, items map[string]*entities.BudgetItem) {
+func applyBillsToBudget(bills *planning.MonthlyBillsReadModel, items map[string]*BudgetItem) {
 	if bills == nil {
 		return
 	}
@@ -504,7 +503,7 @@ func applyBillsToBudget(bills *planning.MonthlyBillsReadModel, items map[string]
 	}
 }
 
-func applyInvoicesToBudget(invoices *planning.MonthlyInvoicesReadModel, items map[string]*entities.BudgetItem) {
+func applyInvoicesToBudget(invoices *planning.MonthlyInvoicesReadModel, items map[string]*BudgetItem) {
 	if invoices == nil {
 		return
 	}

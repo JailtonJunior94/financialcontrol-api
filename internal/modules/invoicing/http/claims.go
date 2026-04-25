@@ -1,6 +1,6 @@
 package http
 
-import platformsecurity "github.com/jailtonjunior94/financialcontrol-api/internal/platform/security"
+import platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 
 type ClaimsResolver interface {
 	UserID(authorizationHeader string) (string, error)

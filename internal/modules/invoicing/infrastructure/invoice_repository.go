@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 )
 
 type InvoiceRepository struct {
@@ -19,7 +19,7 @@ func NewInvoiceRepository(db database.ISqlConnection) *InvoiceRepository {
 	return &InvoiceRepository{db: db}
 }
 
-func (r *InvoiceRepository) GetInvoiceByCardId(userID, cardID string) ([]entities.Invoice, error) {
+func (r *InvoiceRepository) GetInvoiceByCardId(userID, cardID string) ([]invoicingdomain.Invoice, error) {
 	connection := r.db.Connect()
 	rows, err := connection.Query(getInvoiceByCardID, sql.Named("userId", userID), sql.Named("cardId", cardID))
 	if err != nil {
@@ -29,9 +29,9 @@ func (r *InvoiceRepository) GetInvoiceByCardId(userID, cardID string) ([]entitie
 		_ = rows.Close()
 	}()
 
-	invoices := make([]entities.Invoice, 0)
+	invoices := make([]invoicingdomain.Invoice, 0)
 	for rows.Next() {
-		var invoice entities.Invoice
+		var invoice invoicingdomain.Invoice
 		if err := rows.Scan(&invoice.ID, &invoice.CardId, &invoice.Date, &invoice.Total, &invoice.CreatedAt, &invoice.UpdatedAt, &invoice.Active); err != nil {
 			return nil, err
 		}
@@ -42,10 +42,10 @@ func (r *InvoiceRepository) GetInvoiceByCardId(userID, cardID string) ([]entitie
 	return invoices, nil
 }
 
-func (r *InvoiceRepository) GetInvoiceByDate(startDate, endDate time.Time, cardID string) (*entities.Invoice, error) {
+func (r *InvoiceRepository) GetInvoiceByDate(startDate, endDate time.Time, cardID string) (*invoicingdomain.Invoice, error) {
 	row := r.db.Connect().QueryRow(getInvoiceByDate, sql.Named("startDate", startDate), sql.Named("endDate", endDate), sql.Named("cardId", cardID))
 
-	invoice := new(entities.Invoice)
+	invoice := new(invoicingdomain.Invoice)
 	err := row.Scan(&invoice.ID, &invoice.CardId, &invoice.Date, &invoice.Total, &invoice.CreatedAt, &invoice.UpdatedAt, &invoice.Active)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -57,7 +57,7 @@ func (r *InvoiceRepository) GetInvoiceByDate(startDate, endDate time.Time, cardI
 	return invoice, nil
 }
 
-func (r *InvoiceRepository) AddInvoice(invoice *entities.Invoice) (*entities.Invoice, error) {
+func (r *InvoiceRepository) AddInvoice(invoice *invoicingdomain.Invoice) (*invoicingdomain.Invoice, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(addInvoice)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (r *InvoiceRepository) AddInvoice(invoice *entities.Invoice) (*entities.Inv
 	return invoice, nil
 }
 
-func (r *InvoiceRepository) UpdateInvoice(invoice *entities.Invoice) (*entities.Invoice, error) {
+func (r *InvoiceRepository) UpdateInvoice(invoice *invoicingdomain.Invoice) (*invoicingdomain.Invoice, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(updateInvoice)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (r *InvoiceRepository) UpdateInvoice(invoice *entities.Invoice) (*entities.
 	return invoice, nil
 }
 
-func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceID, cardID, userID string) ([]entities.InvoiceItem, error) {
+func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceID, cardID, userID string) ([]invoicingdomain.InvoiceItem, error) {
 	rows, err := r.db.Connect().Query(getInvoiceItemsByInvoiceID, sql.Named("invoiceId", invoiceID), sql.Named("cardId", cardID), sql.Named("userId", userID))
 	if err != nil {
 		return nil, err
@@ -108,9 +108,9 @@ func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceID, cardID, userID 
 		_ = rows.Close()
 	}()
 
-	items := make([]entities.InvoiceItem, 0)
+	items := make([]invoicingdomain.InvoiceItem, 0)
 	for rows.Next() {
-		var item entities.InvoiceItem
+		var item invoicingdomain.InvoiceItem
 		if err := rows.Scan(
 			&item.ID,
 			&item.InvoiceId,
@@ -138,10 +138,10 @@ func (r *InvoiceRepository) GetInvoiceItemByInvoiceId(invoiceID, cardID, userID 
 	return items, nil
 }
 
-func (r *InvoiceRepository) GetInvoiceItemById(id string) (*entities.InvoiceItem, error) {
+func (r *InvoiceRepository) GetInvoiceItemById(id string) (*invoicingdomain.InvoiceItem, error) {
 	row := r.db.Connect().QueryRow(getInvoiceItemByID, sql.Named("id", id))
 
-	item := new(entities.InvoiceItem)
+	item := new(invoicingdomain.InvoiceItem)
 	err := row.Scan(
 		&item.ID,
 		&item.InvoiceId,
@@ -167,7 +167,7 @@ func (r *InvoiceRepository) GetInvoiceItemById(id string) (*entities.InvoiceItem
 	return item, nil
 }
 
-func (r *InvoiceRepository) AddInvoiceItem(item *entities.InvoiceItem) (*entities.InvoiceItem, error) {
+func (r *InvoiceRepository) AddInvoiceItem(item *invoicingdomain.InvoiceItem) (*invoicingdomain.InvoiceItem, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(addInvoiceItem)
 	if err != nil {
 		return nil, err
@@ -226,8 +226,8 @@ func (r *InvoiceRepository) GetLastInvoiceControl() (int64, error) {
 	return control, nil
 }
 
-func (r *InvoiceRepository) GetInvoicesCategories(startDate, endDate time.Time, cardID string) ([]entities.InvoiceCategories, error) {
-	var categories []entities.InvoiceCategories
+func (r *InvoiceRepository) GetInvoicesCategories(startDate, endDate time.Time, cardID string) ([]invoicingdomain.InvoiceCategories, error) {
+	var categories []invoicingdomain.InvoiceCategories
 	if err := r.db.Connect().Select(&categories, getInvoicesCategories, sql.Named("startDate", startDate), sql.Named("endDate", endDate), sql.Named("cardId", cardID)); err != nil {
 		return nil, err
 	}
@@ -235,9 +235,9 @@ func (r *InvoiceRepository) GetInvoicesCategories(startDate, endDate time.Time, 
 	return categories, nil
 }
 
-func (r *InvoiceRepository) AddManyInvoiceItems(items []*entities.InvoiceItem) error {
+func (r *InvoiceRepository) AddManyInvoiceItems(items []*invoicingdomain.InvoiceItem) error {
 	query := make([]string, 0, len(items))
-	params := make([]interface{}, 0, len(items)*13)
+	params := make([]any, 0, len(items)*13)
 
 	for i, item := range items {
 		query = append(query, fmt.Sprintf(`INSERT INTO dbo.[InvoiceItem] VALUES (@id%d, @invoiceId%d, @categoryId%d, @purchaseDate%d, @description%d, @totalAmount%d, @installment%d, @installmentValue%d, @tags%d, @createdAt%d, @updatedAt%d, @active%d, @invoiceControl%d)`, i, i, i, i, i, i, i, i, i, i, i, i, i))
@@ -270,10 +270,10 @@ func (r *InvoiceRepository) AddManyInvoiceItems(items []*entities.InvoiceItem) e
 	return r.db.ValidateResult(result, err)
 }
 
-func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error) {
-	var invoice entities.Invoice
-	var invoiceItem entities.InvoiceItem
-	itemMap := make(map[string][]entities.InvoiceItem)
+func (r *InvoiceRepository) GetInvoiceById(id string) (*invoicingdomain.Invoice, error) {
+	var invoice invoicingdomain.Invoice
+	var invoiceItem invoicingdomain.InvoiceItem
+	itemMap := make(map[string][]invoicingdomain.InvoiceItem)
 
 	rows, err := r.db.Connect().Queryx(getInvoiceByID, sql.Named("id", id))
 	if err != nil {
@@ -316,7 +316,7 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 			return nil, err
 		}
 
-		item := entities.InvoiceItem{
+		item := invoicingdomain.InvoiceItem{
 			InvoiceId:        invoiceItem.InvoiceId,
 			CategoryId:       invoiceItem.CategoryId,
 			Description:      invoiceItem.Description,
@@ -326,15 +326,15 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 			Installment:      invoiceItem.Installment,
 			InstallmentValue: invoiceItem.InstallmentValue,
 			InvoiceControl:   invoiceItem.InvoiceControl,
-			Entity: entities.Entity{
+			Entity: invoicingdomain.Entity{
 				ID:        invoiceItem.ID,
 				CreatedAt: invoiceItem.CreatedAt,
 				UpdatedAt: invoiceItem.UpdatedAt,
 				Active:    invoiceItem.Active,
 			},
-			Category: entities.Category{
+			Category: invoicingdomain.Category{
 				Name: invoiceItem.Category.Name,
-				Entity: entities.Entity{
+				Entity: invoicingdomain.Entity{
 					ID:     invoiceItem.Category.ID,
 					Active: invoiceItem.Category.Active,
 				},
@@ -348,12 +348,12 @@ func (r *InvoiceRepository) GetInvoiceById(id string) (*entities.Invoice, error)
 	return &invoice, nil
 }
 
-func (r *InvoiceRepository) UpdateManyInvoices(_ []*entities.Invoice) error {
+func (r *InvoiceRepository) UpdateManyInvoices(_ []*invoicingdomain.Invoice) error {
 	return nil
 }
 
-func (r *InvoiceRepository) GetInvoiceItemByInvoiceControl(invoiceControl int64) ([]*entities.InvoiceItem, error) {
-	var items []*entities.InvoiceItem
+func (r *InvoiceRepository) GetInvoiceItemByInvoiceControl(invoiceControl int64) ([]*invoicingdomain.InvoiceItem, error) {
+	var items []*invoicingdomain.InvoiceItem
 	if err := r.db.Connect().Select(&items, getInvoiceItemsByControl, sql.Named("invoiceControl", invoiceControl)); err != nil {
 		return nil, err
 	}

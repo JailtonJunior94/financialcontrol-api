@@ -1,15 +1,15 @@
 package application
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type CardRepository interface {
-	GetCards(userID string) ([]entities.Card, error)
-	GetCardById(id, userID string) (*entities.Card, error)
-	AddCard(card *entities.Card) (*entities.Card, error)
-	UpdateCard(card *entities.Card) (*entities.Card, error)
+	GetCards(userID string) ([]domain.Card, error)
+	GetCardById(id, userID string) (*domain.Card, error)
+	AddCard(card *domain.Card) (*domain.Card, error)
+	UpdateCard(card *domain.Card) (*domain.Card, error)
 }
 
 type CardService interface {

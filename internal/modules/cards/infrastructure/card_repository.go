@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"database/sql"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
 )
 
@@ -15,7 +15,7 @@ func NewCardRepository(db database.ISqlConnection) *CardRepository {
 	return &CardRepository{db: db}
 }
 
-func (r *CardRepository) GetCards(userID string) ([]entities.Card, error) {
+func (r *CardRepository) GetCards(userID string) ([]domain.Card, error) {
 	connection := r.db.Connect()
 	rows, err := connection.Query(getCards, sql.Named("userId", userID))
 	if err != nil {
@@ -25,9 +25,9 @@ func (r *CardRepository) GetCards(userID string) ([]entities.Card, error) {
 		_ = rows.Close()
 	}()
 
-	cards := make([]entities.Card, 0)
+	cards := make([]domain.Card, 0)
 	for rows.Next() {
-		var card entities.Card
+		var card domain.Card
 		if err := rows.Scan(
 			&card.ID,
 			&card.UserId,
@@ -53,11 +53,11 @@ func (r *CardRepository) GetCards(userID string) ([]entities.Card, error) {
 	return cards, nil
 }
 
-func (r *CardRepository) GetCardById(id, userID string) (*entities.Card, error) {
+func (r *CardRepository) GetCardById(id, userID string) (*domain.Card, error) {
 	connection := r.db.Connect()
 	row := connection.QueryRow(getCardByID, sql.Named("id", id), sql.Named("userId", userID))
 
-	card := new(entities.Card)
+	card := new(domain.Card)
 	err := row.Scan(
 		&card.ID,
 		&card.UserId,
@@ -84,7 +84,7 @@ func (r *CardRepository) GetCardById(id, userID string) (*entities.Card, error) 
 	return card, nil
 }
 
-func (r *CardRepository) AddCard(card *entities.Card) (*entities.Card, error) {
+func (r *CardRepository) AddCard(card *domain.Card) (*domain.Card, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(addCard)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (r *CardRepository) AddCard(card *entities.Card) (*entities.Card, error) {
 	return card, nil
 }
 
-func (r *CardRepository) UpdateCard(card *entities.Card) (*entities.Card, error) {
+func (r *CardRepository) UpdateCard(card *domain.Card) (*domain.Card, error) {
 	statement, err := r.db.OpenConnectionAndMountStatement(updateCard)
 	if err != nil {
 		return nil, err

@@ -3,8 +3,9 @@ package invoicingapp_test
 import (
 	"errors"
 	"testing"
+	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
 
 	"github.com/stretchr/testify/assert"
@@ -12,24 +13,30 @@ import (
 )
 
 func TestListenerAdapterSetDataAndHandleCallsHandler(t *testing.T) {
-	inv := newFlaggedInvoice()
-	repo := &fakeInvoiceRepo{invoice: inv}
 	sync := &fakeSyncPort{}
-	handler := invoicingapp.NewInvoiceChangedHandler(repo, sync)
+	handler := invoicingapp.NewInvoiceChangedHandler(sync)
 	adapter := invoicingapp.NewInvoiceChangedListenerAdapter(handler)
 
-	adapter.SetData("inv-adapter-1")
+	payload := invoicingdomain.InvoiceChangedPayload{
+		InvoiceID:       "inv-adapter-1",
+		CardDescription: "Visa",
+		UserID:          "user-1",
+		ReferenceDate:   time.Now(),
+		Total:           50.0,
+	}
+
+	adapter.SetData(payload)
 	err := adapter.Handle()
 
 	require.NoError(t, err)
-	assert.True(t, repo.updated)
+	assert.True(t, sync.called)
 }
 
-func TestListenerAdapterHandleIgnoresNonStringData(t *testing.T) {
-	handler := invoicingapp.NewInvoiceChangedHandler(&fakeInvoiceRepo{}, &fakeSyncPort{})
+func TestListenerAdapterHandleIgnoresUnexpectedDataType(t *testing.T) {
+	handler := invoicingapp.NewInvoiceChangedHandler(&fakeSyncPort{})
 	adapter := invoicingapp.NewInvoiceChangedListenerAdapter(handler)
 
-	adapter.SetData(12345) // wrong type
+	adapter.SetData(12345) // wrong type — must be InvoiceChangedPayload
 	err := adapter.Handle()
 
 	// Should return nil (logged and skipped) rather than panicking.
@@ -37,19 +44,17 @@ func TestListenerAdapterHandleIgnoresNonStringData(t *testing.T) {
 }
 
 func TestListenerAdapterPropagatesHandlerError(t *testing.T) {
-	repo := &fakeInvoiceRepo{getErr: errors.New("db fail")}
-	handler := invoicingapp.NewInvoiceChangedHandler(repo, &fakeSyncPort{})
+	sync := &fakeSyncPort{err: errors.New("sync fail")}
+	handler := invoicingapp.NewInvoiceChangedHandler(sync)
 	adapter := invoicingapp.NewInvoiceChangedListenerAdapter(handler)
 
-	adapter.SetData("inv-err")
+	payload := invoicingdomain.InvoiceChangedPayload{
+		InvoiceID: "inv-err",
+	}
+
+	adapter.SetData(payload)
 	err := adapter.Handle()
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "fetching invoice")
-}
-
-// helper to produce an invoice that skips the sync path
-func newFlaggedInvoice() *entities.Invoice {
-	inv := &entities.Invoice{MarkImportTransactions: false}
-	return inv
+	assert.Contains(t, err.Error(), "syncing transaction")
 }

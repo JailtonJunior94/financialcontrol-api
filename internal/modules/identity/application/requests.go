@@ -1,6 +1,9 @@
 package application
 
-import "github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
+import (
+	identitydomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
+)
 
 type AuthRequest struct {
 	Email    string `json:"email"`
@@ -9,11 +12,11 @@ type AuthRequest struct {
 
 func (a *AuthRequest) IsValid() error {
 	if a.Email == "" {
-		return customerrors.EmailIsRequired
+		return identitydomain.EmailIsRequired
 	}
 
 	if a.Password == "" {
-		return customerrors.PasswordIsRequired
+		return identitydomain.PasswordIsRequired
 	}
 
 	return nil
@@ -31,11 +34,11 @@ func (u *UserRequest) IsValid() error {
 	}
 
 	if u.Email == "" {
-		return customerrors.EmailIsRequired
+		return identitydomain.EmailIsRequired
 	}
 
 	if u.Password == "" {
-		return customerrors.PasswordIsRequired
+		return identitydomain.PasswordIsRequired
 	}
 
 	return nil

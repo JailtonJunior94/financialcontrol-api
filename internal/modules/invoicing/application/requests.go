@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
 )
 
 type InvoiceRequest struct {

@@ -1,6 +1,6 @@
 package application
 
-import "github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+import "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 
 type DefaultFlagService struct {
 	repository FlagRepository

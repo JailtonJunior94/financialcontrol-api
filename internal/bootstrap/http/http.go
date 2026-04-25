@@ -5,7 +5,7 @@ import (
 	"os"
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
-	platformhttp "github.com/jailtonjunior94/financialcontrol-api/internal/platform/http"
+	platformhttp "github.com/jailtonjunior94/financialcontrol-api/pkg/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"

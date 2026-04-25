@@ -3,13 +3,14 @@ package invoicingapp
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"mime/multipart"
 	"strings"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
+	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 )
 
 type DefaultInvoiceService struct {
@@ -93,7 +94,7 @@ func (s *DefaultInvoiceService) DeleteInvoiceItem(id string) *HttpResponse {
 	}
 
 	for _, invoiceItem := range items {
-		if err := s.publishInvoiceChanged(invoiceItem.InvoiceId); err != nil {
+		if err := s.publishInvoiceChanged(context.Background(), invoiceItem.InvoiceId); err != nil {
 			return web.ServerError()
 		}
 	}
@@ -139,7 +140,7 @@ func (s *DefaultInvoiceService) create(userID string, request *InvoiceRequest) *
 	}
 
 	startDate, endDate := s.getDates(request.PurchaseDate, card.ClosingDay)
-	items := make([]*entities.InvoiceItem, request.QuantityInvoice)
+	items := make([]*invoicingdomain.InvoiceItem, request.QuantityInvoice)
 	for i := 0; i < request.QuantityInvoice; i++ {
 		invoice, err := s.invoiceRepository.GetInvoiceByDate(startDate.AddDate(0, i, 0), endDate.AddDate(0, i, 0), card.ID)
 		if err != nil {
@@ -164,7 +165,7 @@ func (s *DefaultInvoiceService) create(userID string, request *InvoiceRequest) *
 	}
 
 	for _, item := range items {
-		if err := s.publishInvoiceChanged(item.InvoiceId); err != nil {
+		if err := s.publishInvoiceChanged(context.Background(), item.InvoiceId); err != nil {
 			return web.ServerError()
 		}
 	}
@@ -183,6 +184,34 @@ func (s *DefaultInvoiceService) getDates(purchaseDate time.Time, closingDay int)
 	return timer.StartDate().AddDate(0, 1, 0), timer.EndDate().AddDate(0, 1, 0)
 }
 
-func (s *DefaultInvoiceService) publishInvoiceChanged(invoiceID string) error {
-	return s.eventPublisher.PublishInvoiceChanged(context.Background(), invoiceID)
+// publishInvoiceChanged fetches the invoice, recalculates its total, persists
+// the updated value and then publishes the invoice_changed event with an
+// auto-contained payload. Publishing is skipped when MarkImportTransactions
+// is false because no downstream sync is needed.
+func (s *DefaultInvoiceService) publishInvoiceChanged(ctx context.Context, invoiceID string) error {
+	invoice, err := s.invoiceRepository.GetInvoiceById(invoiceID)
+	if err != nil {
+		return fmt.Errorf("publishInvoiceChanged: fetching invoice %s: %w", invoiceID, err)
+	}
+
+	invoice.UpdatingValues()
+
+	if _, err = s.invoiceRepository.UpdateInvoice(invoice); err != nil {
+		return fmt.Errorf("publishInvoiceChanged: updating invoice %s: %w", invoiceID, err)
+	}
+
+	if !invoice.MarkImportTransactions {
+		return nil
+	}
+
+	payload := invoicingdomain.InvoiceChangedPayload{
+		InvoiceID:              invoiceID,
+		CardDescription:        invoice.Card.Description,
+		UserID:                 invoice.Card.UserId,
+		ReferenceDate:          invoice.Date,
+		Total:                  invoice.Total,
+		MarkImportTransactions: invoice.MarkImportTransactions,
+	}
+
+	return s.eventPublisher.PublishInvoiceChanged(ctx, payload)
 }

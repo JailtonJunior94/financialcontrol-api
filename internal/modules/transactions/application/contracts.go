@@ -3,7 +3,7 @@ package application
 import (
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 	transactionsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/domain"
 )
 

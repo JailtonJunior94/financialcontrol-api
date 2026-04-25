@@ -1,9 +1,20 @@
 package domain
 
-import "github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
+import "github.com/jailtonjunior94/financialcontrol-api/pkg/entity"
 
-type User = entities.User
+type User struct {
+	Name     string `db:"Name"`
+	Email    string `db:"Email"`
+	Password string `db:"Password"`
+	entity.Entity
+}
 
 func NewUser(name, email, password string) *User {
-	return entities.NewUser(name, email, password)
+	u := &User{
+		Name:     name,
+		Email:    email,
+		Password: password,
+	}
+	u.NewEntity()
+	return u
 }

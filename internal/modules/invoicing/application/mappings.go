@@ -4,16 +4,16 @@ import (
 	"time"
 
 	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
+	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
 )
 
-func ToInvoiceEntity(request *InvoiceRequest, date time.Time, total float64) *entities.Invoice {
-	return entities.NewInvoice(request.CardId, date, total)
+func ToInvoiceEntity(request *InvoiceRequest, date time.Time, total float64) *invoicingdomain.Invoice {
+	return invoicingdomain.NewInvoice(request.CardId, date, total)
 }
 
-func ToInvoiceItemEntity(request *InvoiceRequest, invoiceID string, installment int, invoiceControl int64) *entities.InvoiceItem {
-	entity := entities.NewInvoiceItem(
+func ToInvoiceItemEntity(request *InvoiceRequest, invoiceID string, installment int, invoiceControl int64) *invoicingdomain.InvoiceItem {
+	entity := invoicingdomain.NewInvoiceItem(
 		invoiceID,
 		request.CategoryId,
 		request.Description,
@@ -25,7 +25,7 @@ func ToInvoiceItemEntity(request *InvoiceRequest, invoiceID string, installment 
 	return entity
 }
 
-func ToInvoiceResponse(entity *entities.Invoice) *appresponses.InvoiceResponse {
+func ToInvoiceResponse(entity *invoicingdomain.Invoice) *appresponses.InvoiceResponse {
 	if entity == nil {
 		return nil
 	}
@@ -40,7 +40,7 @@ func ToInvoiceResponse(entity *entities.Invoice) *appresponses.InvoiceResponse {
 	}
 }
 
-func ToManyInvoiceResponse(entities []entities.Invoice) []*appresponses.InvoiceResponse {
+func ToManyInvoiceResponse(entities []invoicingdomain.Invoice) []*appresponses.InvoiceResponse {
 	response := make([]*appresponses.InvoiceResponse, len(entities))
 	for i, entity := range entities {
 		response[i] = &appresponses.InvoiceResponse{
@@ -54,7 +54,7 @@ func ToManyInvoiceResponse(entities []entities.Invoice) []*appresponses.InvoiceR
 	return response
 }
 
-func ToManyInvoiceItemResponse(entities []entities.InvoiceItem) []*appresponses.InvoiceItemResponse {
+func ToManyInvoiceItemResponse(entities []invoicingdomain.InvoiceItem) []*appresponses.InvoiceItemResponse {
 	response := make([]*appresponses.InvoiceItemResponse, len(entities))
 	for i, entity := range entities {
 		response[i] = &appresponses.InvoiceItemResponse{
@@ -77,7 +77,7 @@ func ToManyInvoiceItemResponse(entities []entities.InvoiceItem) []*appresponses.
 	return response
 }
 
-func toCardMinimalResponse(entity *entities.Card) *appresponses.CardMinimalResponse {
+func toCardMinimalResponse(entity *invoicingdomain.Card) *appresponses.CardMinimalResponse {
 	return &appresponses.CardMinimalResponse{
 		ID:     entity.ID,
 		Name:   entity.Name,

@@ -5,34 +5,34 @@ import (
 	"testing"
 
 	appresponses "github.com/jailtonjunior94/financialcontrol-api/internal/application/dtos/responses"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/entities"
 	catalogapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/application"
+	catalogdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/domain"
 
 	"github.com/stretchr/testify/require"
 )
 
 type flagRepositoryStub struct {
-	flags []entities.Flag
+	flags []catalogdomain.Flag
 	err   error
 }
 
-func (s *flagRepositoryStub) GetFlags() ([]entities.Flag, error) {
+func (s *flagRepositoryStub) GetFlags() ([]catalogdomain.Flag, error) {
 	return s.flags, s.err
 }
 
 type categoryRepositoryStub struct {
-	categories []entities.Category
+	categories []catalogdomain.Category
 	err        error
 }
 
-func (s *categoryRepositoryStub) GetCategories() ([]entities.Category, error) {
+func (s *categoryRepositoryStub) GetCategories() ([]catalogdomain.Category, error) {
 	return s.categories, s.err
 }
 
 func TestFlagsReturnsMappedPayload(t *testing.T) {
 	service := catalogapp.NewFlagService(&flagRepositoryStub{
-		flags: []entities.Flag{
-			{Entity: entities.Entity{ID: "flag-id", Active: true}, Name: "Visa"},
+		flags: []catalogdomain.Flag{
+			{Entity: catalogdomain.Entity{ID: "flag-id", Active: true}, Name: "Visa"},
 		},
 	})
 
@@ -56,8 +56,8 @@ func TestFlagsReturnsServerErrorWhenRepositoryFails(t *testing.T) {
 
 func TestCategoriesReturnsMappedPayload(t *testing.T) {
 	service := catalogapp.NewCategoryService(&categoryRepositoryStub{
-		categories: []entities.Category{
-			{Entity: entities.Entity{ID: "category-id", Active: true}, Name: "Moradia", Sequence: 1},
+		categories: []catalogdomain.Category{
+			{Entity: catalogdomain.Entity{ID: "category-id", Active: true}, Name: "Moradia", Sequence: 1},
 		},
 	})
 

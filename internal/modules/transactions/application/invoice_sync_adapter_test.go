@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/web"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 	transactionsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/domain"
 

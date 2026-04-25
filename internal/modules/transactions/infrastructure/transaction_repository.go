@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/platform/persistence"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/persistence"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 	transactionsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/domain"

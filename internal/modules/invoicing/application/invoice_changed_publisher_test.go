@@ -1,10 +1,11 @@
 package invoicingapp_test
 
 import (
-	"context"
 	"testing"
+	"time"
 
-	platformevents "github.com/jailtonjunior94/financialcontrol-api/internal/platform/events"
+	invoicingdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/domain"
+	platformevents "github.com/jailtonjunior94/financialcontrol-api/pkg/events"
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
 
 	"github.com/stretchr/testify/assert"
@@ -19,21 +20,34 @@ func (f *fakeDispatcher) Dispatch(event platformevents.Event) {
 	f.dispatched = append(f.dispatched, event)
 }
 
+func (f *fakeDispatcher) AddListener(_ string, _ platformevents.Listener) {}
+
 func TestPublishInvoiceChangedReturnsErrorWhenInvoiceIDIsEmpty(t *testing.T) {
 	pub := invoicingapp.NewInvoiceChangedEventPublisher(&fakeDispatcher{})
-	err := pub.PublishInvoiceChanged(context.Background(), "")
+	err := pub.PublishInvoiceChanged(t.Context(), invoicingdomain.InvoiceChangedPayload{})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invoiceID must not be empty")
+	assert.Contains(t, err.Error(), "InvoiceID must not be empty")
 }
 
-func TestPublishInvoiceChangedDispatchesEventWithCorrectKey(t *testing.T) {
+func TestPublishInvoiceChangedDispatchesEventWithCorrectKeyAndPayload(t *testing.T) {
 	dispatcher := &fakeDispatcher{}
 	pub := invoicingapp.NewInvoiceChangedEventPublisher(dispatcher)
 
-	err := pub.PublishInvoiceChanged(context.Background(), "inv-99")
+	payload := invoicingdomain.InvoiceChangedPayload{
+		InvoiceID:       "inv-99",
+		CardDescription: "Visa",
+		UserID:          "user-1",
+		ReferenceDate:   time.Now(),
+		Total:           200.0,
+	}
+
+	err := pub.PublishInvoiceChanged(t.Context(), payload)
 
 	require.NoError(t, err)
 	require.Len(t, dispatcher.dispatched, 1)
 	assert.Equal(t, "invoice_changed", dispatcher.dispatched[0].GetKey())
-	assert.Equal(t, "inv-99", dispatcher.dispatched[0].GetData())
+	got, ok := dispatcher.dispatched[0].GetData().(invoicingdomain.InvoiceChangedPayload)
+	require.True(t, ok, "event data should be InvoiceChangedPayload")
+	assert.Equal(t, "inv-99", got.InvoiceID)
+	assert.Equal(t, "Visa", got.CardDescription)
 }

@@ -3,7 +3,7 @@ package cards
 import (
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	modulehttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
-	platformmodules "github.com/jailtonjunior94/financialcontrol-api/internal/platform/modules"
+	platformmodules "github.com/jailtonjunior94/financialcontrol-api/pkg/modules"
 
 	"github.com/gofiber/fiber/v2"
 )

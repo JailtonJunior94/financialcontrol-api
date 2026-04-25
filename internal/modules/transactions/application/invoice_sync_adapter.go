@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/shared"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/shared"
 )
 
 // InvoiceSyncAdapter implements the TransactionSyncPort required by the

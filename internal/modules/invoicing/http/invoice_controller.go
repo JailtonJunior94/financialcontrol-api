@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/domain/customerrors"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
 
 	"github.com/gofiber/fiber/v2"

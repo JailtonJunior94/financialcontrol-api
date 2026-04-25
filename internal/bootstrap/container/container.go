@@ -2,7 +2,7 @@ package container
 
 import (
 	appusecase "github.com/jailtonjunior94/financialcontrol-api/internal/application/usecase"
-	platformevents "github.com/jailtonjunior94/financialcontrol-api/internal/platform/events"
+	platformevents "github.com/jailtonjunior94/financialcontrol-api/pkg/events"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/adapters"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/config"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/infrastructure/database"
@@ -24,7 +24,7 @@ import (
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
 	transactionsinfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/infrastructure"
-	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/internal/platform/security"
+	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 )
 
 // Container holds every wired dependency for the application.
@@ -61,6 +61,21 @@ type Container struct {
 	UpdateTransactionBill *appusecase.UpdateTransactionBill
 }
 
+// invoicingCardRepositoryAdapter adapts the cards repository to the invoicing
+// module's CardRepository interface. The container is the only place allowed
+// to import across module boundaries.
+type invoicingCardRepositoryAdapter struct {
+	repo *cardsinfra.CardRepository
+}
+
+func (a *invoicingCardRepositoryAdapter) GetCardById(id, userID string) (*invoicingapp.CardView, error) {
+	card, err := a.repo.GetCardById(id, userID)
+	if err != nil || card == nil {
+		return nil, err
+	}
+	return &invoicingapp.CardView{ID: card.ID, ClosingDay: card.ClosingDay}, nil
+}
+
 func Build(sqlConnection database.ISqlConnection) *Container {
 	c := &Container{
 		SqlConnection: sqlConnection,
@@ -72,12 +87,13 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	c.UserRepository = identityinfra.NewUserRepository(c.SqlConnection)
 	c.BillRepository = billinginfra.NewBillRepository(c.SqlConnection)
 	c.FlagRepository = cataloginfra.NewFlagRepository(c.SqlConnection)
-	c.CardRepository = cardsinfra.NewCardRepository(c.SqlConnection)
+	cardRepo := cardsinfra.NewCardRepository(c.SqlConnection)
+	c.CardRepository = cardRepo
 	c.InvoiceRepository = invoicinginfra.NewInvoiceRepository(c.SqlConnection)
 	c.CategoryRepository = cataloginfra.NewCategoryRepository(c.SqlConnection)
 	c.TransactionRepository = transactionsinfra.NewTransactionRepository(c.SqlConnection)
 
-	dispatcher := platformevents.NewDispatcher()
+	var dispatcher platformevents.EventDispatcher = platformevents.NewInProcessDispatcher()
 
 	c.BillService = billingapp.NewBillService(c.BillRepository)
 	c.FlagService = catalogapp.NewFlagService(c.FlagRepository)
@@ -87,12 +103,13 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	c.TransactionService = transactionsapp.NewTransactionService(c.TransactionRepository)
 	c.AuthService = identityapp.NewAuthService(c.UserRepository, c.HashAdapter, c.JwtAdapter)
 	invoicePublisher := invoicingapp.NewInvoiceChangedEventPublisher(dispatcher)
-	c.InvoiceService = invoicingapp.NewInvoiceService(c.CardRepository, c.InvoiceRepository, invoicePublisher)
+	invoicingCardRepo := &invoicingCardRepositoryAdapter{repo: cardRepo}
+	c.InvoiceService = invoicingapp.NewInvoiceService(invoicingCardRepo, c.InvoiceRepository, invoicePublisher)
 
 	// Wire the modular invoice_changed handler via the adapter so the event
 	// dispatcher calls the new context-aware handler without service locator.
 	invoiceSyncAdapter := transactionsapp.NewInvoiceSyncAdapter(c.TransactionRepository, c.TransactionService)
-	invoiceChangedHandler := invoicingapp.NewInvoiceChangedHandler(c.InvoiceRepository, invoiceSyncAdapter)
+	invoiceChangedHandler := invoicingapp.NewInvoiceChangedHandler(invoiceSyncAdapter)
 	dispatcher.AddListener("invoice_changed", invoicingapp.NewInvoiceChangedListenerAdapter(invoiceChangedHandler))
 
 	c.UserController = identityhttp.NewUserController(c.UserService)
