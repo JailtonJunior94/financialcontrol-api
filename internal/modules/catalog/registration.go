@@ -12,8 +12,8 @@ func Registration() platformmodules.ModuleRegistration {
 	return platformmodules.ModuleRegistration{
 		Name: "catalog",
 		RegisterHTTP: func(router fiber.Router, container *bootstrapcontainer.Container) {
-			modulehttp.AddFlagRouter(router, container.FlagController)
-			modulehttp.AddCategoryRouter(router, container.CategoryController)
+			modulehttp.AddFlagRouter(router, container.FlagController, container.JwtParser)
+			modulehttp.AddCategoryRouter(router, container.CategoryController, container.JwtParser)
 		},
 	}
 }

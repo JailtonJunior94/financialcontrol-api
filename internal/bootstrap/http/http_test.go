@@ -5,21 +5,24 @@ import (
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	bootstraphttp "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/http"
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
-	identityhttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/http"
+	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 
 	"github.com/stretchr/testify/require"
 )
 
+// stubModule returns an *identity.Module with nil handlers — safe for route-registration
+// tests that never invoke any handler.
+func stubModule() *identity.Module { return &identity.Module{} }
+
 func TestNewAppRegistersAPIBootstrapRoutes(t *testing.T) {
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
-		UserController:        &identityhttp.UserController{},
-		AuthController:        &identityhttp.AuthController{},
+		IdentityModule:        stubModule(),
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},
@@ -55,8 +58,7 @@ func TestNewAppBootstrapsWithRuntimeConfigLoaded(t *testing.T) {
 	require.NoError(t, err)
 
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
-		UserController:        &identityhttp.UserController{},
-		AuthController:        &identityhttp.AuthController{},
+		IdentityModule:        stubModule(),
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},

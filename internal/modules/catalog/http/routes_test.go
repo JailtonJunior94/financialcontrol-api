@@ -3,14 +3,26 @@ package http_test
 import (
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	catalogapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/application"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
+	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 )
+
+func newTestParser(t *testing.T) pkgjwt.Parser {
+	t.Helper()
+	p, err := pkgjwt.NewParser(pkgjwt.Config{
+		Secret:    []byte("test-secret-that-is-at-least-32-bytes-long!!"),
+		AccessTTL: time.Minute,
+	})
+	require.NoError(t, err)
+	return p
+}
 
 type flagServiceStub struct {
 	status int
@@ -39,7 +51,7 @@ func TestFlagRoutesPreserveEndpointContract(t *testing.T) {
 		},
 	})
 
-	cataloghttp.AddFlagRouter(app, controller)
+	cataloghttp.AddFlagRouter(app, controller, newTestParser(t))
 
 	req := httptest.NewRequest(fiber.MethodGet, "/flags", nil)
 	resp, err := app.Test(req)

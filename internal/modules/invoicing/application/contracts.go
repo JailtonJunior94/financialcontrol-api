@@ -55,7 +55,3 @@ type InvoiceService interface {
 	InvoiceCategories(startDate, endDate time.Time, cardID string) *HttpResponse
 	UpdateInvoice(id, userID string, request *InvoiceRequest) *HttpResponse
 }
-
-type ClaimsResolver interface {
-	UserID(authorizationHeader string) (string, error)
-}

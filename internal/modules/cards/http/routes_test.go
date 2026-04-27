@@ -2,14 +2,15 @@ package http_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"net/http/httptest"
 	"testing"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	cardsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application"
 	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
@@ -48,26 +49,20 @@ func (s *cardServiceStub) RemoveCard(id, userID string) *appresponses.HttpRespon
 	return &appresponses.HttpResponse{StatusCode: s.removeStatus, Data: s.removeData}
 }
 
-type claimsResolverStub struct {
-	userID string
-	err    error
+func withIdentity(app *fiber.App, userID string) *fiber.App {
+	app.Use(func(c *fiber.Ctx) error {
+		ctx := identitycontext.WithIdentity(context.Background(), identitycontext.Identity{UserID: userID})
+		c.SetUserContext(ctx)
+		return c.Next()
+	})
+	return app
 }
 
-func (s *claimsResolverStub) UserID(authorizationHeader string) (string, error) {
-	if s.err != nil {
-		return "", s.err
-	}
-
-	return s.userID, nil
-}
-
-func TestCardsContractReturnsUnauthorizedWhenClaimsAreInvalid(t *testing.T) {
+func TestCardsContractReturnsUnauthorizedWhenIdentityMissing(t *testing.T) {
 	app := fiber.New()
 	controller := cardshttp.NewCardController(
 		&cardServiceStub{cardsStatus: fiber.StatusOK, cardsData: []cardsapp.CardResponse{}},
-		&claimsResolverStub{err: errors.New("invalid token")},
 	)
-
 	app.Get("/cards", controller.Cards)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/cards", nil)
@@ -83,9 +78,8 @@ func TestCreateCardContractPreservesPayloadValidation(t *testing.T) {
 			createStatus: fiber.StatusCreated,
 			createData:   &cardsapp.CardResponse{ID: "card-id", Name: "Cartao XP"},
 		},
-		&claimsResolverStub{userID: "user-id"},
 	)
-
+	withIdentity(app, "user-id")
 	app.Post("/cards", controller.CreateCard)
 
 	body, err := json.Marshal(map[string]any{

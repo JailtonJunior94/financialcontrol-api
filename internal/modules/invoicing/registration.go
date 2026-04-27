@@ -12,7 +12,7 @@ func Registration() platformmodules.ModuleRegistration {
 	return platformmodules.ModuleRegistration{
 		Name: "invoicing",
 		RegisterHTTP: func(router fiber.Router, container *bootstrapcontainer.Container) {
-			modulehttp.AddInvoiceRouter(router, container.InvoiceController)
+			modulehttp.AddInvoiceRouter(router, container.InvoiceController, container.JwtParser)
 		},
 	}
 }

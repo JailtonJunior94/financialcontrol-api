@@ -1,6 +1,9 @@
 package container
 
 import (
+	"log"
+	"time"
+
 	billingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/application"
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	billinginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/infrastructure"
@@ -10,9 +13,7 @@ import (
 	catalogapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/application"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
 	cataloginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/infrastructure"
-	identityapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application"
-	identityhttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/http"
-	identityinfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure"
+	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
 	invoicinginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/infrastructure"
@@ -23,6 +24,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	platformevents "github.com/jailtonjunior94/financialcontrol-api/pkg/events"
+	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 	pkguuid "github.com/jailtonjunior94/financialcontrol-api/pkg/uuid"
 )
@@ -32,25 +34,21 @@ import (
 type Container struct {
 	SqlConnection         database.ISqlConnection
 	HashAdapter           platformsecurity.HashAdapter
-	JwtAdapter            platformsecurity.TokenAdapter
+	JwtParser             pkgjwt.Parser
 	UuidAdapter           pkguuid.IUuidAdapter
-	UserRepository        identityapp.UserRepository
+	IdentityModule        *identity.Module
 	TransactionRepository transactionsapp.TransactionRepository
 	BillRepository        billingapp.BillRepository
 	FlagRepository        catalogapp.FlagRepository
 	CardRepository        cardsapp.CardRepository
 	InvoiceRepository     invoicingapp.InvoiceRepository
 	CategoryRepository    catalogapp.CategoryRepository
-	UserService           identityapp.UserService
-	AuthService           identityapp.AuthService
 	TransactionService    transactionsapp.TransactionAppService
 	BillService           billingapp.BillService
 	FlagService           catalogapp.FlagService
 	CardService           cardsapp.CardService
 	InvoiceService        invoicingapp.InvoiceService
 	CategoryService       catalogapp.CategoryService
-	UserController        *identityhttp.UserController
-	AuthController        *identityhttp.AuthController
 	TransactionController *transactionshttp.TransactionController
 	BillController        *billinghttp.BillController
 	FlagController        *cataloghttp.FlagController
@@ -80,11 +78,31 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	c := &Container{
 		SqlConnection: sqlConnection,
 		HashAdapter:   platformsecurity.NewHashAdapter(),
-		JwtAdapter:    platformsecurity.NewJWTAdapter(),
 		UuidAdapter:   pkguuid.NewUuidAdapter(),
 	}
 
-	c.UserRepository = identityinfra.NewUserRepository(c.SqlConnection)
+	jwtCfg := pkgjwt.Config{
+		Secret:    []byte(config.JwtSecret),
+		AccessTTL: time.Hour * time.Duration(config.ExpirationAt),
+	}
+
+	jwtIssuer, err := pkgjwt.NewIssuer(jwtCfg)
+	if err != nil {
+		log.Fatalf("build jwt issuer: %v", err)
+	}
+
+	jwtParser, err := pkgjwt.NewParser(jwtCfg)
+	if err != nil {
+		log.Fatalf("build jwt parser: %v", err)
+	}
+	c.JwtParser = jwtParser
+
+	c.IdentityModule = identity.NewModule(identity.Deps{
+		DB:          sqlConnection,
+		Hasher:      identity.NewHasherAdapter(c.HashAdapter),
+		TokenIssuer: identity.NewTokenIssuerAdapter(jwtIssuer),
+	})
+
 	c.BillRepository = billinginfra.NewBillRepository(c.SqlConnection)
 	c.FlagRepository = cataloginfra.NewFlagRepository(c.SqlConnection)
 	cardRepo := cardsinfra.NewCardRepository(c.SqlConnection)
@@ -99,9 +117,7 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	c.FlagService = catalogapp.NewFlagService(c.FlagRepository)
 	c.CardService = cardsapp.NewCardService(c.CardRepository)
 	c.CategoryService = catalogapp.NewCategoryService(c.CategoryRepository)
-	c.UserService = identityapp.NewUserService(c.UserRepository, c.HashAdapter)
 	c.TransactionService = transactionsapp.NewTransactionService(c.TransactionRepository)
-	c.AuthService = identityapp.NewAuthService(c.UserRepository, c.HashAdapter, c.JwtAdapter)
 	invoicePublisher := invoicingapp.NewInvoiceChangedEventPublisher(dispatcher)
 	invoicingCardRepo := &invoicingCardRepositoryAdapter{repo: cardRepo}
 	c.InvoiceService = invoicingapp.NewInvoiceService(invoicingCardRepo, c.InvoiceRepository, invoicePublisher)
@@ -112,14 +128,12 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	invoiceChangedHandler := invoicingapp.NewInvoiceChangedHandler(invoiceSyncAdapter)
 	dispatcher.AddListener("invoice_changed", invoicingapp.NewInvoiceChangedListenerAdapter(invoiceChangedHandler))
 
-	c.UserController = identityhttp.NewUserController(c.UserService)
 	c.BillController = billinghttp.NewBillController(c.BillService)
 	c.FlagController = cataloghttp.NewFlagController(c.FlagService)
 	c.CategoryController = cataloghttp.NewCategoryController(c.CategoryService)
-	c.CardController = cardshttp.NewCardController(c.CardService, cardshttp.NewClaimsResolver(c.JwtAdapter))
-	c.AuthController = identityhttp.NewAuthController(c.AuthService, identityhttp.NewClaimsResolver(c.JwtAdapter))
-	c.InvoiceController = invoicinghttp.NewInvoiceController(c.InvoiceService, invoicinghttp.NewClaimsResolver(c.JwtAdapter))
-	c.TransactionController = transactionshttp.NewTransactionController(c.TransactionService, transactionshttp.NewClaimsResolver(c.JwtAdapter))
+	c.CardController = cardshttp.NewCardController(c.CardService)
+	c.InvoiceController = invoicinghttp.NewInvoiceController(c.InvoiceService)
+	c.TransactionController = transactionshttp.NewTransactionController(c.TransactionService)
 
 	c.UpdateUseCase = planningsync.NewUpdateTransactionUseCase(
 		c.TransactionRepository,

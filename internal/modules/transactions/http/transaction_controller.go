@@ -1,46 +1,43 @@
 package http
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type TransactionController struct {
-	service        transactionsapp.TransactionAppService
-	claimsResolver ClaimsResolver
+	service transactionsapp.TransactionAppService
 }
 
-func NewTransactionController(service transactionsapp.TransactionAppService, claimsResolver ClaimsResolver) *TransactionController {
-	return &TransactionController{
-		service:        service,
-		claimsResolver: claimsResolver,
-	}
+func NewTransactionController(service transactionsapp.TransactionAppService) *TransactionController {
+	return &TransactionController{service: service}
 }
 
 func (c *TransactionController) Transactions(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.Transactions(userID)
+	response := c.service.Transactions(id.UserID)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (c *TransactionController) TransactionById(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.TransactionById(ctx.Params("id"), userID)
+	response := c.service.TransactionById(ctx.Params("id"), id.UserID)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (c *TransactionController) CreateTransaction(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
@@ -54,17 +51,17 @@ func (c *TransactionController) CreateTransaction(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	response := c.service.CreateTransaction(request, userID)
+	response := c.service.CreateTransaction(request, id.UserID)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (c *TransactionController) CloneTransaction(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.CloneTransaction(ctx.Params("transactionid"), userID)
+	response := c.service.CloneTransaction(ctx.Params("transactionid"), id.UserID)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
@@ -79,12 +76,12 @@ func (c *TransactionController) CreateTransactionItem(ctx *fiber.Ctx) error {
 		return ctx.Status(statusCode).JSON(data)
 	}
 
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.CreateTransactionItem(request, ctx.Params("transactionid"), userID)
+	response := c.service.CreateTransactionItem(request, ctx.Params("transactionid"), id.UserID)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
@@ -94,17 +91,17 @@ func (c *TransactionController) UpdateTransactionItem(ctx *fiber.Ctx) error {
 		return ctx.Status(statusCode).JSON(data)
 	}
 
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.UpdateTransactionItem(ctx.Params("transactionid"), ctx.Params("id"), userID, request)
+	response := c.service.UpdateTransactionItem(ctx.Params("transactionid"), ctx.Params("id"), id.UserID, request)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (c *TransactionController) MarkAsPaidTransactionItem(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
@@ -114,17 +111,17 @@ func (c *TransactionController) MarkAsPaidTransactionItem(ctx *fiber.Ctx) error 
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": customerrors.UnprocessableEntityMessage})
 	}
 
-	response := c.service.MarkAsPaidTransactionItem(ctx.Params("transactionid"), ctx.Params("id"), userID, &request)
+	response := c.service.MarkAsPaidTransactionItem(ctx.Params("transactionid"), ctx.Params("id"), id.UserID, &request)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (c *TransactionController) RemoveTransactionItem(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.RemoveTransactionItem(ctx.Params("transactionid"), ctx.Params("id"), userID)
+	response := c.service.RemoveTransactionItem(ctx.Params("transactionid"), ctx.Params("id"), id.UserID)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 

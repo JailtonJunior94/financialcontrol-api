@@ -12,7 +12,7 @@ func Registration() platformmodules.ModuleRegistration {
 	return platformmodules.ModuleRegistration{
 		Name: "cards",
 		RegisterHTTP: func(router fiber.Router, container *bootstrapcontainer.Container) {
-			modulehttp.AddCardRouter(router, container.CardController)
+			modulehttp.AddCardRouter(router, container.CardController, container.JwtParser)
 		},
 	}
 }

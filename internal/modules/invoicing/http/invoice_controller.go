@@ -1,41 +1,38 @@
 package http
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/customerrors"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type InvoiceController struct {
-	service        invoicingapp.InvoiceService
-	claimsResolver ClaimsResolver
+	service invoicingapp.InvoiceService
 }
 
-func NewInvoiceController(service invoicingapp.InvoiceService, claimsResolver ClaimsResolver) *InvoiceController {
-	return &InvoiceController{
-		service:        service,
-		claimsResolver: claimsResolver,
-	}
+func NewInvoiceController(service invoicingapp.InvoiceService) *InvoiceController {
+	return &InvoiceController{service: service}
 }
 
 func (c *InvoiceController) Invoices(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.Invoices(userID, ctx.Query("cardId"))
+	response := c.service.Invoices(id.UserID, ctx.Query("cardId"))
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
 func (c *InvoiceController) InvoiceById(ctx *fiber.Ctx) error {
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.InvoiceById(userID, ctx.Params("id"))
+	response := c.service.InvoiceById(id.UserID, ctx.Params("id"))
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
@@ -55,12 +52,12 @@ func (c *InvoiceController) CreateInvoice(ctx *fiber.Ctx) error {
 		return ctx.Status(statusCode).JSON(data)
 	}
 
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.CreateInvoice(userID, request)
+	response := c.service.CreateInvoice(id.UserID, request)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
@@ -70,12 +67,12 @@ func (c *InvoiceController) UpdateInvoice(ctx *fiber.Ctx) error {
 		return ctx.Status(statusCode).JSON(data)
 	}
 
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.UpdateInvoice(ctx.Params("id"), userID, request)
+	response := c.service.UpdateInvoice(ctx.Params("id"), id.UserID, request)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 
@@ -90,12 +87,12 @@ func (c *InvoiceController) ImportInvoices(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"message": customerrors.UnprocessableEntityMessage})
 	}
 
-	userID, err := c.claimsResolver.UserID(ctx.Get("Authorization"))
+	id, err := identitycontext.FromContext(ctx.UserContext())
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": customerrors.InvalidTokenMessage})
 	}
 
-	response := c.service.ImportInvoices(userID, file)
+	response := c.service.ImportInvoices(id.UserID, file)
 	return ctx.Status(response.StatusCode).JSON(response.Data)
 }
 

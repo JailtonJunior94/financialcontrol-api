@@ -2,16 +2,13 @@ package domain
 
 import "errors"
 
-const (
-	EmailIsRequiredMessage       = "O E-mail é obrigatório"
-	PasswordIsRequiredMessage    = "A Senha é obrigatória"
-	InvalidUserOrPasswordMessage = "Usuário e/ou senha inválidos"
-	ErrorCreateUserMessage       = "Não foi possível cadastrar usuário"
-)
+const InvalidUserOrPasswordMessage = "Usuário e/ou senha inválidos"
 
 var (
-	EmailIsRequired       = errors.New(EmailIsRequiredMessage)
-	PasswordIsRequired    = errors.New(PasswordIsRequiredMessage)
-	InvalidUserOrPassword = errors.New(InvalidUserOrPasswordMessage)
-	ErrorCreateUser       = errors.New(ErrorCreateUserMessage)
+	ErrInvalidEmail       = errors.New("e-mail inválido")
+	ErrInvalidPassword    = errors.New("senha inválida")
+	ErrUserNotFound       = errors.New("usuário não encontrado")
+	ErrInvalidCredentials = errors.New("usuário e/ou senha inválidos")
+	ErrUserAlreadyExists  = errors.New("usuário já cadastrado")
+	ErrTokenIssuance      = errors.New("falha ao emitir token")
 )

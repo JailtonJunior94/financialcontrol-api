@@ -1,0 +1,34 @@
+name: "Mocks Consistency Check"
+
+on:
+  push:
+    branches: [develop, feature/eventos, master]
+  pull_request:
+    branches: [develop, master]
+
+jobs:
+  mocks-check:
+    name: Verify committed mocks match generated mocks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Generate mocks
+        run: make mocks
+
+      - name: Check for uncommitted changes in mocks
+        run: |
+          git diff --exit-code -- '*/mocks/*' || {
+            echo "::error::Generated mocks differ from committed mocks."
+            echo "Run 'make mocks' locally and commit the updated mocks."
+            git diff -- '*/mocks/*'
+            exit 1
+          }

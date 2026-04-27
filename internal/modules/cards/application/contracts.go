@@ -19,7 +19,3 @@ type CardService interface {
 	UpdateCard(id, userID string, request *CardRequest) *web.HttpResponse
 	RemoveCard(id, userID string) *web.HttpResponse
 }
-
-type ClaimsResolver interface {
-	UserID(authorizationHeader string) (string, error)
-}

@@ -2,19 +2,31 @@ package http_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 	transactionsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
+	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
+	appresponses "github.com/jailtonjunior94/financialcontrol-api/pkg/web"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 )
+
+func newTestParser(t *testing.T) pkgjwt.Parser {
+	t.Helper()
+	p, err := pkgjwt.NewParser(pkgjwt.Config{
+		Secret:    []byte("test-secret-that-is-at-least-32-bytes-long!!"),
+		AccessTTL: time.Minute,
+	})
+	require.NoError(t, err)
+	return p
+}
 
 type transactionServiceStub struct {
 	transactionsStatus        int
@@ -73,26 +85,20 @@ func (s *transactionServiceStub) RemoveTransactionItem(string, string, string) *
 	return &appresponses.HttpResponse{StatusCode: s.removeTransactionStatus, Data: s.removeTransactionData}
 }
 
-type claimsResolverStub struct {
-	userID string
-	err    error
+func withIdentity(app *fiber.App, userID string) *fiber.App {
+	app.Use(func(c *fiber.Ctx) error {
+		ctx := identitycontext.WithIdentity(context.Background(), identitycontext.Identity{UserID: userID})
+		c.SetUserContext(ctx)
+		return c.Next()
+	})
+	return app
 }
 
-func (s *claimsResolverStub) UserID(string) (string, error) {
-	if s.err != nil {
-		return "", s.err
-	}
-
-	return s.userID, nil
-}
-
-func TestTransactionsContractReturnsUnauthorizedWhenClaimsAreInvalid(t *testing.T) {
+func TestTransactionsContractReturnsUnauthorizedWhenIdentityMissing(t *testing.T) {
 	app := fiber.New()
 	controller := transactionshttp.NewTransactionController(
 		&transactionServiceStub{transactionsStatus: fiber.StatusOK, transactionsData: []transactionsapp.TransactionResponse{}},
-		&claimsResolverStub{err: errors.New("invalid token")},
 	)
-
 	app.Get("/transactions", controller.Transactions)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/transactions", nil)
@@ -108,9 +114,8 @@ func TestCreateTransactionContractPreservesPayloadValidation(t *testing.T) {
 			createTransactionStatus: fiber.StatusCreated,
 			createTransactionData:   &transactionsapp.TransactionResponse{ID: "tx-1"},
 		},
-		&claimsResolverStub{userID: "user-1"},
 	)
-
+	withIdentity(app, "user-1")
 	app.Post("/transactions", controller.CreateTransaction)
 
 	body, err := json.Marshal(map[string]any{
@@ -129,7 +134,7 @@ func TestCreateTransactionContractPreservesPayloadValidation(t *testing.T) {
 
 func TestAddTransactionRouterPreservesPublicPaths(t *testing.T) {
 	app := fiber.New()
-	transactionshttp.AddTransactionRouter(app, &transactionshttp.TransactionController{})
+	transactionshttp.AddTransactionRouter(app, &transactionshttp.TransactionController{}, newTestParser(t))
 
 	routes := app.GetRoutes(true)
 	routeIndex := make(map[string]map[string]bool, len(routes))

@@ -16,9 +16,8 @@ func TestRegistrationsExposeExpectedFoundationModules(t *testing.T) {
 		names = append(names, registration.Name)
 	}
 
-	require.Equal(t, 7, len(registrations))
+	require.Equal(t, 6, len(registrations))
 	require.ElementsMatch(t, []string{
-		"identity",
 		"catalog",
 		"cards",
 		"billing",

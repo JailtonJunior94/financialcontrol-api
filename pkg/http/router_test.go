@@ -7,7 +7,7 @@ import (
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
-	identityhttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/http"
+	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
 	pkghttp "github.com/jailtonjunior94/financialcontrol-api/pkg/http"
@@ -19,8 +19,7 @@ import (
 func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 	app := fiber.New()
 	pkghttp.RegisterRoutes(app, &bootstrapcontainer.Container{
-		UserController:        &identityhttp.UserController{},
-		AuthController:        &identityhttp.AuthController{},
+		IdentityModule:        &identity.Module{},
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},
