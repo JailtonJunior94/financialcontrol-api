@@ -1,6 +1,6 @@
 environment: Production
 mssql:
-  connectionString: ""
+  connectionString: "${MSSQL_CONNECTION_STRING}"
 security:
   expirationAt: 1
-  jwtSecret: ""
+  jwtSecret: "${JWT_SECRET}"

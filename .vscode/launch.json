@@ -6,10 +6,11 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PORT": "4000",
-                "ENVIRONMENT": "Development",
+                "ENVIRONMENT": "Development"
             },
             "args": []
         },
@@ -18,7 +19,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PORT": "4000",
                 "ENVIRONMENT": "Staging"
@@ -30,7 +32,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PORT": "4000",
                 "ENVIRONMENT": "Production"
@@ -42,13 +45,16 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PORT": "4000",
                 "ENVIRONMENT": "Production"
             },
             "args": [
-                "budget"
+                "budget",
+                "--date",
+                "01/05/2026"
             ]
         },
         {
@@ -56,13 +62,101 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/main.go",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
             "env": {
                 "PORT": "4000",
                 "ENVIRONMENT": "Production"
             },
             "args": [
-                "budget-cards-and-others"
+                "budget-cards-and-others",
+                "--date",
+                "01/05/2026"
+            ]
+        },
+        {
+            "name": "Production (Budget Unified)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Production"
+            },
+            "args": [
+                "budget-unified",
+                "--date",
+                "01/05/2026"
+            ]
+        },
+        {
+            "name": "Production (Budget Full)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Production"
+            },
+            "args": [
+                "budget-full",
+                "--date",
+                "01/05/2026"
+            ]
+        },
+        {
+            "name": "Production (Balance)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Production"
+            },
+            "args": [
+                "balance",
+                "--date",
+                "01/05/2026"
+            ]
+        },
+        {
+            "name": "Production (Budget Category)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Production"
+            },
+            "args": [
+                "budget-category",
+                "--date",
+                "01/05/2026",
+                "--category",
+                ""
+            ]
+        },
+        {
+            "name": "Production (Sync)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Production"
+            },
+            "args": [
+                "sync"
             ]
         }
     ]
