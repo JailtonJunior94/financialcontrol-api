@@ -29,7 +29,7 @@ func (s *DefaultCardService) CardById(id, userID string) *web.HttpResponse {
 	}
 
 	if card == nil {
-		return web.NotFound(domain.CardNotFound)
+		return web.NotFound(domain.ErrCardNotFound)
 	}
 
 	return web.Ok(ToCardResponse(card))
@@ -51,7 +51,7 @@ func (s *DefaultCardService) UpdateCard(id, userID string, request *CardRequest)
 	}
 
 	if card == nil {
-		return web.NotFound(domain.CardNotFound)
+		return web.NotFound(domain.ErrCardNotFound)
 	}
 
 	card.Update(request.FlagID, request.Name, request.Description, request.Number, request.ClosingDay, request.ExpirationDate)
@@ -69,7 +69,7 @@ func (s *DefaultCardService) RemoveCard(id, userID string) *web.HttpResponse {
 	}
 
 	if card == nil {
-		return web.NotFound(domain.CardNotFound)
+		return web.NotFound(domain.ErrCardNotFound)
 	}
 
 	card.UpdateStatus(false)

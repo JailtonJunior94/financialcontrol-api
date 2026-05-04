@@ -22,3 +22,15 @@ packages:
       Issuer:
       Parser:
   github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext: {}
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces:
+    interfaces:
+      CardRepository:
+      FlagRepository:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase:
+    interfaces:
+      ListCards:
+      GetCard:
+      CreateCard:
+      UpdateCard:
+      DeactivateCard:
+      ListFlags:
