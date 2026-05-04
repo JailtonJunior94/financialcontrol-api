@@ -1,15 +1,16 @@
 package container
 
 import (
+	"context"
 	"log"
 	"time"
 
 	billingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/application"
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	billinginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/infrastructure"
-	cardsapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application"
-	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
-	cardsinfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure"
+	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
+	cardsvos "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
+	cardsmssql "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/persistence/mssql"
 	catalogapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/application"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
 	cataloginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/infrastructure"
@@ -24,6 +25,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	platformevents "github.com/jailtonjunior94/financialcontrol-api/pkg/events"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 	pkguuid "github.com/jailtonjunior94/financialcontrol-api/pkg/uuid"
@@ -37,41 +39,47 @@ type Container struct {
 	JwtParser             pkgjwt.Parser
 	UuidAdapter           pkguuid.IUuidAdapter
 	IdentityModule        *identity.Module
+	CardsModule           *cards.Module
 	TransactionRepository transactionsapp.TransactionRepository
 	BillRepository        billingapp.BillRepository
 	FlagRepository        catalogapp.FlagRepository
-	CardRepository        cardsapp.CardRepository
 	InvoiceRepository     invoicingapp.InvoiceRepository
 	CategoryRepository    catalogapp.CategoryRepository
 	TransactionService    transactionsapp.TransactionAppService
 	BillService           billingapp.BillService
 	FlagService           catalogapp.FlagService
-	CardService           cardsapp.CardService
 	InvoiceService        invoicingapp.InvoiceService
 	CategoryService       catalogapp.CategoryService
 	TransactionController *transactionshttp.TransactionController
 	BillController        *billinghttp.BillController
 	FlagController        *cataloghttp.FlagController
-	CardController        *cardshttp.CardController
 	InvoiceController     *invoicinghttp.InvoiceController
 	CategoryController    *cataloghttp.CategoryController
 	UpdateUseCase         *planningsync.UpdateTransactionUseCase
 	UpdateTransactionBill *planningsync.UpdateTransactionBill
 }
 
-// invoicingCardRepositoryAdapter adapts the cards repository to the invoicing
-// module's CardRepository interface. The container is the only place allowed
-// to import across module boundaries.
+// invoicingCardRepositoryAdapter adapts the new cards mssql repository to the
+// invoicing module's CardRepository interface. The container is the only place
+// allowed to import across module boundaries.
 type invoicingCardRepositoryAdapter struct {
-	repo *cardsinfra.CardRepository
+	repo *cardsmssql.CardRepository
 }
 
 func (a *invoicingCardRepositoryAdapter) GetCardById(id, userID string) (*invoicingapp.CardView, error) {
-	card, err := a.repo.GetCardById(id, userID)
-	if err != nil || card == nil {
+	uid, err := identityvo.ParseUserID(userID)
+	if err != nil {
 		return nil, err
 	}
-	return &invoicingapp.CardView{ID: card.ID, ClosingDay: card.ClosingDay}, nil
+	cid, err := cardsvos.ParseCardID(id)
+	if err != nil {
+		return nil, err
+	}
+	card, err := a.repo.GetByID(context.Background(), uid, cid)
+	if err != nil {
+		return nil, err
+	}
+	return &invoicingapp.CardView{ID: card.ID().String(), ClosingDay: card.ClosingDay().Int()}, nil
 }
 
 func Build(sqlConnection database.ISqlConnection) *Container {
@@ -105,21 +113,20 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 
 	c.BillRepository = billinginfra.NewBillRepository(c.SqlConnection)
 	c.FlagRepository = cataloginfra.NewFlagRepository(c.SqlConnection)
-	cardRepo := cardsinfra.NewCardRepository(c.SqlConnection)
-	c.CardRepository = cardRepo
 	c.InvoiceRepository = invoicinginfra.NewInvoiceRepository(c.SqlConnection)
 	c.CategoryRepository = cataloginfra.NewCategoryRepository(c.SqlConnection)
 	c.TransactionRepository = transactionsinfra.NewTransactionRepository(c.SqlConnection)
+
+	c.CardsModule = cards.NewModule(cards.Deps{DB: sqlConnection, JwtParser: jwtParser})
 
 	var dispatcher platformevents.EventDispatcher = platformevents.NewInProcessDispatcher()
 
 	c.BillService = billingapp.NewBillService(c.BillRepository)
 	c.FlagService = catalogapp.NewFlagService(c.FlagRepository)
-	c.CardService = cardsapp.NewCardService(c.CardRepository)
 	c.CategoryService = catalogapp.NewCategoryService(c.CategoryRepository)
 	c.TransactionService = transactionsapp.NewTransactionService(c.TransactionRepository)
 	invoicePublisher := invoicingapp.NewInvoiceChangedEventPublisher(dispatcher)
-	invoicingCardRepo := &invoicingCardRepositoryAdapter{repo: cardRepo}
+	invoicingCardRepo := &invoicingCardRepositoryAdapter{repo: cardsmssql.NewCardRepository(sqlConnection.Connect())}
 	c.InvoiceService = invoicingapp.NewInvoiceService(invoicingCardRepo, c.InvoiceRepository, invoicePublisher)
 
 	// Wire the modular invoice_changed handler via the adapter so the event
@@ -131,7 +138,6 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	c.BillController = billinghttp.NewBillController(c.BillService)
 	c.FlagController = cataloghttp.NewFlagController(c.FlagService)
 	c.CategoryController = cataloghttp.NewCategoryController(c.CategoryService)
-	c.CardController = cardshttp.NewCardController(c.CardService)
 	c.InvoiceController = invoicinghttp.NewInvoiceController(c.InvoiceService)
 	c.TransactionController = transactionshttp.NewTransactionController(c.TransactionService)
 

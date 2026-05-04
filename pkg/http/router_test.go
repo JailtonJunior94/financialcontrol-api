@@ -5,7 +5,8 @@ import (
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
-	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
+	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
@@ -16,6 +17,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func stubCardsModule() *cards.Module {
+	return &cards.Module{
+		CardHandler: handlers.NewCardHandler(nil, nil, nil, nil, nil),
+		FlagHandler: handlers.NewFlagHandler(nil),
+	}
+}
+
 func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 	app := fiber.New()
 	pkghttp.RegisterRoutes(app, &bootstrapcontainer.Container{
@@ -23,7 +31,7 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},
-		CardController:        &cardshttp.CardController{},
+		CardsModule:           stubCardsModule(),
 		InvoiceController:     &invoicinghttp.InvoiceController{},
 		CategoryController:    &cataloghttp.CategoryController{},
 	})

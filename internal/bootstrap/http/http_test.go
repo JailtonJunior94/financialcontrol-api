@@ -6,7 +6,8 @@ import (
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	bootstraphttp "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/http"
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
-	cardshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/http"
+	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
@@ -15,6 +16,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 )
+
+func stubCardsModule() *cards.Module {
+	return &cards.Module{
+		CardHandler: handlers.NewCardHandler(nil, nil, nil, nil, nil),
+		FlagHandler: handlers.NewFlagHandler(nil),
+	}
+}
 
 // stubModule returns an *identity.Module with nil handlers — safe for route-registration
 // tests that never invoke any handler.
@@ -26,7 +34,7 @@ func TestNewAppRegistersAPIBootstrapRoutes(t *testing.T) {
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},
-		CardController:        &cardshttp.CardController{},
+		CardsModule:           stubCardsModule(),
 		InvoiceController:     &invoicinghttp.InvoiceController{},
 		CategoryController:    &cataloghttp.CategoryController{},
 	})
@@ -62,7 +70,7 @@ func TestNewAppBootstrapsWithRuntimeConfigLoaded(t *testing.T) {
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
 		FlagController:        &cataloghttp.FlagController{},
-		CardController:        &cardshttp.CardController{},
+		CardsModule:           stubCardsModule(),
 		InvoiceController:     &invoicinghttp.InvoiceController{},
 		CategoryController:    &cataloghttp.CategoryController{},
 	})
