@@ -60,6 +60,7 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 		"/api/v1/bills/:billid/items/:id":               {"GET", "PUT", "DELETE"},
 		"/api/v1/flags":                                 {"GET"},
 		"/api/v1/cards":                                 {"GET", "POST"},
+		"/api/v1/cards/flags":                           {"GET"},
 		"/api/v1/cards/:id":                             {"GET", "PUT", "DELETE"},
 		"/api/v1/invoices":                              {"GET", "POST"},
 		"/api/v1/invoices/:id":                          {"GET", "PATCH"},

@@ -11,4 +11,5 @@ var (
 	ErrInvalidCredentials = errors.New("usuário e/ou senha inválidos")
 	ErrUserAlreadyExists  = errors.New("usuário já cadastrado")
 	ErrTokenIssuance      = errors.New("falha ao emitir token")
+	ErrIdentityInvalid    = errors.New("identidade no contexto possui user ID inválido")
 )

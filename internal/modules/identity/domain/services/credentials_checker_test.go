@@ -8,6 +8,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
+
 	"github.com/stretchr/testify/suite"
 )
 

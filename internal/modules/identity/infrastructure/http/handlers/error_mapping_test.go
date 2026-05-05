@@ -70,6 +70,12 @@ func (s *ErrorMappingSuite) TestMapError() {
 			expectedKey:    "error",
 		},
 		{
+			name:           "ErrIdentityInvalid → 401 (BUG-IDV-003)",
+			err:            domain.ErrIdentityInvalid,
+			expectedStatus: fiber.StatusUnauthorized,
+			expectedKey:    "error",
+		},
+		{
 			name:           "ErrInvalidToken → 401",
 			err:            pkgjwt.ErrInvalidToken,
 			expectedStatus: fiber.StatusUnauthorized,

@@ -7,6 +7,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
+
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure/http/routes"
 	mssqlrepo "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure/repositories/mssql"

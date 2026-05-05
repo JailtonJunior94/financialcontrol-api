@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
+	sharedidentityvo "github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,7 +24,7 @@ func (s *UserIDSuite) TestParseUserID() {
 		expect func(id vos.UserID, err error)
 	}{
 		{
-			name:  "valid uuid-like string",
+			name:  "valid uuid v4",
 			input: "550e8400-e29b-41d4-a716-446655440000",
 			expect: func(id vos.UserID, err error) {
 				s.NoError(err)
@@ -31,10 +32,24 @@ func (s *UserIDSuite) TestParseUserID() {
 			},
 		},
 		{
+			name:  "valid uuid v1 is accepted (BUG-IDV-002 regression)",
+			input: "c232ab00-9414-11ec-b3c8-9f6bdeced846",
+			expect: func(id vos.UserID, err error) {
+				s.NoError(err)
+				s.Equal(vos.UserID("c232ab00-9414-11ec-b3c8-9f6bdeced846"), id)
+			},
+		},
+		{
 			name:  "empty string",
 			input: "",
 			expect: func(id vos.UserID, err error) {
-				s.Error(err)
+				s.ErrorIs(err, vos.ErrInvalidUserID)
+			},
+		},
+		{
+			name:  "invalid non-uuid string",
+			input: "not-a-uuid",
+			expect: func(id vos.UserID, err error) {
 				s.ErrorIs(err, vos.ErrInvalidUserID)
 			},
 		},
@@ -57,4 +72,14 @@ func (s *UserIDSuite) TestNewUserIDIsUnique() {
 	id1 := vos.NewUserID()
 	id2 := vos.NewUserID()
 	s.NotEqual(id1, id2)
+}
+
+func (s *UserIDSuite) TestSharedIdentityVOCompatibility() {
+	sharedID, err := sharedidentityvo.ParseUserID("550e8400-e29b-41d4-a716-446655440000")
+	s.Require().NoError(err)
+
+	legacyID := sharedID
+
+	s.Equal(sharedID.String(), legacyID.String())
+	s.Equal(sharedidentityvo.ErrInvalidUserID, vos.ErrInvalidUserID)
 }

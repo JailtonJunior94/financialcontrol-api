@@ -15,6 +15,7 @@ const (
 	TransactionClone       = "/transactions/:transactionid/clone"
 	Users                  = "/users"
 	Cards                  = "/cards"
+	CardFlags              = "/cards/flags"
 	CardId                 = "/cards/:id"
 	Invoices               = "/invoices"
 	InvoicesImport         = "/invoices-import"

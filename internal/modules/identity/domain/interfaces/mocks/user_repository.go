@@ -6,7 +6,6 @@ import (
 	context "context"
 
 	entities "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
-	identityvo "github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -133,7 +132,7 @@ func (_c *UserRepository_GetByEmail_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetByID provides a mock function with given fields: ctx, id
-func (_m *UserRepository) GetByID(ctx context.Context, id identityvo.UserID) (*entities.User, error) {
+func (_m *UserRepository) GetByID(ctx context.Context, id vos.UserID) (*entities.User, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
@@ -142,10 +141,10 @@ func (_m *UserRepository) GetByID(ctx context.Context, id identityvo.UserID) (*e
 
 	var r0 *entities.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID) (*entities.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, vos.UserID) (*entities.User, error)); ok {
 		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID) *entities.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, vos.UserID) *entities.User); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
@@ -153,7 +152,7 @@ func (_m *UserRepository) GetByID(ctx context.Context, id identityvo.UserID) (*e
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, identityvo.UserID) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, vos.UserID) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
@@ -169,14 +168,14 @@ type UserRepository_GetByID_Call struct {
 
 // GetByID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id identityvo.UserID
+//   - id vos.UserID
 func (_e *UserRepository_Expecter) GetByID(ctx interface{}, id interface{}) *UserRepository_GetByID_Call {
 	return &UserRepository_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
 }
 
-func (_c *UserRepository_GetByID_Call) Run(run func(ctx context.Context, id identityvo.UserID)) *UserRepository_GetByID_Call {
+func (_c *UserRepository_GetByID_Call) Run(run func(ctx context.Context, id vos.UserID)) *UserRepository_GetByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(identityvo.UserID))
+		run(args[0].(context.Context), args[1].(vos.UserID))
 	})
 	return _c
 }
@@ -186,7 +185,7 @@ func (_c *UserRepository_GetByID_Call) Return(_a0 *entities.User, _a1 error) *Us
 	return _c
 }
 
-func (_c *UserRepository_GetByID_Call) RunAndReturn(run func(context.Context, identityvo.UserID) (*entities.User, error)) *UserRepository_GetByID_Call {
+func (_c *UserRepository_GetByID_Call) RunAndReturn(run func(context.Context, vos.UserID) (*entities.User, error)) *UserRepository_GetByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

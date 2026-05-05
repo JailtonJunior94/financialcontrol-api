@@ -5,8 +5,6 @@ package mocks
 import (
 	context "context"
 
-	identityvo "github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
-
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -28,7 +26,7 @@ func (_m *TokenIssuer) EXPECT() *TokenIssuer_Expecter {
 }
 
 // Issue provides a mock function with given fields: ctx, userID, email
-func (_m *TokenIssuer) Issue(ctx context.Context, userID identityvo.UserID, email vos.Email) (string, time.Time, error) {
+func (_m *TokenIssuer) Issue(ctx context.Context, userID vos.UserID, email vos.Email) (string, time.Time, error) {
 	ret := _m.Called(ctx, userID, email)
 
 	if len(ret) == 0 {
@@ -38,22 +36,22 @@ func (_m *TokenIssuer) Issue(ctx context.Context, userID identityvo.UserID, emai
 	var r0 string
 	var r1 time.Time
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID, vos.Email) (string, time.Time, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, vos.UserID, vos.Email) (string, time.Time, error)); ok {
 		return rf(ctx, userID, email)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID, vos.Email) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, vos.UserID, vos.Email) string); ok {
 		r0 = rf(ctx, userID, email)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, identityvo.UserID, vos.Email) time.Time); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, vos.UserID, vos.Email) time.Time); ok {
 		r1 = rf(ctx, userID, email)
 	} else {
 		r1 = ret.Get(1).(time.Time)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, identityvo.UserID, vos.Email) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, vos.UserID, vos.Email) error); ok {
 		r2 = rf(ctx, userID, email)
 	} else {
 		r2 = ret.Error(2)
@@ -69,15 +67,15 @@ type TokenIssuer_Issue_Call struct {
 
 // Issue is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID identityvo.UserID
+//   - userID vos.UserID
 //   - email vos.Email
 func (_e *TokenIssuer_Expecter) Issue(ctx interface{}, userID interface{}, email interface{}) *TokenIssuer_Issue_Call {
 	return &TokenIssuer_Issue_Call{Call: _e.mock.On("Issue", ctx, userID, email)}
 }
 
-func (_c *TokenIssuer_Issue_Call) Run(run func(ctx context.Context, userID identityvo.UserID, email vos.Email)) *TokenIssuer_Issue_Call {
+func (_c *TokenIssuer_Issue_Call) Run(run func(ctx context.Context, userID vos.UserID, email vos.Email)) *TokenIssuer_Issue_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(identityvo.UserID), args[2].(vos.Email))
+		run(args[0].(context.Context), args[1].(vos.UserID), args[2].(vos.Email))
 	})
 	return _c
 }
@@ -87,7 +85,7 @@ func (_c *TokenIssuer_Issue_Call) Return(token string, expiresAt time.Time, err 
 	return _c
 }
 
-func (_c *TokenIssuer_Issue_Call) RunAndReturn(run func(context.Context, identityvo.UserID, vos.Email) (string, time.Time, error)) *TokenIssuer_Issue_Call {
+func (_c *TokenIssuer_Issue_Call) RunAndReturn(run func(context.Context, vos.UserID, vos.Email) (string, time.Time, error)) *TokenIssuer_Issue_Call {
 	_c.Call.Return(run)
 	return _c
 }

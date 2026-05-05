@@ -1,24 +1,17 @@
 package vos
 
-import (
-	"errors"
+import sharedidentityvo "github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 
-	"github.com/google/uuid"
-)
+// UserID remains available in the legacy identity domain package as a
+// compatibility shim, but the canonical implementation now lives in pkg/identityvo.
+type UserID = sharedidentityvo.UserID
 
-type UserID string
-
-var ErrInvalidUserID = errors.New("user ID inválido")
+var ErrInvalidUserID = sharedidentityvo.ErrInvalidUserID
 
 func NewUserID() UserID {
-	return UserID(uuid.NewString())
+	return sharedidentityvo.NewUserID()
 }
 
 func ParseUserID(s string) (UserID, error) {
-	if s == "" {
-		return "", ErrInvalidUserID
-	}
-	return UserID(s), nil
+	return sharedidentityvo.ParseUserID(s)
 }
-
-func (u UserID) String() string { return string(u) }

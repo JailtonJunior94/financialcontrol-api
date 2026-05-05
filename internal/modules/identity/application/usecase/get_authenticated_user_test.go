@@ -42,6 +42,10 @@ func (s *GetAuthenticatedUserSuite) TestExecute() {
 		UserID: userID.String(),
 		Email:  email.String(),
 	})
+	ctxWithInvalidIdentity := identitycontext.WithIdentity(s.ctx, identitycontext.Identity{
+		UserID: "not-a-uuid",
+		Email:  email.String(),
+	})
 
 	scenarios := []struct {
 		name   string
@@ -68,6 +72,15 @@ func (s *GetAuthenticatedUserSuite) TestExecute() {
 				s.Equal(userID.String(), out.ID)
 				s.Equal("Me User", out.Name)
 				s.Equal(email.String(), out.Email)
+			},
+		},
+		{
+			name:  "user id invalido no contexto retorna ErrIdentityInvalid (BUG-IDV-003)",
+			ctx:   ctxWithInvalidIdentity,
+			setup: func() {},
+			expect: func(out dtos.MeResponse, err error) {
+				s.ErrorIs(err, domain.ErrIdentityInvalid)
+				s.NotErrorIs(err, domain.ErrUserNotFound)
 			},
 		},
 		{

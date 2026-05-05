@@ -30,7 +30,7 @@ func (u *getAuthenticatedUser) Execute(ctx context.Context) (dtos.MeResponse, er
 
 	userID, err := vos.ParseUserID(identity.UserID)
 	if err != nil {
-		return dtos.MeResponse{}, domain.ErrUserNotFound
+		return dtos.MeResponse{}, domain.ErrIdentityInvalid
 	}
 
 	user, err := u.repo.GetByID(ctx, userID)
