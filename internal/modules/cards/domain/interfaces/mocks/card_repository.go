@@ -133,9 +133,9 @@ func (_c *CardRepository_GetByID_Call) RunAndReturn(run func(context.Context, id
 	return _c
 }
 
-// List provides a mock function with given fields: ctx, userID
-func (_m *CardRepository) List(ctx context.Context, userID identityvo.UserID) ([]entities.Card, error) {
-	ret := _m.Called(ctx, userID)
+// List provides a mock function with given fields: ctx, userID, pagination
+func (_m *CardRepository) List(ctx context.Context, userID identityvo.UserID, pagination vos.Pagination) ([]entities.Card, error) {
+	ret := _m.Called(ctx, userID, pagination)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
@@ -143,19 +143,19 @@ func (_m *CardRepository) List(ctx context.Context, userID identityvo.UserID) ([
 
 	var r0 []entities.Card
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID) ([]entities.Card, error)); ok {
-		return rf(ctx, userID)
+	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID, vos.Pagination) ([]entities.Card, error)); ok {
+		return rf(ctx, userID, pagination)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID) []entities.Card); ok {
-		r0 = rf(ctx, userID)
+	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID, vos.Pagination) []entities.Card); ok {
+		r0 = rf(ctx, userID, pagination)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]entities.Card)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, identityvo.UserID) error); ok {
-		r1 = rf(ctx, userID)
+	if rf, ok := ret.Get(1).(func(context.Context, identityvo.UserID, vos.Pagination) error); ok {
+		r1 = rf(ctx, userID, pagination)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -171,13 +171,14 @@ type CardRepository_List_Call struct {
 // List is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID identityvo.UserID
-func (_e *CardRepository_Expecter) List(ctx interface{}, userID interface{}) *CardRepository_List_Call {
-	return &CardRepository_List_Call{Call: _e.mock.On("List", ctx, userID)}
+//   - pagination vos.Pagination
+func (_e *CardRepository_Expecter) List(ctx interface{}, userID interface{}, pagination interface{}) *CardRepository_List_Call {
+	return &CardRepository_List_Call{Call: _e.mock.On("List", ctx, userID, pagination)}
 }
 
-func (_c *CardRepository_List_Call) Run(run func(ctx context.Context, userID identityvo.UserID)) *CardRepository_List_Call {
+func (_c *CardRepository_List_Call) Run(run func(ctx context.Context, userID identityvo.UserID, pagination vos.Pagination)) *CardRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(identityvo.UserID))
+		run(args[0].(context.Context), args[1].(identityvo.UserID), args[2].(vos.Pagination))
 	})
 	return _c
 }
@@ -187,7 +188,7 @@ func (_c *CardRepository_List_Call) Return(_a0 []entities.Card, _a1 error) *Card
 	return _c
 }
 
-func (_c *CardRepository_List_Call) RunAndReturn(run func(context.Context, identityvo.UserID) ([]entities.Card, error)) *CardRepository_List_Call {
+func (_c *CardRepository_List_Call) RunAndReturn(run func(context.Context, identityvo.UserID, vos.Pagination) ([]entities.Card, error)) *CardRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

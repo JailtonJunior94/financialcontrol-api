@@ -24,9 +24,9 @@ func (_m *ListCards) EXPECT() *ListCards_Expecter {
 	return &ListCards_Expecter{mock: &_m.Mock}
 }
 
-// Execute provides a mock function with given fields: ctx, userID
-func (_m *ListCards) Execute(ctx context.Context, userID identityvo.UserID) ([]dtos.CardResponse, error) {
-	ret := _m.Called(ctx, userID)
+// Execute provides a mock function with given fields: ctx, userID, pagination
+func (_m *ListCards) Execute(ctx context.Context, userID identityvo.UserID, pagination dtos.Pagination) ([]dtos.CardResponse, error) {
+	ret := _m.Called(ctx, userID, pagination)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -34,19 +34,19 @@ func (_m *ListCards) Execute(ctx context.Context, userID identityvo.UserID) ([]d
 
 	var r0 []dtos.CardResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID) ([]dtos.CardResponse, error)); ok {
-		return rf(ctx, userID)
+	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID, dtos.Pagination) ([]dtos.CardResponse, error)); ok {
+		return rf(ctx, userID, pagination)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID) []dtos.CardResponse); ok {
-		r0 = rf(ctx, userID)
+	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID, dtos.Pagination) []dtos.CardResponse); ok {
+		r0 = rf(ctx, userID, pagination)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]dtos.CardResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, identityvo.UserID) error); ok {
-		r1 = rf(ctx, userID)
+	if rf, ok := ret.Get(1).(func(context.Context, identityvo.UserID, dtos.Pagination) error); ok {
+		r1 = rf(ctx, userID, pagination)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,13 +62,14 @@ type ListCards_Execute_Call struct {
 // Execute is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID identityvo.UserID
-func (_e *ListCards_Expecter) Execute(ctx interface{}, userID interface{}) *ListCards_Execute_Call {
-	return &ListCards_Execute_Call{Call: _e.mock.On("Execute", ctx, userID)}
+//   - pagination dtos.Pagination
+func (_e *ListCards_Expecter) Execute(ctx interface{}, userID interface{}, pagination interface{}) *ListCards_Execute_Call {
+	return &ListCards_Execute_Call{Call: _e.mock.On("Execute", ctx, userID, pagination)}
 }
 
-func (_c *ListCards_Execute_Call) Run(run func(ctx context.Context, userID identityvo.UserID)) *ListCards_Execute_Call {
+func (_c *ListCards_Execute_Call) Run(run func(ctx context.Context, userID identityvo.UserID, pagination dtos.Pagination)) *ListCards_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(identityvo.UserID))
+		run(args[0].(context.Context), args[1].(identityvo.UserID), args[2].(dtos.Pagination))
 	})
 	return _c
 }
@@ -78,7 +79,7 @@ func (_c *ListCards_Execute_Call) Return(_a0 []dtos.CardResponse, _a1 error) *Li
 	return _c
 }
 
-func (_c *ListCards_Execute_Call) RunAndReturn(run func(context.Context, identityvo.UserID) ([]dtos.CardResponse, error)) *ListCards_Execute_Call {
+func (_c *ListCards_Execute_Call) RunAndReturn(run func(context.Context, identityvo.UserID, dtos.Pagination) ([]dtos.CardResponse, error)) *ListCards_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

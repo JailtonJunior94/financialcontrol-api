@@ -9,7 +9,10 @@ import (
 )
 
 type CardRepository interface {
-	List(ctx context.Context, userID identityvo.UserID) ([]entities.Card, error)
+	List(ctx context.Context, userID identityvo.UserID, pagination vos.Pagination) ([]entities.Card, error)
+	// GetByID returns the active card with the given id that belongs to userID.
+	// It returns (nil, domain.ErrCardNotFound) when the card does not exist or
+	// does not belong to the user. It never returns (nil, nil).
 	GetByID(ctx context.Context, userID identityvo.UserID, id vos.CardID) (*entities.Card, error)
 	Add(ctx context.Context, card *entities.Card) error
 	Update(ctx context.Context, card *entities.Card) error

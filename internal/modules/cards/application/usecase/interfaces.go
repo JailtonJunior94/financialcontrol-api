@@ -9,7 +9,7 @@ import (
 )
 
 type ListCards interface {
-	Execute(ctx context.Context, userID identityvo.UserID) ([]dtos.CardResponse, error)
+	Execute(ctx context.Context, userID identityvo.UserID, pagination dtos.Pagination) ([]dtos.CardResponse, error)
 }
 
 type GetCard interface {
