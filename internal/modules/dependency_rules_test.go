@@ -15,7 +15,7 @@ import (
 )
 
 var allModules = []string{
-	"identity", "catalog", "cards", "billing",
+	"identity", "categories", "cards", "billing",
 	"transactions", "invoicing", "planning",
 }
 
