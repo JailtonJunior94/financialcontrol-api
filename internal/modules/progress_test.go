@@ -40,7 +40,6 @@ var legacyCapabilityDirs = []string{
 // moduleDirs are the module roots that should grow as migration progresses.
 var moduleDirs = []string{
 	"internal/modules/identity",
-	"internal/modules/catalog",
 	"internal/modules/cards",
 	"internal/modules/billing",
 	"internal/modules/transactions",
@@ -52,7 +51,6 @@ var moduleDirs = []string{
 // packages. All 7 modules are covered following the completed migration.
 var crossModuleRestricted = map[string][]string{
 	"identity":     {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"catalog":      {"internal/infrastructure/repositories", "internal/application/handlers"},
 	"cards":        {"internal/infrastructure/repositories", "internal/application/handlers"},
 	"billing":      {"internal/infrastructure/repositories", "internal/application/handlers"},
 	"transactions": {"internal/infrastructure/repositories", "internal/application/handlers"},

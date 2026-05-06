@@ -10,6 +10,7 @@ type BillingCycle struct {
 	due     DueDay
 }
 
+//nolint:staticcheck // Preserva mensagens públicas de validação já expostas pelo módulo.
 var ErrInvalidBillingCycle = errors.New("Ciclo de faturamento inválido")
 
 func NewBillingCycle(closing ClosingDay, due DueDay) (BillingCycle, error) {

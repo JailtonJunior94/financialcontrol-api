@@ -7,6 +7,7 @@ import (
 
 type CardNumber string
 
+//nolint:staticcheck // Preserva mensagens públicas de validação já expostas pelo módulo.
 var ErrInvalidCardNumber = errors.New("Número do cartão inválido")
 
 func NewCardNumber(s string) (CardNumber, error) {

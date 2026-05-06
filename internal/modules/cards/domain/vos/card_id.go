@@ -10,6 +10,7 @@ import (
 type CardID string
 
 var (
+	//nolint:staticcheck // Preserva mensagens públicas de validação já expostas pelo módulo.
 	ErrInvalidCardID = errors.New("ID de cartão inválido")
 	uuidRE           = regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 )

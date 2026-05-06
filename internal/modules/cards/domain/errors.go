@@ -2,6 +2,7 @@ package domain
 
 import "errors"
 
+//nolint:staticcheck // Preserva mensagens públicas de domínio expostas pelo contrato HTTP.
 var (
 	ErrCardNotFound        = errors.New("Cartão não encontrado")
 	ErrFlagNotFound        = errors.New("Bandeira não encontrada")

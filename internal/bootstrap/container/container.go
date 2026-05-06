@@ -11,9 +11,7 @@ import (
 	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
 	cardsvos "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	cardsmssql "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/persistence/mssql"
-	catalogapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/application"
-	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
-	cataloginfra "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/infrastructure"
+	categories "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicingapp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
@@ -40,21 +38,16 @@ type Container struct {
 	UuidAdapter           pkguuid.IUuidAdapter
 	IdentityModule        *identity.Module
 	CardsModule           *cards.Module
+	CategoriesModule      *categories.Module
 	TransactionRepository transactionsapp.TransactionRepository
 	BillRepository        billingapp.BillRepository
-	FlagRepository        catalogapp.FlagRepository
 	InvoiceRepository     invoicingapp.InvoiceRepository
-	CategoryRepository    catalogapp.CategoryRepository
 	TransactionService    transactionsapp.TransactionAppService
 	BillService           billingapp.BillService
-	FlagService           catalogapp.FlagService
 	InvoiceService        invoicingapp.InvoiceService
-	CategoryService       catalogapp.CategoryService
 	TransactionController *transactionshttp.TransactionController
 	BillController        *billinghttp.BillController
-	FlagController        *cataloghttp.FlagController
 	InvoiceController     *invoicinghttp.InvoiceController
-	CategoryController    *cataloghttp.CategoryController
 	UpdateUseCase         *planningsync.UpdateTransactionUseCase
 	UpdateTransactionBill *planningsync.UpdateTransactionBill
 }
@@ -112,18 +105,15 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	})
 
 	c.BillRepository = billinginfra.NewBillRepository(c.SqlConnection)
-	c.FlagRepository = cataloginfra.NewFlagRepository(c.SqlConnection)
 	c.InvoiceRepository = invoicinginfra.NewInvoiceRepository(c.SqlConnection)
-	c.CategoryRepository = cataloginfra.NewCategoryRepository(c.SqlConnection)
 	c.TransactionRepository = transactionsinfra.NewTransactionRepository(c.SqlConnection)
 
 	c.CardsModule = cards.NewModule(cards.Deps{DB: sqlConnection, JwtParser: jwtParser})
+	c.CategoriesModule = categories.NewModule(categories.Deps{DB: sqlConnection, JwtParser: jwtParser})
 
 	var dispatcher platformevents.EventDispatcher = platformevents.NewInProcessDispatcher()
 
 	c.BillService = billingapp.NewBillService(c.BillRepository)
-	c.FlagService = catalogapp.NewFlagService(c.FlagRepository)
-	c.CategoryService = catalogapp.NewCategoryService(c.CategoryRepository)
 	c.TransactionService = transactionsapp.NewTransactionService(c.TransactionRepository)
 	invoicePublisher := invoicingapp.NewInvoiceChangedEventPublisher(dispatcher)
 	invoicingCardRepo := &invoicingCardRepositoryAdapter{repo: cardsmssql.NewCardRepository(sqlConnection.Connect())}
@@ -136,8 +126,6 @@ func Build(sqlConnection database.ISqlConnection) *Container {
 	dispatcher.AddListener("invoice_changed", invoicingapp.NewInvoiceChangedListenerAdapter(invoiceChangedHandler))
 
 	c.BillController = billinghttp.NewBillController(c.BillService)
-	c.FlagController = cataloghttp.NewFlagController(c.FlagService)
-	c.CategoryController = cataloghttp.NewCategoryController(c.CategoryService)
 	c.InvoiceController = invoicinghttp.NewInvoiceController(c.InvoiceService)
 	c.TransactionController = transactionshttp.NewTransactionController(c.TransactionService)
 

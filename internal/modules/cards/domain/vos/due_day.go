@@ -4,6 +4,7 @@ import "errors"
 
 type DueDay int
 
+//nolint:staticcheck // Preserva mensagens públicas de validação já expostas pelo módulo.
 var ErrInvalidDueDay = errors.New("Dia de vencimento inválido (1..31)")
 
 func NewDueDay(n int) (DueDay, error) {

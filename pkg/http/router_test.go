@@ -7,7 +7,8 @@ import (
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
-	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
+	categories "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories"
+	categorieshandlers "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
@@ -16,6 +17,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 )
+
+func stubCategoriesModule() *categories.Module {
+	return &categories.Module{
+		CategoryHandler: categorieshandlers.NewCategoryHandler(nil, nil, nil, nil, nil),
+	}
+}
 
 func stubCardsModule() *cards.Module {
 	return &cards.Module{
@@ -30,10 +37,9 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 		IdentityModule:        &identity.Module{},
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
-		FlagController:        &cataloghttp.FlagController{},
 		CardsModule:           stubCardsModule(),
+		CategoriesModule:      stubCategoriesModule(),
 		InvoiceController:     &invoicinghttp.InvoiceController{},
-		CategoryController:    &cataloghttp.CategoryController{},
 	})
 
 	routes := app.GetRoutes(true)
@@ -58,7 +64,6 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 		"/api/v1/bills/:id":                             {"GET"},
 		"/api/v1/bills/:billid":                         {"POST"},
 		"/api/v1/bills/:billid/items/:id":               {"GET", "PUT", "DELETE"},
-		"/api/v1/flags":                                 {"GET"},
 		"/api/v1/cards":                                 {"GET", "POST"},
 		"/api/v1/cards/flags":                           {"GET"},
 		"/api/v1/cards/:id":                             {"GET", "PUT", "DELETE"},
@@ -67,7 +72,8 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 		"/api/v1/invoices/:id/items":                    {"PUT", "DELETE"},
 		"/api/v1/invoices-import":                       {"POST"},
 		"/api/v1/invoices/:id/categories":               {"GET"},
-		"/api/v1/categories":                            {"GET"},
+		"/api/v1/categories":                            {"GET", "POST"},
+		"/api/v1/categories/:id":                        {"GET", "PUT", "DELETE"},
 	}
 
 	for path, methods := range expected {

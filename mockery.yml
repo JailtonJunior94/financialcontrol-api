@@ -34,3 +34,13 @@ packages:
       UpdateCard:
       DeactivateCard:
       ListFlags:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces:
+    interfaces:
+      CategoryRepository:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase:
+    interfaces:
+      CreateCategory:
+      UpdateCategory:
+      DeleteCategory:
+      GetCategory:
+      ListCategories:

@@ -8,7 +8,8 @@ import (
 	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
-	cataloghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog/http"
+	categories "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories"
+	categorieshandlers "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
 	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
@@ -28,15 +29,20 @@ func stubCardsModule() *cards.Module {
 // tests that never invoke any handler.
 func stubModule() *identity.Module { return &identity.Module{} }
 
+func stubCategoriesModule() *categories.Module {
+	return &categories.Module{
+		CategoryHandler: categorieshandlers.NewCategoryHandler(nil, nil, nil, nil, nil),
+	}
+}
+
 func TestNewAppRegistersAPIBootstrapRoutes(t *testing.T) {
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
 		IdentityModule:        stubModule(),
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
-		FlagController:        &cataloghttp.FlagController{},
 		CardsModule:           stubCardsModule(),
+		CategoriesModule:      stubCategoriesModule(),
 		InvoiceController:     &invoicinghttp.InvoiceController{},
-		CategoryController:    &cataloghttp.CategoryController{},
 	})
 
 	routes := app.GetRoutes(true)
@@ -69,10 +75,9 @@ func TestNewAppBootstrapsWithRuntimeConfigLoaded(t *testing.T) {
 		IdentityModule:        stubModule(),
 		TransactionController: &transactionshttp.TransactionController{},
 		BillController:        &billinghttp.BillController{},
-		FlagController:        &cataloghttp.FlagController{},
 		CardsModule:           stubCardsModule(),
+		CategoriesModule:      stubCategoriesModule(),
 		InvoiceController:     &invoicinghttp.InvoiceController{},
-		CategoryController:    &cataloghttp.CategoryController{},
 	})
 
 	require.NotNil(t, app)

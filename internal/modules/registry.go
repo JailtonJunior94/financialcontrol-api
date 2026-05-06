@@ -3,12 +3,11 @@ package modules
 import (
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/catalog"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions"
-	platformmodules "github.com/jailtonjunior94/financialcontrol-api/pkg/modules"
 	pkgauthmiddleware "github.com/jailtonjunior94/financialcontrol-api/pkg/authmiddleware"
+	platformmodules "github.com/jailtonjunior94/financialcontrol-api/pkg/modules"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
@@ -16,7 +15,6 @@ import (
 
 func Registrations() []platformmodules.ModuleRegistration {
 	return []platformmodules.ModuleRegistration{
-		catalog.Registration(),
 		billing.Registration(),
 		transactions.Registration(),
 		invoicing.Registration(),
@@ -31,6 +29,7 @@ func RegisterHTTP(router fiber.Router, container *bootstrapcontainer.Container) 
 	)
 
 	container.CardsModule.RegisterHTTP(router, container.JwtParser)
+	container.CategoriesModule.RegisterHTTP(router, container.JwtParser)
 
 	for _, registration := range Registrations() {
 		if registration.RegisterHTTP == nil {

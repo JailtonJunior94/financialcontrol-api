@@ -4,6 +4,7 @@ import "errors"
 
 type ClosingDay int
 
+//nolint:staticcheck // Preserva mensagens públicas de validação já expostas pelo módulo.
 var ErrInvalidClosingDay = errors.New("Melhor dia de compra inválido (1..31)")
 
 func NewClosingDay(n int) (ClosingDay, error) {
