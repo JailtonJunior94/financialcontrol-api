@@ -15,6 +15,20 @@
             "args": []
         },
         {
+            "name": "Debug (API - Docker DB)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/financialcontrol-api/main.go",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PORT": "4000",
+                "ENVIRONMENT": "Development",
+                "MSSQL_CONNECTION_STRING": "sqlserver://sa:%40docker%402021@localhost:1433?database=financial_control&encrypt=disable"
+            },
+            "args": []
+        },
+        {
             "name": "Staging (API)",
             "type": "go",
             "request": "launch",

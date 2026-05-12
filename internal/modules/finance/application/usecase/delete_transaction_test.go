@@ -78,7 +78,7 @@ func TestDeleteTransaction_HasActiveRefund_ReturnsError(t *testing.T) {
 
 // BUG-003 regression: DeleteTransaction must surface
 // ErrInstallmentInClosedOrPaidInvoice when any installment is bound to a closed
-// or paid invoice. After fixing the SQL to JOIN finance.Invoices, the repository
+// or paid invoice. After fixing the SQL to JOIN dbo.FinanceInvoices, the repository
 // returns true even when installment.status='scheduled' (RF-46 keeps it that
 // way while the invoice is closed-but-unpaid).
 func TestDeleteTransaction_BlocksWhenInstallmentInClosedOrPaidInvoice(t *testing.T) {

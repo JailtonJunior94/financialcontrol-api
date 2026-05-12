@@ -1,18 +1,15 @@
--- Migration: create the finance module schema on MSSQL (DDL only — Task 3.0).
+-- Migration: create the finance module tables on MSSQL (DDL only — Task 3.0).
 -- DML migration data and counts/sums gate will be added in Task 10.0 to this same file.
 -- Idempotency is delegated to dbo.schema_migrations; defensive guards removed.
 --
--- Fallback (decision A1.c): if CREATE SCHEMA is not permitted in the target environment,
--- prefix table names with "Finance" in dbo (e.g., dbo.FinanceTransactions) and update
--- constants in pkg/database/queries.go accordingly. The finance. prefix is the default.
-
-IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'finance')
-    EXEC('CREATE SCHEMA finance');
+-- Decision A1.c (chosen): tables live in dbo with the "Finance" prefix
+-- (e.g., dbo.FinanceTransactions) to avoid CREATE SCHEMA and keep all objects
+-- in a single schema. Queries in internal/.../mssql/queries.go must follow this naming.
 
 -- ============================================================
--- Table: finance.Transactions
+-- Table: dbo.FinanceTransactions
 -- ============================================================
-CREATE TABLE finance.Transactions (
+CREATE TABLE dbo.FinanceTransactions (
     [Id]                    UNIQUEIDENTIFIER NOT NULL,
     [UserId]                UNIQUEIDENTIFIER NOT NULL,
     [Description]           NVARCHAR(255)    COLLATE SQL_Latin1_General_CP1_CI_AI NOT NULL, -- C3.a + F2.b (RF-19)
@@ -31,7 +28,7 @@ CREATE TABLE finance.Transactions (
     [DeletedAt]             DATETIME2        NULL,
     CONSTRAINT PK_Transactions PRIMARY KEY ([Id]),
     CONSTRAINT FK_Tx_User FOREIGN KEY ([UserId]) REFERENCES dbo.[User]([Id]),
-    CONSTRAINT FK_Tx_Original FOREIGN KEY ([OriginalTransactionId]) REFERENCES finance.Transactions([Id]), -- H1.a (self-FK)
+    CONSTRAINT FK_Tx_Original FOREIGN KEY ([OriginalTransactionId]) REFERENCES dbo.FinanceTransactions([Id]), -- H1.a (self-FK)
     CONSTRAINT CK_Tx_Amount_Positive CHECK ([Amount] > 0),
     CONSTRAINT CK_Tx_Currency_BRL CHECK ([Currency] = 'BRL'),                               -- H2.b: single-currency enforced; relax in future PRD
     CONSTRAINT CK_Tx_Type CHECK ([TransactionType] IN ('income','expense','credit_purchase','installment_purchase','refund')),
@@ -39,21 +36,21 @@ CREATE TABLE finance.Transactions (
 );
 
 CREATE INDEX IX_Tx_User_Occurred
-    ON finance.Transactions([UserId], [OccurredAt] DESC, [CreatedAt] DESC)
+    ON dbo.FinanceTransactions([UserId], [OccurredAt] DESC, [CreatedAt] DESC)
     WHERE [DeletedAt] IS NULL;
 
 CREATE INDEX IX_Tx_User_LegacyOrigin
-    ON finance.Transactions([UserId], [LegacyOrigin])
+    ON dbo.FinanceTransactions([UserId], [LegacyOrigin])
     WHERE [LegacyOrigin] IS NOT NULL;
 
 CREATE UNIQUE INDEX UX_Tx_ActiveRefundPerOriginal
-    ON finance.Transactions([OriginalTransactionId])
+    ON dbo.FinanceTransactions([OriginalTransactionId])
     WHERE [TransactionType] = 'refund' AND [DeletedAt] IS NULL; -- RF-13 (409 duplicate guard)
 
 -- ============================================================
--- Table: finance.Invoices
+-- Table: dbo.FinanceInvoices
 -- ============================================================
-CREATE TABLE finance.Invoices (
+CREATE TABLE dbo.FinanceInvoices (
     [Id]           UNIQUEIDENTIFIER NOT NULL,
     [UserId]       UNIQUEIDENTIFIER NOT NULL,
     [CardId]       UNIQUEIDENTIFIER NOT NULL,
@@ -75,17 +72,17 @@ CREATE TABLE finance.Invoices (
 );
 
 CREATE INDEX IX_Inv_User_Card_Cycle
-    ON finance.Invoices([UserId], [CardId], [CycleEnd] DESC)
+    ON dbo.FinanceInvoices([UserId], [CardId], [CycleEnd] DESC)
     WHERE [DeletedAt] IS NULL;
 
 CREATE INDEX IX_Inv_User_State
-    ON finance.Invoices([UserId], [State])
+    ON dbo.FinanceInvoices([UserId], [State])
     WHERE [DeletedAt] IS NULL;
 
 -- ============================================================
--- Table: finance.Installments
+-- Table: dbo.FinanceInstallments
 -- ============================================================
-CREATE TABLE finance.Installments (
+CREATE TABLE dbo.FinanceInstallments (
     [Id]            UNIQUEIDENTIFIER NOT NULL,
     [TransactionId] UNIQUEIDENTIFIER NOT NULL,
     [InvoiceId]     UNIQUEIDENTIFIER NOT NULL,
@@ -99,24 +96,24 @@ CREATE TABLE finance.Installments (
     [UpdatedAt]     DATETIME2        NOT NULL,
     [DeletedAt]     DATETIME2        NULL,
     CONSTRAINT PK_Installments PRIMARY KEY ([Id]),
-    CONSTRAINT FK_Inst_Tx FOREIGN KEY ([TransactionId]) REFERENCES finance.Transactions([Id]),
-    CONSTRAINT FK_Inst_Inv FOREIGN KEY ([InvoiceId]) REFERENCES finance.Invoices([Id]),
+    CONSTRAINT FK_Inst_Tx FOREIGN KEY ([TransactionId]) REFERENCES dbo.FinanceTransactions([Id]),
+    CONSTRAINT FK_Inst_Inv FOREIGN KEY ([InvoiceId]) REFERENCES dbo.FinanceInvoices([Id]),
     CONSTRAINT CK_Inst_Status CHECK ([Status] IN ('scheduled','anticipated','paid_via_invoice','refunded')),
     CONSTRAINT CK_Inst_Currency_BRL CHECK ([Currency] = 'BRL')
 );
 
 CREATE INDEX IX_Inst_Invoice
-    ON finance.Installments([InvoiceId])
+    ON dbo.FinanceInstallments([InvoiceId])
     WHERE [DeletedAt] IS NULL;
 
 CREATE INDEX IX_Inst_Tx
-    ON finance.Installments([TransactionId])
+    ON dbo.FinanceInstallments([TransactionId])
     WHERE [DeletedAt] IS NULL;
 
 -- ============================================================
--- Table: finance.IdempotencyKeys  (RF-26)
+-- Table: dbo.FinanceIdempotencyKeys  (RF-26)
 -- ============================================================
-CREATE TABLE finance.IdempotencyKeys (
+CREATE TABLE dbo.FinanceIdempotencyKeys (
     [UserId]       UNIQUEIDENTIFIER NOT NULL,
     [Endpoint]     VARCHAR(128)     NOT NULL,
     [Key]          VARCHAR(64)      NOT NULL,
@@ -129,7 +126,23 @@ CREATE TABLE finance.IdempotencyKeys (
 );
 
 CREATE INDEX IX_Idemp_Expires
-    ON finance.IdempotencyKeys([ExpiresAt]);
+    ON dbo.FinanceIdempotencyKeys([ExpiresAt]);
+
+-- ============================================================
+-- Table: dbo.FinanceMigrationAudit  (Assumption 4 / RF-38)
+-- Criada antes do bloco DML porque o bloco de auditoria abaixo lê/insere
+-- nesta tabela; T-SQL falha com "Invalid object name" se a DDL ficar depois.
+-- ============================================================
+CREATE TABLE dbo.FinanceMigrationAudit (
+    [Id]           UNIQUEIDENTIFIER NOT NULL,
+    [StartedAt]    DATETIME2        NOT NULL,
+    [FinishedAt]   DATETIME2        NULL,
+    [SourceTable]  VARCHAR(64)      NOT NULL,
+    [RowsRead]     BIGINT           NOT NULL DEFAULT 0,
+    [RowsWritten]  BIGINT           NOT NULL DEFAULT 0,
+    [Status]       VARCHAR(16)      NOT NULL,
+    CONSTRAINT PK_MigrationAudit PRIMARY KEY ([Id])
+);
 
 -- ============================================================
 -- DML Migration: populate finance.* from legacy dbo tables
@@ -142,25 +155,25 @@ CREATE INDEX IX_Idemp_Expires
 --
 -- Source → Destination mapping:
 --   dbo.TransactionItem  (+ parent dbo.[Transaction] for UserId/Date)
---                        → finance.Transactions  (income / expense)
---   dbo.Invoice          → finance.Invoices
---   dbo.InvoiceItem      → finance.Transactions  (credit_purchase / installment_purchase)
+--                        → dbo.FinanceTransactions  (income / expense)
+--   dbo.Invoice          → dbo.FinanceInvoices
+--   dbo.InvoiceItem      → dbo.FinanceTransactions  (credit_purchase / installment_purchase)
 --   dbo.InvoiceItem (Installment>1)
---                        → finance.Installments  (one row per installment number)
+--                        → dbo.FinanceInstallments  (one row per installment number)
 
 -- ============================================================
 -- Audit: record migration start (idempotent)
 -- ============================================================
 DECLARE @auditId UNIQUEIDENTIFIER;
-IF EXISTS (SELECT 1 FROM finance.MigrationAudit WHERE [Status] IN ('started', 'dml_ok'))
+IF EXISTS (SELECT 1 FROM dbo.FinanceMigrationAudit WHERE [Status] IN ('started', 'dml_ok'))
     SELECT TOP 1 @auditId = [Id]
-    FROM finance.MigrationAudit
+    FROM dbo.FinanceMigrationAudit
     WHERE [Status] IN ('started', 'dml_ok')
     ORDER BY [StartedAt] DESC;
 ELSE
 BEGIN
     SET @auditId = NEWID();
-    INSERT INTO finance.MigrationAudit
+    INSERT INTO dbo.FinanceMigrationAudit
         ([Id], [StartedAt], [FinishedAt], [SourceTable], [RowsRead], [RowsWritten], [Status])
     VALUES
         (@auditId, GETUTCDATE(), NULL, '*', 0, 0, 'started');
@@ -169,13 +182,16 @@ END;
 -- ============================================================
 -- RF-36: Hard validations — abort with RAISERROR on invalid rows
 -- ============================================================
-DECLARE @badId UNIQUEIDENTIFIER;
+-- @badIdStr é separado de @badId porque RAISERROR só aceita variáveis/literais
+-- como argumentos de substituição — CAST inline causa parse error no T-SQL.
+DECLARE @badId UNIQUEIDENTIFIER, @badIdStr VARCHAR(36);
 
 -- TransactionItem: value <= 0
 IF EXISTS (SELECT 1 FROM dbo.TransactionItem WHERE Active = 1 AND Value <= 0)
 BEGIN
     SELECT TOP 1 @badId = Id FROM dbo.TransactionItem WHERE Active = 1 AND Value <= 0;
-    RAISERROR('RF-36: TransactionItem.Value <= 0, source id: %s', 16, 1, CAST(@badId AS VARCHAR(36)));
+    SET @badIdStr = CAST(@badId AS VARCHAR(36));
+    RAISERROR('RF-36: TransactionItem.Value <= 0, source id: %s', 16, 1, @badIdStr);
 END;
 
 -- TransactionItem: Type not in (INCOME, OUTCOME)
@@ -187,7 +203,8 @@ BEGIN
     SELECT TOP 1 @badId = Id
     FROM dbo.TransactionItem
     WHERE Active = 1 AND UPPER([Type]) NOT IN ('INCOME', 'OUTCOME');
-    RAISERROR('RF-36: TransactionItem.Type invalid, source id: %s', 16, 1, CAST(@badId AS VARCHAR(36)));
+    SET @badIdStr = CAST(@badId AS VARCHAR(36));
+    RAISERROR('RF-36: TransactionItem.Type invalid, source id: %s', 16, 1, @badIdStr);
 END;
 
 -- InvoiceItem: TotalAmount <= 0 or NULL
@@ -197,7 +214,8 @@ IF EXISTS (
 BEGIN
     SELECT TOP 1 @badId = Id
     FROM dbo.InvoiceItem WHERE Active = 1 AND (TotalAmount IS NULL OR TotalAmount <= 0);
-    RAISERROR('RF-36: InvoiceItem.TotalAmount <= 0, source id: %s', 16, 1, CAST(@badId AS VARCHAR(36)));
+    SET @badIdStr = CAST(@badId AS VARCHAR(36));
+    RAISERROR('RF-36: InvoiceItem.TotalAmount <= 0, source id: %s', 16, 1, @badIdStr);
 END;
 
 -- InvoiceItem: Description > 255 chars (RF-36)
@@ -205,14 +223,16 @@ IF EXISTS (SELECT 1 FROM dbo.InvoiceItem WHERE Active = 1 AND LEN([Description])
 BEGIN
     SELECT TOP 1 @badId = Id
     FROM dbo.InvoiceItem WHERE Active = 1 AND LEN([Description]) > 255;
-    RAISERROR('RF-36: InvoiceItem.Description > 255 chars, source id: %s', 16, 1, CAST(@badId AS VARCHAR(36)));
+    SET @badIdStr = CAST(@badId AS VARCHAR(36));
+    RAISERROR('RF-36: InvoiceItem.Description > 255 chars, source id: %s', 16, 1, @badIdStr);
 END;
 
 -- InvoiceItem: NULL CategoryId
 IF EXISTS (SELECT 1 FROM dbo.InvoiceItem WHERE Active = 1 AND CategoryId IS NULL)
 BEGIN
     SELECT TOP 1 @badId = Id FROM dbo.InvoiceItem WHERE Active = 1 AND CategoryId IS NULL;
-    RAISERROR('RF-36: InvoiceItem.CategoryId is NULL, source id: %s', 16, 1, CAST(@badId AS VARCHAR(36)));
+    SET @badIdStr = CAST(@badId AS VARCHAR(36));
+    RAISERROR('RF-36: InvoiceItem.CategoryId is NULL, source id: %s', 16, 1, @badIdStr);
 END;
 
 -- ============================================================
@@ -228,7 +248,7 @@ SELECT
 INTO #InvoiceMap
 FROM dbo.Invoice inv
 INNER JOIN dbo.Card      c  ON c.[Id]  = inv.[CardId]
-LEFT  JOIN finance.Invoices fi
+LEFT  JOIN dbo.FinanceInvoices fi
            ON fi.[LegacyOrigin] = 'Invoice:' + CAST(inv.[Id] AS VARCHAR(36))
 WHERE inv.[Active] = 1
   AND c.[Active]   = 1;
@@ -245,18 +265,18 @@ INTO #InvoiceItemMap
 FROM dbo.InvoiceItem ii
 INNER JOIN dbo.Invoice       inv ON inv.[Id] = ii.[InvoiceId]
 INNER JOIN #InvoiceMap       im  ON im.[LegacyInvId] = inv.[Id]
-LEFT  JOIN finance.Transactions ft
+LEFT  JOIN dbo.FinanceTransactions ft
            ON ft.[LegacyOrigin] = 'InvoiceItem:' + CAST(ii.[Id] AS VARCHAR(36))
 WHERE ii.[Active]  = 1
   AND inv.[Active] = 1;
 
 -- ============================================================
--- DML 1: finance.Transactions ← dbo.TransactionItem
+-- DML 1: dbo.FinanceTransactions ← dbo.TransactionItem
 -- RF-35: payment_method = pix  (no card_id)
 -- RF-35: transaction_type = income | expense  (from Type column)
 -- CategoryId: placeholder UUID (no FK constraint on this column)
 -- ============================================================
-INSERT INTO finance.Transactions (
+INSERT INTO dbo.FinanceTransactions (
     [Id], [UserId], [Description], [Amount], [Currency], [OccurredAt],
     [TransactionType], [PaymentMethod],
     [CardId], [CategoryId], [SubcategoryId], [OriginalTransactionId],
@@ -283,15 +303,15 @@ INNER JOIN dbo.[Transaction] t ON t.[Id] = ti.[TransactionId]
 WHERE ti.[Active] = 1
   AND t.[Active]  = 1
   AND NOT EXISTS (
-        SELECT 1 FROM finance.Transactions
+        SELECT 1 FROM dbo.FinanceTransactions
         WHERE [LegacyOrigin] = 'TransactionItem:' + CAST(ti.[Id] AS VARCHAR(36))
   );
 
 -- ============================================================
--- DML 2: finance.Invoices ← dbo.Invoice
+-- DML 2: dbo.FinanceInvoices ← dbo.Invoice
 -- CycleStart/End derived from Invoice.[Date]; ClosingDate from Card.ClosingDay.
 -- ============================================================
-INSERT INTO finance.Invoices (
+INSERT INTO dbo.FinanceInvoices (
     [Id], [UserId], [CardId], [State],
     [CycleStart], [CycleEnd], [ClosingDate], [DueDate],
     [Total], [Currency], [PaidAt],
@@ -318,16 +338,16 @@ FROM #InvoiceMap im
 INNER JOIN dbo.Invoice inv ON inv.[Id] = im.[LegacyInvId]
 INNER JOIN dbo.Card    c   ON c.[Id]   = inv.[CardId]
 WHERE NOT EXISTS (
-        SELECT 1 FROM finance.Invoices
+        SELECT 1 FROM dbo.FinanceInvoices
         WHERE [LegacyOrigin] = 'Invoice:' + CAST(inv.[Id] AS VARCHAR(36))
 );
 
 -- ============================================================
--- DML 3: finance.Transactions ← dbo.InvoiceItem (credit purchases)
+-- DML 3: dbo.FinanceTransactions ← dbo.InvoiceItem (credit purchases)
 -- RF-35: payment_method = credit_card (card_id not null)
 -- RF-35: transaction_type = credit_purchase if installment<=1, installment_purchase if >1
 -- ============================================================
-INSERT INTO finance.Transactions (
+INSERT INTO dbo.FinanceTransactions (
     [Id], [UserId], [Description], [Amount], [Currency], [OccurredAt],
     [TransactionType], [PaymentMethod],
     [CardId], [CategoryId], [SubcategoryId], [OriginalTransactionId],
@@ -352,12 +372,12 @@ SELECT
 FROM #InvoiceItemMap im
 INNER JOIN dbo.InvoiceItem ii ON ii.[Id] = im.[LegacyItemId]
 WHERE NOT EXISTS (
-        SELECT 1 FROM finance.Transactions
+        SELECT 1 FROM dbo.FinanceTransactions
         WHERE [LegacyOrigin] = 'InvoiceItem:' + CAST(ii.[Id] AS VARCHAR(36))
 );
 
 -- ============================================================
--- DML 4: finance.Installments ← dbo.InvoiceItem (installment_purchase rows only)
+-- DML 4: dbo.FinanceInstallments ← dbo.InvoiceItem (installment_purchase rows only)
 -- One finance.Installment per installment number (1..N).
 -- ============================================================
 WITH Numbers(n) AS (
@@ -367,7 +387,7 @@ WITH Numbers(n) AS (
     SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20 UNION ALL
     SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL SELECT 24
 )
-INSERT INTO finance.Installments (
+INSERT INTO dbo.FinanceInstallments (
     [Id], [TransactionId], [InvoiceId],
     [Number], [Total], [Amount], [Currency],
     [Status], [LegacyOrigin], [CreatedAt], [UpdatedAt]
@@ -389,7 +409,7 @@ INNER JOIN dbo.InvoiceItem ii ON ii.[Id] = im.[LegacyItemId]
 INNER JOIN Numbers nb ON nb.[n] <= im.[InstallmentCount]
 WHERE im.[InstallmentCount] > 1
   AND NOT EXISTS (
-        SELECT 1 FROM finance.Installments
+        SELECT 1 FROM dbo.FinanceInstallments
         WHERE [LegacyOrigin] = 'InvoiceItem:' + CAST(ii.[Id] AS VARCHAR(36))
                              + ':' + CAST(nb.[n] AS VARCHAR(2))
 );
@@ -408,7 +428,7 @@ FROM dbo.TransactionItem ti
 INNER JOIN dbo.[Transaction] t ON t.[Id] = ti.[TransactionId]
 WHERE ti.[Active] = 1 AND t.[Active] = 1;
 
-SELECT @dstCnt = COUNT(*) FROM finance.Transactions
+SELECT @dstCnt = COUNT(*) FROM dbo.FinanceTransactions
 WHERE [LegacyOrigin] LIKE 'TransactionItem:%';
 
 IF @srcCnt <> @dstCnt
@@ -420,7 +440,7 @@ FROM dbo.InvoiceItem ii
 INNER JOIN dbo.Invoice inv ON inv.[Id] = ii.[InvoiceId]
 WHERE ii.[Active] = 1 AND inv.[Active] = 1;
 
-SELECT @dstCnt = COUNT(*) FROM finance.Transactions
+SELECT @dstCnt = COUNT(*) FROM dbo.FinanceTransactions
 WHERE [LegacyOrigin] LIKE 'InvoiceItem:%';
 
 IF @srcCnt <> @dstCnt
@@ -429,7 +449,7 @@ IF @srcCnt <> @dstCnt
 -- RF-38c: Invoice count
 SELECT @srcCnt = COUNT(*) FROM dbo.Invoice WHERE [Active] = 1;
 
-SELECT @dstCnt = COUNT(*) FROM finance.Invoices
+SELECT @dstCnt = COUNT(*) FROM dbo.FinanceInvoices
 WHERE [LegacyOrigin] LIKE 'Invoice:%';
 
 IF @srcCnt <> @dstCnt
@@ -457,7 +477,7 @@ FULL OUTER JOIN (
         [UserId],
         [TransactionType],
         CAST(SUM([Amount]) AS DECIMAL(19,4)) AS [DstSum]
-    FROM finance.Transactions
+    FROM dbo.FinanceTransactions
     WHERE [LegacyOrigin] LIKE 'TransactionItem:%'
     GROUP BY [UserId], [TransactionType]
 ) dst ON dst.[UserId] = src.[UserId] AND dst.[TransactionType] = src.[TxType]
@@ -482,7 +502,7 @@ FULL OUTER JOIN (
     SELECT
         [UserId],
         CAST(SUM([Amount]) AS DECIMAL(19,4)) AS [DstSum]
-    FROM finance.Transactions
+    FROM dbo.FinanceTransactions
     WHERE [LegacyOrigin] LIKE 'InvoiceItem:%'
     GROUP BY [UserId]
 ) dst ON dst.[UserId] = src.[UserId]
@@ -506,8 +526,8 @@ LEFT JOIN (
     SELECT
         ft.[LegacyOrigin],
         COUNT(*) AS [Actual]
-    FROM finance.Installments inst
-    INNER JOIN finance.Transactions ft ON ft.[Id] = inst.[TransactionId]
+    FROM dbo.FinanceInstallments inst
+    INNER JOIN dbo.FinanceTransactions ft ON ft.[Id] = inst.[TransactionId]
     WHERE ft.[LegacyOrigin] LIKE 'InvoiceItem:%'
       AND ft.[LegacyOrigin] NOT LIKE 'InvoiceItem:%:%'
     GROUP BY ft.[LegacyOrigin]
@@ -520,7 +540,7 @@ IF @mismatch > 0
 -- ============================================================
 -- Audit: mark DML complete (Status = dml_ok)
 -- ============================================================
-UPDATE finance.MigrationAudit
+UPDATE dbo.FinanceMigrationAudit
 SET
     [Status]      = 'dml_ok',
     [FinishedAt]  = GETUTCDATE(),
@@ -529,21 +549,7 @@ SET
         (SELECT COUNT(*) FROM dbo.InvoiceItem     WHERE Active = 1) +
         (SELECT COUNT(*) FROM dbo.Invoice         WHERE Active = 1),
     [RowsWritten] =
-        (SELECT COUNT(*) FROM finance.Transactions  WHERE LegacyOrigin IS NOT NULL) +
-        (SELECT COUNT(*) FROM finance.Invoices      WHERE LegacyOrigin IS NOT NULL) +
-        (SELECT COUNT(*) FROM finance.Installments  WHERE LegacyOrigin IS NOT NULL)
+        (SELECT COUNT(*) FROM dbo.FinanceTransactions  WHERE LegacyOrigin IS NOT NULL) +
+        (SELECT COUNT(*) FROM dbo.FinanceInvoices      WHERE LegacyOrigin IS NOT NULL) +
+        (SELECT COUNT(*) FROM dbo.FinanceInstallments  WHERE LegacyOrigin IS NOT NULL)
 WHERE [Id] = @auditId;
-
--- ============================================================
--- Table: finance.MigrationAudit  (Assumption 4 / RF-38)
--- ============================================================
-CREATE TABLE finance.MigrationAudit (
-    [Id]           UNIQUEIDENTIFIER NOT NULL,
-    [StartedAt]    DATETIME2        NOT NULL,
-    [FinishedAt]   DATETIME2        NULL,
-    [SourceTable]  VARCHAR(64)      NOT NULL,
-    [RowsRead]     BIGINT           NOT NULL DEFAULT 0,
-    [RowsWritten]  BIGINT           NOT NULL DEFAULT 0,
-    [Status]       VARCHAR(16)      NOT NULL,
-    CONSTRAINT PK_MigrationAudit PRIMARY KEY ([Id])
-);

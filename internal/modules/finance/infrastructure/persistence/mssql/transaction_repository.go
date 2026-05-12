@@ -108,7 +108,7 @@ func (r *TransactionRepository) List(ctx context.Context, userID identityvo.User
 	where, args := buildTransactionWhere(userID, f)
 
 	// count query
-	countQ := "SELECT COUNT(1) FROM finance.Transactions (NOLOCK) WHERE " + where
+	countQ := "SELECT COUNT(1) FROM dbo.FinanceTransactions (NOLOCK) WHERE " + where
 	var total int64
 	if err := r.db.QueryRowContext(ctx, countQ, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("mssql: list transactions count: %w", err)
@@ -247,8 +247,8 @@ func buildTransactionWhere(userID identityvo.UserID, f filters.TransactionFilter
 		args = append(args, sql.Named("term", "%"+f.DescriptionContains+"%"))
 	}
 	if f.InvoiceStatus.IsActive() {
-		sb.WriteString(" AND EXISTS (SELECT 1 FROM finance.Installments inst (NOLOCK)" +
-			" INNER JOIN finance.Invoices inv (NOLOCK) ON inv.[Id] = inst.[InvoiceId]" +
+		sb.WriteString(" AND EXISTS (SELECT 1 FROM dbo.FinanceInstallments inst (NOLOCK)" +
+			" INNER JOIN dbo.FinanceInvoices inv (NOLOCK) ON inv.[Id] = inst.[InvoiceId]" +
 			" WHERE inst.[TransactionId] = [Id]" +
 			" AND inst.[DeletedAt] IS NULL AND inv.[DeletedAt] IS NULL" +
 			" AND inv.[State] = @invoiceStatus)")

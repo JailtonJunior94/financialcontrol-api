@@ -92,7 +92,7 @@ func (r *InvoiceRepository) List(ctx context.Context, userID identityvo.UserID, 
 
 	var total int64
 	if err := r.db.QueryRowContext(ctx,
-		"SELECT COUNT(1) FROM finance.Invoices (NOLOCK) WHERE "+where, args...,
+		"SELECT COUNT(1) FROM dbo.FinanceInvoices (NOLOCK) WHERE "+where, args...,
 	).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("mssql: list invoices count: %w", err)
 	}

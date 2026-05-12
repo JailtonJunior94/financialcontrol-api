@@ -1,4 +1,4 @@
-.PHONY: build test vet lint run run_sync run_budget run_budget_cards_and_others run_budget_unified run_budget_full run_balance run_budget_category mocks mocks/clean
+.PHONY: build test vet lint run run_sync run_budget run_budget_cards_and_others run_budget_unified run_budget_full run_balance run_budget_category mocks mocks/clean infra-up infra-down infra-logs infra-migrate infra-wait infra-db-create infra-finalize
 
 # Mockery v2 pinned — see ADR-003. v2.46.0 incompatível com Go 1.26; mínimo v2.53.6.
 MOCKERY ?= go run github.com/vektra/mockery/v2@v2.53.6
@@ -80,3 +80,49 @@ migrate-up: migrate-build
 migrate-baseline: migrate-build
 	@test -n "$(BASELINE)" || (echo "usage: make migrate-baseline BASELINE=N" && exit 2)
 	MIGRATION_BASELINE=$(BASELINE) ./bin/migration
+
+COMPOSE_FILE       := deployments/docker/docker-compose.yml
+COMPOSE            := docker compose -f $(COMPOSE_FILE)
+MSSQL_DB           ?= financial_control
+MSSQL_SA_PASSWORD  ?= @docker@2021
+MSSQL_WAIT_RETRIES ?= 60
+
+infra-up: infra-wait infra-db-create infra-migrate infra-finalize
+	@echo "Infra ready: mssql up, database $(MSSQL_DB) present, migrations applied up to v2."
+
+infra-wait:
+	@echo "Starting MSSQL container..."
+	@$(COMPOSE) up -d mssql
+	@echo "Waiting for MSSQL to accept connections..."
+	@for i in $$(seq 1 $(MSSQL_WAIT_RETRIES)); do \
+	  if docker exec mssql /opt/mssql-tools18/bin/sqlcmd -No -S localhost -U sa -P '$(MSSQL_SA_PASSWORD)' -Q 'SELECT 1' >/dev/null 2>&1; then \
+	    echo "MSSQL ready (attempt $$i)"; \
+	    exit 0; \
+	  fi; \
+	  printf '.'; sleep 2; \
+	done; \
+	echo "MSSQL did not become ready in time"; exit 1
+
+infra-db-create:
+	@echo "Ensuring database $(MSSQL_DB) exists..."
+	@docker exec mssql /opt/mssql-tools18/bin/sqlcmd -No -S localhost -U sa -P '$(MSSQL_SA_PASSWORD)' \
+	  -Q "IF DB_ID('$(MSSQL_DB)') IS NULL CREATE DATABASE [$(MSSQL_DB)]"
+
+infra-migrate:
+	@echo "Running migrations..."
+	@# 000003 is a prod-cutover migration that drops legacy tables and requires
+	@# the smoke hook (HTTP runtime) — it intentionally fires THROW 50001 here.
+	@# The leading "-" lets the chain continue; infra-finalize cleans dirty state.
+	-@$(COMPOSE) --profile migrate run --rm --build migration
+
+infra-finalize:
+	@echo "Finalizing schema_migrations (cap at v2 for local dev)..."
+	@docker exec mssql /opt/mssql-tools18/bin/sqlcmd -No -S localhost -U sa -P '$(MSSQL_SA_PASSWORD)' \
+	  -d $(MSSQL_DB) \
+	  -Q "IF EXISTS (SELECT 1 FROM schema_migrations WHERE version = 3 AND dirty = 1) UPDATE schema_migrations SET version = 2, dirty = 0;"
+
+infra-down:
+	@$(COMPOSE) --profile migrate down
+
+infra-logs:
+	@$(COMPOSE) logs -f mssql

@@ -53,7 +53,7 @@ type smokeInvoiceItem struct {
 
 // FinanceSmokeHook is the production entry-point registered in init().
 // It builds the full runtime, runs smoke requests for every user that has at least
-// one finance.Transaction, and writes Status='smoke_ok' to finance.MigrationAudit
+// one finance.Transaction, and writes Status='smoke_ok' to dbo.FinanceMigrationAudit
 // on success.  Any non-2xx response or infrastructure error returns a non-nil error.
 func FinanceSmokeHook(ctx context.Context, logger *slog.Logger) error {
 	c, err := bootstrapcontainer.BuildRuntime()
@@ -84,7 +84,7 @@ func FinanceSmokeHook(ctx context.Context, logger *slog.Logger) error {
 		queryUsers: func(qCtx context.Context) ([]string, error) {
 			rows, err := db.QueryContext(qCtx,
 				`SELECT DISTINCT CAST([UserId] AS VARCHAR(36))
-				 FROM finance.Transactions
+				 FROM dbo.FinanceTransactions
 				 WHERE [DeletedAt] IS NULL`)
 			if err != nil {
 				return nil, err
@@ -93,7 +93,7 @@ func FinanceSmokeHook(ctx context.Context, logger *slog.Logger) error {
 		},
 		writeAudit: func(aCtx context.Context) error {
 			_, err := db.ExecContext(aCtx, `
-				INSERT INTO finance.MigrationAudit
+				INSERT INTO dbo.FinanceMigrationAudit
 				    ([Id],[StartedAt],[FinishedAt],[SourceTable],[RowsRead],[RowsWritten],[Status])
 				VALUES (NEWID(),GETUTCDATE(),GETUTCDATE(),'*',0,0,'smoke_ok')`)
 			return err

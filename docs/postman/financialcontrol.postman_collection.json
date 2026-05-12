@@ -1,0 +1,991 @@
+{
+	"info": {
+		"_postman_id": "6d3a9b9a-4e5c-4b5a-9a9a-4e5c4b5a9a9a",
+		"name": "Financial Control API",
+		"description": "API para controle financeiro pessoal, incluindo gestão de transações, faturas, cartões e categorias.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Identity",
+			"item": [
+				{
+					"name": "Authenticate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"securepassword\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Authenticated User (Me)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"me"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Finance",
+			"item": [
+				{
+					"name": "Transactions",
+					"item": [
+						{
+							"name": "Create Transaction",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Idempotency-Key",
+										"value": "{{$guid}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"description\": \"Aluguel\",\n    \"amount\": \"1500.00\",\n    \"occurred_at\": \"2026-05-12T10:00:00Z\",\n    \"transaction_type\": \"expense\",\n    \"payment_method\": \"pix\",\n    \"category_id\": \"uuid-categoria\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/finance/transactions",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"transactions"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "List Transactions",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/finance/transactions?page=1&page_size=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"transactions"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "page_size",
+											"value": "10"
+										},
+										{
+											"key": "transaction_type",
+											"value": "expense",
+											"disabled": true
+										},
+										{
+											"key": "payment_method",
+											"value": "credit_card",
+											"disabled": true
+										},
+										{
+											"key": "from",
+											"value": "2026-05-01T00:00:00Z",
+											"disabled": true
+										},
+										{
+											"key": "to",
+											"value": "2026-05-31T23:59:59Z",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Transaction",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/finance/transactions/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"transactions",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "uuid-transacao"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Transaction",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"description\": \"Aluguel Atualizado\",\n    \"amount\": \"1550.00\",\n    \"occurred_at\": \"2026-05-12T10:00:00Z\",\n    \"transaction_type\": \"expense\",\n    \"payment_method\": \"pix\",\n    \"category_id\": \"uuid-categoria\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/finance/transactions/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"transactions",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "uuid-transacao"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Transaction",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/finance/transactions/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"transactions",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "uuid-transacao"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Refund Transaction",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"payment_method\": \"pix\",\n    \"description\": \"Estorno de compra\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/finance/transactions/:id/refund",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"transactions",
+										":id",
+										"refund"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "uuid-transacao"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Invoices",
+					"item": [
+						{
+							"name": "List Invoices",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/finance/invoices?page=1&page_size=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"invoices"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "page_size",
+											"value": "10"
+										},
+										{
+											"key": "card_id",
+											"value": "uuid-cartao",
+											"disabled": true
+										},
+										{
+											"key": "state",
+											"value": "open",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Invoice",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/finance/invoices/:id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"invoices",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "uuid-fatura"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Pay Invoice",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"payment_method\": \"pix\",\n    \"paid_at\": \"2026-05-12T10:00:00Z\",\n    \"amount\": \"500.00\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/finance/invoices/:id/pay",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"invoices",
+										":id",
+										"pay"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "uuid-fatura"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Summary",
+					"item": [
+						{
+							"name": "Get Monthly Summary",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/finance/summary?year=2026&month=5",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"summary"
+									],
+									"query": [
+										{
+											"key": "year",
+											"value": "2026"
+										},
+										{
+											"key": "month",
+											"value": "5"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Installments",
+					"item": [
+						{
+							"name": "Anticipate Installment",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/finance/installments/:id/anticipate",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"finance",
+										"installments",
+										":id",
+										"anticipate"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "uuid-parcela"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "List Categories",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/categories?page=1&pageSize=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categories"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								},
+								{
+									"key": "name",
+									"value": "Alimentação",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-categoria"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Lazer\",\n    \"sequence\": 1,\n    \"color\": \"#FF5733\",\n    \"icon\": \"fun-icon\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/categories",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Category",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Lazer Atualizado\",\n    \"sequence\": 2,\n    \"color\": \"#C70039\",\n    \"icon\": \"new-icon\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-categoria"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/categories/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"categories",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-categoria"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cards",
+			"item": [
+				{
+					"name": "List Cards",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/cards?page=1&size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"cards"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Flags",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/cards/flags",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"cards",
+								"flags"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/cards/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"cards",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-cartao"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"flagId\": \"uuid-bandeira\",\n    \"name\": \"Cartão Inter\",\n    \"number\": \"1234\",\n    \"description\": \"Cartão para gastos fixos\",\n    \"closingDay\": 5,\n    \"expirationDate\": \"2030-12-31T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cards",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"cards"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"flagId\": \"uuid-bandeira\",\n    \"name\": \"Cartão Inter Atualizado\",\n    \"number\": \"1234\",\n    \"description\": \"Cartão para gastos fixos\",\n    \"closingDay\": 10,\n    \"expirationDate\": \"2030-12-31T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cards/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"cards",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-cartao"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate Card",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/cards/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"cards",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "uuid-cartao"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

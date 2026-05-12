@@ -18,7 +18,7 @@ const smokeTriggerVersion = 2
 
 // SmokeHookFn is a function invoked between the smoke-trigger migration and the
 // subsequent DROP migration.  Implementations must write Status='smoke_ok' to
-// finance.MigrationAudit before returning nil.
+// dbo.FinanceMigrationAudit before returning nil.
 type SmokeHookFn func(ctx context.Context, logger *slog.Logger) error
 
 // globalHooks is the package-level registry populated by hook packages via init().
@@ -159,7 +159,7 @@ func (r *runner) apply(ctx context.Context, migrator migration.Migrator) error {
 //  1. Apply all pending migrations (000002 succeeds; 000003 SQL gate fires
 //     because smoke_ok is absent, leaving the migration dirty at version 3).
 //  2. Reset dirty state to smokeTriggerVersion, then run the named smoke hook
-//     (which writes Status='smoke_ok' to finance.MigrationAudit).
+//     (which writes Status='smoke_ok' to dbo.FinanceMigrationAudit).
 //  3. Re-apply pending migrations (only 000003 remains; guard is now satisfied).
 func (r *runner) applyWithSmoke(ctx context.Context, migrator migration.Migrator) error {
 	hookFn := r.testHookFn
@@ -207,7 +207,7 @@ func (r *runner) applyWithSmoke(ctx context.Context, migrator migration.Migrator
 			slog.Uint64("version", uint64(smokeTriggerVersion)))
 	}
 
-	// Phase 2: run smoke hook (writes smoke_ok to finance.MigrationAudit).
+	// Phase 2: run smoke hook (writes smoke_ok to dbo.FinanceMigrationAudit).
 	r.logger.Info("invoking smoke hook", slog.String("hook", r.smokeHook))
 	if err := hookFn(ctx, r.logger); err != nil {
 		return fmt.Errorf("smoke %q: %w", r.smokeHook, err)

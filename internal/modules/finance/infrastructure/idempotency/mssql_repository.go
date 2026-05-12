@@ -14,16 +14,16 @@ import (
 
 const (
 	getIdempotencyKey = `SELECT [RequestHash],[ResponseBody],[StatusCode]
-	FROM finance.IdempotencyKeys (NOLOCK)
+	FROM dbo.FinanceIdempotencyKeys (NOLOCK)
 	WHERE [UserId] = @userId AND [Endpoint] = @endpoint AND [Key] = @key
 	  AND [ExpiresAt] > @now`
 
-	saveIdempotencyKey = `INSERT INTO finance.IdempotencyKeys
+	saveIdempotencyKey = `INSERT INTO dbo.FinanceIdempotencyKeys
 		([UserId],[Endpoint],[Key],[RequestHash],[ResponseBody],[StatusCode],[CreatedAt],[ExpiresAt])
 		VALUES
 		(@userId,@endpoint,@key,@requestHash,@responseBody,@statusCode,@createdAt,@expiresAt)`
 
-	purgeExpiredIdempotencyKeys = `DELETE FROM finance.IdempotencyKeys WHERE [ExpiresAt] <= @now`
+	purgeExpiredIdempotencyKeys = `DELETE FROM dbo.FinanceIdempotencyKeys WHERE [ExpiresAt] <= @now`
 )
 
 var _ IdempotencyRepository = (*MSSQLRepository)(nil)

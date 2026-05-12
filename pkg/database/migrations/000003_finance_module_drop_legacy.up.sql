@@ -3,19 +3,19 @@
 -- Recovery: restore from pre-migration backup snapshot.
 --
 -- Guard (RF-39 / defense in depth): the Go smoke hook (finance_smoke.go) must have
--- written Status='smoke_ok' to finance.MigrationAudit before this file executes.
+-- written Status='smoke_ok' to dbo.FinanceMigrationAudit before this file executes.
 -- If the guard fires, the entire migration batch is aborted and the legacy tables
 -- are preserved intact.
 
 IF NOT EXISTS (
-    SELECT 1 FROM finance.MigrationAudit WHERE [Status] = 'smoke_ok'
+    SELECT 1 FROM dbo.FinanceMigrationAudit WHERE [Status] = 'smoke_ok'
 )
 BEGIN
     -- THROW aborts the batch unconditionally, so the legacy DROP statements
     -- below cannot run when the smoke gate has not been satisfied —
     -- independent of XACT_ABORT or the migration driver's error handling.
     THROW 50001,
-        '000003: smoke validation not confirmed — Status=''smoke_ok'' required in finance.MigrationAudit. Run cmd/migration with --smoke=finance flag.',
+        '000003: smoke validation not confirmed — Status=''smoke_ok'' required in dbo.FinanceMigrationAudit. Run cmd/migration with --smoke=finance flag.',
         1;
 END;
 

@@ -18,7 +18,7 @@ services:
 
   mssql:
     container_name: mssql
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    image: mcr.microsoft.com/mssql/server:2019-CU32-ubuntu-20.04
     restart: always
     ports:
       - "1433:1433"
@@ -30,6 +30,22 @@ services:
       ACCEPT_EULA: 'Y'
       SA_PASSWORD: '@docker@2021'
       MSSQL_AGENT_ENABLED: 'True'
+
+  migration:
+    container_name: financialcontrol_migration
+    image: financialcontrol-migration
+    build:
+      context: ../..
+      dockerfile: Dockerfile.migration
+    depends_on:
+      - mssql
+    networks:
+      - financial_net
+    environment:
+      MSSQL_CONNECTION_STRING: "sqlserver://sa:%40docker%402021@mssql:1433?database=financial_control&encrypt=disable"
+    restart: "no"
+    profiles:
+      - migrate
 
 networks:
   financial_net:

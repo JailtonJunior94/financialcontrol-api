@@ -11,7 +11,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// TransactionRow holds columns scanned from finance.Transactions.
+// TransactionRow holds columns scanned from dbo.FinanceTransactions.
 type TransactionRow struct {
 	ID                    string
 	UserID                string
@@ -31,7 +31,7 @@ type TransactionRow struct {
 	DeletedAt             *time.Time
 }
 
-// InvoiceRow holds columns scanned from finance.Invoices.
+// InvoiceRow holds columns scanned from dbo.FinanceInvoices.
 type InvoiceRow struct {
 	ID           string
 	UserID       string
@@ -50,7 +50,7 @@ type InvoiceRow struct {
 	DeletedAt    *time.Time
 }
 
-// InstallmentRow holds columns scanned from finance.Installments.
+// InstallmentRow holds columns scanned from dbo.FinanceInstallments.
 type InstallmentRow struct {
 	ID            string
 	TransactionID string
