@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
-	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	categories "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories"
 	categorieshandlers "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
+	finance "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance"
+	financehandlers "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/http/handlers"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
-	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
-	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
 	pkghttp "github.com/jailtonjunior94/financialcontrol-api/pkg/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -31,15 +30,22 @@ func stubCardsModule() *cards.Module {
 	}
 }
 
+func stubFinanceModule() *finance.Module {
+	return &finance.Module{
+		TransactionHandler: financehandlers.NewTransactionHandler(nil, nil, nil, nil, nil, nil),
+		InvoiceHandler:     financehandlers.NewInvoiceHandler(nil, nil, nil),
+		InstallmentHandler: financehandlers.NewInstallmentHandler(nil),
+		SummaryHandler:     financehandlers.NewSummaryHandler(nil),
+	}
+}
+
 func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 	app := fiber.New()
 	pkghttp.RegisterRoutes(app, &bootstrapcontainer.Container{
-		IdentityModule:        &identity.Module{},
-		TransactionController: &transactionshttp.TransactionController{},
-		BillController:        &billinghttp.BillController{},
-		CardsModule:           stubCardsModule(),
-		CategoriesModule:      stubCategoriesModule(),
-		InvoiceController:     &invoicinghttp.InvoiceController{},
+		IdentityModule:   &identity.Module{},
+		CardsModule:      stubCardsModule(),
+		CategoriesModule: stubCategoriesModule(),
+		FinanceModule:    stubFinanceModule(),
 	})
 
 	routes := app.GetRoutes(true)
@@ -52,28 +58,22 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 	}
 
 	expected := map[string][]string{
-		"/api/v1/token":                                 {"POST"},
-		"/api/v1/me":                                    {"GET"},
-		"/api/v1/users":                                 {"POST"},
-		"/api/v1/transactions":                          {"GET", "POST"},
-		"/api/v1/transactions/:id":                      {"GET"},
-		"/api/v1/transactions/:transactionid":           {"POST"},
-		"/api/v1/transactions/:transactionid/clone":     {"POST"},
-		"/api/v1/transactions/:transactionid/items/:id": {"GET", "PUT", "PATCH", "DELETE"},
-		"/api/v1/bills":                                 {"GET", "POST"},
-		"/api/v1/bills/:id":                             {"GET"},
-		"/api/v1/bills/:billid":                         {"POST"},
-		"/api/v1/bills/:billid/items/:id":               {"GET", "PUT", "DELETE"},
-		"/api/v1/cards":                                 {"GET", "POST"},
-		"/api/v1/cards/flags":                           {"GET"},
-		"/api/v1/cards/:id":                             {"GET", "PUT", "DELETE"},
-		"/api/v1/invoices":                              {"GET", "POST"},
-		"/api/v1/invoices/:id":                          {"GET", "PATCH"},
-		"/api/v1/invoices/:id/items":                    {"PUT", "DELETE"},
-		"/api/v1/invoices-import":                       {"POST"},
-		"/api/v1/invoices/:id/categories":               {"GET"},
-		"/api/v1/categories":                            {"GET", "POST"},
-		"/api/v1/categories/:id":                        {"GET", "PUT", "DELETE"},
+		"/api/v1/token":                              {"POST"},
+		"/api/v1/me":                                 {"GET"},
+		"/api/v1/users":                              {"POST"},
+		"/api/v1/cards":                              {"GET", "POST"},
+		"/api/v1/cards/flags":                        {"GET"},
+		"/api/v1/cards/:id":                          {"GET", "PUT", "DELETE"},
+		"/api/v1/categories":                         {"GET", "POST"},
+		"/api/v1/categories/:id":                     {"GET", "PUT", "DELETE"},
+		"/api/v1/finance/transactions":               {"GET", "POST"},
+		"/api/v1/finance/transactions/:id":           {"GET", "PUT", "DELETE"},
+		"/api/v1/finance/transactions/:id/refund":    {"POST"},
+		"/api/v1/finance/invoices":                   {"GET"},
+		"/api/v1/finance/invoices/:id":               {"GET"},
+		"/api/v1/finance/invoices/:id/pay":           {"PATCH"},
+		"/api/v1/finance/installments/:id/anticipate": {"POST"},
+		"/api/v1/finance/summary":                    {"GET"},
 	}
 
 	for path, methods := range expected {

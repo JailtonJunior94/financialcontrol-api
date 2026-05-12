@@ -1,0 +1,1 @@
+-- forward-only delivery: rollback procedure documented in cmd/migration/README.md (D-28: snapshot restore).

@@ -15,16 +15,15 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces/mocks"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 )
 
 func TestListCategories_Execute(t *testing.T) {
 	userID := mustUserID(t)
 
-	t.Run("default pagination + scope=all", func(t *testing.T) {
+	t.Run("default pagination", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
 		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
-			return f.Pagination.Page == 1 && f.Pagination.Size == 10 && !f.OnlyRoots && !f.OnlySubs && f.ParentID == nil
+			return f.Pagination.Page == 1 && f.Pagination.Size == 10 && f.NameLike == ""
 		})).Return([]entities.Category{}, int64(0), nil).Once()
 
 		resp, err := usecase.NewListCategories(repo).Execute(context.Background(), userID, dtos.ListCategoriesQuery{})
@@ -33,57 +32,29 @@ func TestListCategories_Execute(t *testing.T) {
 		assert.Equal(t, 10, resp.PageSize)
 	})
 
-	t.Run("scope roots", func(t *testing.T) {
+	t.Run("roots scope is accepted as all", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
-			return f.OnlyRoots && f.ParentID == nil
-		})).Return([]entities.Category{}, int64(0), nil).Once()
+		repo.EXPECT().List(mock.Anything, userID, mock.Anything).Return([]entities.Category{}, int64(0), nil).Once()
 
 		_, err := usecase.NewListCategories(repo).Execute(context.Background(), userID, dtos.ListCategoriesQuery{Scope: "roots"})
 		require.NoError(t, err)
 	})
 
-	t.Run("scope subs with parentId", func(t *testing.T) {
+	t.Run("subs scope is unsupported", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		parentIDStr := "55555555-5555-4555-8555-555555555555"
-		parentID, _ := vos.ParseCategoryID(parentIDStr)
-		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
-			return !f.OnlyRoots && f.OnlySubs && f.ParentID != nil && *f.ParentID == parentID
-		})).Return([]entities.Category{}, int64(0), nil).Once()
-
-		_, err := usecase.NewListCategories(repo).Execute(context.Background(), userID, dtos.ListCategoriesQuery{Scope: "subs", ParentID: parentIDStr})
-		require.NoError(t, err)
-	})
-
-	t.Run("scope subs without parentId", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
-			return !f.OnlyRoots && f.OnlySubs && f.ParentID == nil
-		})).Return([]entities.Category{}, int64(0), nil).Once()
-
 		_, err := usecase.NewListCategories(repo).Execute(context.Background(), userID, dtos.ListCategoriesQuery{Scope: "subs"})
-		require.NoError(t, err)
+		assert.ErrorIs(t, err, domain.ErrCategoryHierarchyUnsupported)
 	})
 
-	t.Run("parentId overrides roots scope", func(t *testing.T) {
+	t.Run("parentId is unsupported", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		parentIDStr := "55555555-5555-4555-8555-555555555555"
-		parentID, _ := vos.ParseCategoryID(parentIDStr)
-		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
-			return !f.OnlyRoots && f.OnlySubs && f.ParentID != nil && *f.ParentID == parentID
-		})).Return([]entities.Category{}, int64(0), nil).Once()
-
-		_, err := usecase.NewListCategories(repo).Execute(context.Background(), userID, dtos.ListCategoriesQuery{Scope: "roots", ParentID: parentIDStr})
-		require.NoError(t, err)
+		_, err := usecase.NewListCategories(repo).Execute(context.Background(), userID, dtos.ListCategoriesQuery{
+			ParentID: "55555555-5555-4555-8555-555555555555",
+		})
+		assert.ErrorIs(t, err, domain.ErrCategoryHierarchyUnsupported)
 	})
 
-	t.Run("invalid parentId", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		_, err := usecase.NewListCategories(repo).Execute(context.Background(), userID, dtos.ListCategoriesQuery{ParentID: "bad"})
-		assert.ErrorIs(t, err, domain.ErrInvalidCategoryID)
-	})
-
-	t.Run("custom pagination", func(t *testing.T) {
+	t.Run("custom pagination and filter", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
 		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
 			return f.Pagination.Page == 3 && f.Pagination.Size == 10 && f.NameLike == "co"
@@ -95,7 +66,7 @@ func TestListCategories_Execute(t *testing.T) {
 		assert.Equal(t, 3, resp.Page)
 	})
 
-	t.Run("page size is capped at one hundred", func(t *testing.T) {
+	t.Run("page size capped at one hundred", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
 		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
 			return f.Pagination.Page == 1 && f.Pagination.Size == 100

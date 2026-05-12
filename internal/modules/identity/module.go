@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
+
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
@@ -11,7 +13,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure/http/routes"
 	mssqlrepo "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure/repositories/mssql"
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 
@@ -20,7 +21,7 @@ import (
 
 // Deps holds the external dependencies required to build the identity module.
 type Deps struct {
-	DB          database.ISqlConnection
+	DB          devkitdb.DBTX
 	Hasher      interfaces.Hasher
 	TokenIssuer interfaces.TokenIssuer
 }
@@ -36,7 +37,7 @@ type Module struct {
 
 // NewModule builds the identity module from its external dependencies.
 func NewModule(deps Deps) *Module {
-	repo := mssqlrepo.NewUserRepository(deps.DB.Connect())
+	repo := mssqlrepo.NewUserRepository(deps.DB)
 
 	authenticateUser := usecase.NewAuthenticateUser(repo, deps.Hasher, deps.TokenIssuer)
 	getAuthenticatedUser := usecase.NewGetAuthenticatedUser(repo)

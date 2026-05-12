@@ -11,23 +11,10 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 )
-
-func makeCategory(t *testing.T, id vos.CategoryID, parentID *vos.CategoryID) *entities.Category {
-	t.Helper()
-	name, err := vos.NewCategoryName("Comida")
-	require.NoError(t, err)
-	color, err := vos.NewCategoryColor("red")
-	require.NoError(t, err)
-	icon, err := vos.NewCategoryIcon("ic-food")
-	require.NoError(t, err)
-	now := newFixedClock().Now()
-	return entities.RehydrateCategory(id, mustUserID(t), parentID, name, color, icon, now, now, nil)
-}
 
 func TestUpdateCategory_Execute(t *testing.T) {
 	userID := mustUserID(t)
@@ -39,145 +26,66 @@ func TestUpdateCategory_Execute(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
 		uniq := services.NewCategoryUniquenessService(repo)
 		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, "bad", dtos.CategoryRequest{Name: "x", Color: "red", Icon: "ic-food"})
+		_, err := sut.Execute(context.Background(), userID, "bad", dtos.CategoryRequest{Name: "x", Sequence: 1})
 		assert.ErrorIs(t, err, domain.ErrInvalidCategoryID)
 	})
 
-	t.Run("not found is propagated (cross user)", func(t *testing.T) {
+	t.Run("not found", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
 		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(nil, domain.ErrCategoryNotFound).Once()
 		uniq := services.NewCategoryUniquenessService(repo)
 		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "x", Color: "red", Icon: "ic-food"})
+		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "x", Sequence: 1})
 		assert.ErrorIs(t, err, domain.ErrCategoryNotFound)
 	})
 
-	t.Run("rename + change appearance", func(t *testing.T) {
+	t.Run("update name and sequence", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		current := makeCategory(t, id, nil)
+		current := makeCategory(t, id, 1, true)
 		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
 		repo.EXPECT().ExistsByName(mock.Anything, userID, mock.Anything, (*vos.CategoryID)(nil), &id).Return(false, nil).Once()
 		repo.EXPECT().Update(mock.Anything, current).Return(nil).Once()
 
 		uniq := services.NewCategoryUniquenessService(repo)
 		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		resp, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "Mercado", Color: "blue", Icon: "ic-cart"})
+		resp, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "Mercado", Sequence: 8, Color: "blue"})
 		require.NoError(t, err)
 		assert.Equal(t, "Mercado", resp.Name)
-		assert.Equal(t, "blue", resp.Color)
-		assert.Equal(t, "ic-cart", resp.Icon)
+		assert.Equal(t, 8, resp.Sequence)
 	})
 
-	t.Run("reparent to inactive parent", func(t *testing.T) {
+	t.Run("hierarchy unsupported", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		oldParent := vos.NewCategoryID()
-		current := makeCategory(t, id, &oldParent)
-		newParentIDStr := "55555555-5555-4555-8555-555555555555"
-		newParentID, _ := vos.ParseCategoryID(newParentIDStr)
-
-		// inactive parent
-		name, _ := vos.NewCategoryName("Pai")
-		color, _ := vos.NewCategoryColor("red")
-		icon, _ := vos.NewCategoryIcon("ic-food")
-		del := clock.Now()
-		inactive := entities.RehydrateCategory(newParentID, userID, nil, name, color, icon, clock.Now(), clock.Now(), &del)
-
-		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
-		repo.EXPECT().GetByIDIncludingDeleted(mock.Anything, userID, newParentID).Return(inactive, nil).Once()
-
 		uniq := services.NewCategoryUniquenessService(repo)
 		sut := usecase.NewUpdateCategory(repo, uniq, clock)
 		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{
-			Name: "x", Color: "red", Icon: "ic-food",
-			ParentID: ptr(newParentIDStr),
+			Name: "Mercado", Sequence: 1, ParentID: ptr("55555555-5555-4555-8555-555555555555"),
 		})
-		assert.ErrorIs(t, err, domain.ErrParentInactive)
+		assert.ErrorIs(t, err, domain.ErrCategoryHierarchyUnsupported)
 	})
 
-	t.Run("reparent to non-existent parent", func(t *testing.T) {
+	t.Run("name conflict", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		oldParent := vos.NewCategoryID()
-		current := makeCategory(t, id, &oldParent)
-		newParentIDStr := "55555555-5555-4555-8555-555555555555"
-		newParentID, _ := vos.ParseCategoryID(newParentIDStr)
-
-		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
-		repo.EXPECT().GetByIDIncludingDeleted(mock.Anything, userID, newParentID).Return(nil, domain.ErrCategoryNotFound).Once()
-
-		uniq := services.NewCategoryUniquenessService(repo)
-		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{
-			Name: "x", Color: "red", Icon: "ic-food",
-			ParentID: ptr(newParentIDStr),
-		})
-		assert.ErrorIs(t, err, domain.ErrParentNotFound)
-	})
-
-	t.Run("name conflict in scope", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		current := makeCategory(t, id, nil)
+		current := makeCategory(t, id, 1, true)
 		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
 		repo.EXPECT().ExistsByName(mock.Anything, userID, mock.Anything, (*vos.CategoryID)(nil), &id).Return(true, nil).Once()
 
 		uniq := services.NewCategoryUniquenessService(repo)
 		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "Outro", Color: "red", Icon: "ic-food"})
+		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "Outro", Sequence: 1})
 		assert.ErrorIs(t, err, domain.ErrCategoryNameAlreadyExists)
 	})
 
-	t.Run("invalid color", func(t *testing.T) {
+	t.Run("update returns not found when row disappears", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		current := makeCategory(t, id, nil)
-		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
-
-		uniq := services.NewCategoryUniquenessService(repo)
-		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "x", Color: "fluor", Icon: "ic-food"})
-		assert.ErrorIs(t, err, domain.ErrInvalidCategoryColor)
-	})
-
-	t.Run("root cannot become subcategory", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		current := makeCategory(t, id, nil)
-		newParentIDStr := "55555555-5555-4555-8555-555555555555"
-
-		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
-
-		uniq := services.NewCategoryUniquenessService(repo)
-		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{
-			Name: "Mercado", Color: "red", Icon: "ic-food",
-			ParentID: ptr(newParentIDStr),
-		})
-		assert.ErrorIs(t, err, domain.ErrSubcategoryDepthExceeded)
-	})
-
-	t.Run("category cannot be reparented to itself", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		parentID := vos.NewCategoryID()
-		current := makeCategory(t, id, &parentID)
-
-		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
-
-		uniq := services.NewCategoryUniquenessService(repo)
-		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{
-			Name: "Mercado", Color: "red", Icon: "ic-food",
-			ParentID: ptr(idStr),
-		})
-		assert.ErrorIs(t, err, domain.ErrSubcategoryDepthExceeded)
-	})
-
-	t.Run("update returns not found when row disappears before persistence", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		current := makeCategory(t, id, nil)
+		current := makeCategory(t, id, 1, true)
 		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(current, nil).Once()
 		repo.EXPECT().ExistsByName(mock.Anything, userID, mock.Anything, (*vos.CategoryID)(nil), &id).Return(false, nil).Once()
 		repo.EXPECT().Update(mock.Anything, current).Return(domain.ErrCategoryNotFound).Once()
 
 		uniq := services.NewCategoryUniquenessService(repo)
 		sut := usecase.NewUpdateCategory(repo, uniq, clock)
-		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "Mercado", Color: "blue", Icon: "ic-cart"})
+		_, err := sut.Execute(context.Background(), userID, idStr, dtos.CategoryRequest{Name: "Mercado", Sequence: 2})
 		assert.ErrorIs(t, err, domain.ErrCategoryNotFound)
 	})
 }

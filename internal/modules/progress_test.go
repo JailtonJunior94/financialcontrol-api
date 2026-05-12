@@ -41,21 +41,19 @@ var legacyCapabilityDirs = []string{
 var moduleDirs = []string{
 	"internal/modules/identity",
 	"internal/modules/cards",
-	"internal/modules/billing",
-	"internal/modules/transactions",
-	"internal/modules/invoicing",
+	"internal/modules/categories",
+	"internal/modules/finance",
 	"internal/modules/planning",
 }
 
 // crossModuleRestricted are import paths that must not appear in modular
-// packages. All 7 modules are covered following the completed migration.
+// packages. All active modules are covered following the completed migration.
 var crossModuleRestricted = map[string][]string{
-	"identity":     {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"cards":        {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"billing":      {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"transactions": {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"invoicing":    {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"planning":     {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"identity":   {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"cards":      {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"categories": {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"finance":    {"internal/infrastructure/repositories", "internal/application/handlers"},
+	"planning":   {"internal/infrastructure/repositories", "internal/application/handlers"},
 }
 
 func TestRefactorProgress_Snapshot(t *testing.T) {
@@ -193,6 +191,24 @@ func TestRefactorProgress_LegacyEquivalentArtifactsRemoved(t *testing.T) {
 			name:        "planning module registration preserved",
 			relative:    "internal/modules/planning/registration.go",
 			shouldExist: true,
+		},
+		{
+			name:        "billing module removed",
+			relative:    "internal/modules/billing",
+			shouldExist: false,
+			goFilesOnly: true,
+		},
+		{
+			name:        "transactions module removed",
+			relative:    "internal/modules/transactions",
+			shouldExist: false,
+			goFilesOnly: true,
+		},
+		{
+			name:        "invoicing module removed",
+			relative:    "internal/modules/invoicing",
+			shouldExist: false,
+			goFilesOnly: true,
 		},
 	}
 

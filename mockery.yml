@@ -44,3 +44,32 @@ packages:
       DeleteCategory:
       GetCategory:
       ListCategories:
+  github.com/JailtonJunior94/devkit-go/pkg/database:
+    config:
+      dir: "internal/bootstrap/migration/mocks"
+      outpkg: "mocks"
+    interfaces:
+      DBTX:
+  github.com/JailtonJunior94/devkit-go/pkg/database/manager:
+    config:
+      dir: "internal/bootstrap/migration/mocks"
+      outpkg: "mocks"
+    interfaces:
+      Manager:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports:
+    interfaces:
+      TransactionRepository:
+      InvoiceRepository:
+      InstallmentRepository:
+      CardProvider:
+      CategoryProvider:
+      Clock:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/idempotency:
+    interfaces:
+      IdempotencyRepository:
+  github.com/JailtonJunior94/devkit-go/pkg/database/migration:
+    config:
+      dir: "internal/bootstrap/migration/mocks"
+      outpkg: "mocks"
+    interfaces:
+      Migrator:

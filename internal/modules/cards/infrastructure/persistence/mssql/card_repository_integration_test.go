@@ -7,7 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
+	devkitmgr "github.com/JailtonJunior94/devkit-go/pkg/database/manager"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
@@ -61,10 +62,10 @@ VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Visa', 1)
 type CardRepositorySuite struct {
 	suite.Suite
 
-	db      *sqlx.DB
-	ctx     context.Context
-	cleanup func()
-	flagID  vos.FlagID
+	mgr    devkitmgr.Manager
+	dbtx   devkitdb.DBTX
+	ctx    context.Context
+	flagID vos.FlagID
 }
 
 func TestCardRepositorySuite(t *testing.T) {
@@ -74,36 +75,38 @@ func TestCardRepositorySuite(t *testing.T) {
 func (s *CardRepositorySuite) SetupSuite() {
 	db, _, err := dbmssql.GetSharedTestDatabase()
 	s.Require().NoError(err, "failed to get shared test database")
-	s.db = db
 
-	_, err = s.db.ExecContext(context.Background(), createFlagTable)
+	_, err = db.ExecContext(context.Background(), createFlagTable)
 	s.Require().NoError(err, "failed to create flag table")
 
-	_, err = s.db.ExecContext(context.Background(), createCardTable)
+	_, err = db.ExecContext(context.Background(), createCardTable)
 	s.Require().NoError(err, "failed to create card table")
 
-	_, err = s.db.ExecContext(context.Background(), insertSeedFlag)
+	_, err = db.ExecContext(context.Background(), insertSeedFlag)
 	s.Require().NoError(err, "failed to seed flag")
 
 	flagID, err := vos.ParseFlagID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	s.Require().NoError(err)
 	s.flagID = flagID
+
+	mgr, _, err := dbmssql.GetSharedTestManager()
+	s.Require().NoError(err, "failed to get shared test manager")
+	s.mgr = mgr
 }
 
 func (s *CardRepositorySuite) SetupTest() {
 	s.ctx = context.Background()
+	s.dbtx = s.mgr.DBTX(s.ctx)
 
-	_, cleanup, err := dbmssql.GetSharedTestDatabase()
-	s.Require().NoError(err, "failed to get shared test database")
-	s.cleanup = cleanup
-
-	// Truncate only Card rows; keep seed Flag
-	_, _ = s.db.ExecContext(s.ctx, "DELETE FROM dbo.[Card]")
+	db, _, err := dbmssql.GetSharedTestDatabase()
+	s.Require().NoError(err)
+	_, _ = db.ExecContext(s.ctx, "DELETE FROM dbo.[Card]")
 }
 
 func (s *CardRepositorySuite) TearDownTest() {
-	if s.cleanup != nil {
-		_, _ = s.db.ExecContext(context.Background(), "DELETE FROM dbo.[Card]")
+	db, _, err := dbmssql.GetSharedTestDatabase()
+	if err == nil {
+		_, _ = db.ExecContext(context.Background(), "DELETE FROM dbo.[Card]")
 	}
 }
 
@@ -114,7 +117,7 @@ func (s *CardRepositorySuite) newCard(userID identityvo.UserID) *entities.Card {
 }
 
 func (s *CardRepositorySuite) TestAddGetByIDUpdateList() {
-	repo := repomssql.NewCardRepository(s.db)
+	repo := repomssql.NewCardRepository(s.dbtx)
 	userID := identityvo.NewUserID()
 
 	card := s.newCard(userID)
@@ -142,7 +145,7 @@ func (s *CardRepositorySuite) TestAddGetByIDUpdateList() {
 }
 
 func (s *CardRepositorySuite) TestIsolationByUserID() {
-	repo := repomssql.NewCardRepository(s.db)
+	repo := repomssql.NewCardRepository(s.dbtx)
 
 	user1 := identityvo.NewUserID()
 	user2 := identityvo.NewUserID()
@@ -186,7 +189,7 @@ func (s *CardRepositorySuite) TestIsolationByUserID() {
 }
 
 func (s *CardRepositorySuite) TestListIgnoresInactiveCards() {
-	repo := repomssql.NewCardRepository(s.db)
+	repo := repomssql.NewCardRepository(s.dbtx)
 	userID := identityvo.NewUserID()
 
 	active := s.newCard(userID)
@@ -204,7 +207,7 @@ func (s *CardRepositorySuite) TestListIgnoresInactiveCards() {
 }
 
 func (s *CardRepositorySuite) TestListWithoutPaginationReturnsAllCards() {
-	repo := repomssql.NewCardRepository(s.db)
+	repo := repomssql.NewCardRepository(s.dbtx)
 	userID := identityvo.NewUserID()
 
 	first := s.newCard(userID)
@@ -218,7 +221,7 @@ func (s *CardRepositorySuite) TestListWithoutPaginationReturnsAllCards() {
 }
 
 func (s *CardRepositorySuite) TestListWithPaginationStillSupportsSlices() {
-	repo := repomssql.NewCardRepository(s.db)
+	repo := repomssql.NewCardRepository(s.dbtx)
 	userID := identityvo.NewUserID()
 
 	first := s.newCard(userID)
@@ -231,10 +234,8 @@ func (s *CardRepositorySuite) TestListWithPaginationStillSupportsSlices() {
 	s.Len(list, 1)
 }
 
-// TestUpdateFiltersByUserID prevents regression: an UPDATE issued with a card
-// whose UserID does not own the persisted row must not mutate that row.
 func (s *CardRepositorySuite) TestUpdateFiltersByUserID() {
-	repo := repomssql.NewCardRepository(s.db)
+	repo := repomssql.NewCardRepository(s.dbtx)
 	owner := identityvo.NewUserID()
 	attacker := identityvo.NewUserID()
 
@@ -266,7 +267,7 @@ func (s *CardRepositorySuite) TestUpdateFiltersByUserID() {
 }
 
 func (s *CardRepositorySuite) TestGetByIDNotFound() {
-	repo := repomssql.NewCardRepository(s.db)
+	repo := repomssql.NewCardRepository(s.dbtx)
 	userID := identityvo.NewUserID()
 	nonExistentID := vos.NewCardID()
 

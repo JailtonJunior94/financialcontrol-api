@@ -26,29 +26,17 @@ func TestGetCategory_Execute(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrInvalidCategoryID)
 	})
 
-	t.Run("root", func(t *testing.T) {
+	t.Run("found", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		root := makeCategory(t, id, nil)
-		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(root, nil).Once()
+		category := makeCategory(t, id, 7, true)
+		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(category, nil).Once()
 		resp, err := usecase.NewGetCategory(repo).Execute(context.Background(), userID, idStr)
 		require.NoError(t, err)
-		assert.Nil(t, resp.Parent)
+		assert.Equal(t, 7, resp.Sequence)
+		assert.True(t, resp.Active)
 	})
 
-	t.Run("subcategory hydrates parent", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		parentID, _ := vos.ParseCategoryID("55555555-5555-4555-8555-555555555555")
-		sub := makeCategory(t, id, &parentID)
-		parent := makeCategory(t, parentID, nil)
-		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(sub, nil).Once()
-		repo.EXPECT().GetByID(mock.Anything, userID, parentID).Return(parent, nil).Once()
-		resp, err := usecase.NewGetCategory(repo).Execute(context.Background(), userID, idStr)
-		require.NoError(t, err)
-		require.NotNil(t, resp.Parent)
-		assert.Equal(t, parentID.String(), resp.Parent.ID)
-	})
-
-	t.Run("not found cross user", func(t *testing.T) {
+	t.Run("not found", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
 		repo.EXPECT().GetByID(mock.Anything, userID, id).Return(nil, domain.ErrCategoryNotFound).Once()
 		_, err := usecase.NewGetCategory(repo).Execute(context.Background(), userID, idStr)

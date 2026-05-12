@@ -59,39 +59,13 @@ func (f *fakeRunners) RunSync() error {
 	return nil
 }
 
-func TestNewRootCommandRegistersExpectedSubcommands(t *testing.T) {
+func TestNewRootCommandRegistersNoLegacyCLISubcommands(t *testing.T) {
 	cmd := bootstrapcli.NewRootCommand(&fakeRunners{})
 
 	require.Equal(t, "financialcontrol-api", cmd.Use)
-
-	names := make([]string, 0, len(cmd.Commands()))
-	for _, subcommand := range cmd.Commands() {
-		names = append(names, subcommand.Name())
-	}
-
-	require.ElementsMatch(t, []string{
-		"balance",
-		"budget",
-		"budget-cards-and-others",
-		"budget-category",
-		"budget-full",
-		"budget-unified",
-		"sync",
-	}, names)
-}
-
-func TestNewRootCommandExecutesBudgetCategoryRunner(t *testing.T) {
-	runners := &fakeRunners{}
-	cmd := bootstrapcli.NewRootCommand(runners)
-	cmd.SetArgs([]string{"budget-category", "--date", "17/04/2026", "--category", "Metas"})
-
-	err := cmd.Execute()
-
-	require.NoError(t, err)
-	require.Len(t, runners.calls, 1)
-	require.Equal(t, "budget-category", runners.calls[0].name)
-	require.Equal(t, "Metas", runners.calls[0].category)
-	require.Equal(t, time.Date(2026, time.April, 17, 0, 0, 0, 0, time.UTC), runners.calls[0].date)
+	// All legacy planning CLI commands removed in task 9.0 together with
+	// billing, transactions, invoicing, and planning/sync modules.
+	require.Empty(t, cmd.Commands(), "no subcommands expected after legacy module removal")
 }
 
 func TestNewRootCommandExecutesServerByDefault(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type Clock interface {
@@ -14,25 +13,15 @@ type Clock interface {
 
 type Category struct {
 	id        vos.CategoryID
-	userID    identityvo.UserID
-	parentID  *vos.CategoryID
 	name      vos.CategoryName
-	color     vos.CategoryColor
-	icon      vos.CategoryIcon
+	sequence  int
 	createdAt time.Time
 	updatedAt time.Time
-	deletedAt *time.Time
+	active    bool
 }
 
-func NewCategory(
-	userID identityvo.UserID,
-	parentID *vos.CategoryID,
-	name string,
-	color string,
-	icon string,
-	clock Clock,
-) (*Category, error) {
-	categoryName, categoryColor, categoryIcon, err := buildVOs(name, color, icon)
+func NewCategory(name string, sequence int, clock Clock) (*Category, error) {
+	categoryName, err := vos.NewCategoryName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -40,103 +29,53 @@ func NewCategory(
 	now := clock.Now().UTC()
 	return &Category{
 		id:        vos.NewCategoryID(),
-		userID:    userID,
-		parentID:  parentID,
 		name:      categoryName,
-		color:     categoryColor,
-		icon:      categoryIcon,
+		sequence:  sequence,
 		createdAt: now,
 		updatedAt: now,
+		active:    true,
 	}, nil
 }
 
 func RehydrateCategory(
 	id vos.CategoryID,
-	userID identityvo.UserID,
-	parentID *vos.CategoryID,
 	name vos.CategoryName,
-	color vos.CategoryColor,
-	icon vos.CategoryIcon,
+	sequence int,
 	createdAt time.Time,
 	updatedAt time.Time,
-	deletedAt *time.Time,
+	active bool,
 ) *Category {
 	return &Category{
 		id:        id,
-		userID:    userID,
-		parentID:  parentID,
 		name:      name,
-		color:     color,
-		icon:      icon,
+		sequence:  sequence,
 		createdAt: createdAt,
 		updatedAt: updatedAt,
-		deletedAt: deletedAt,
+		active:    active,
 	}
 }
 
-func (c *Category) Rename(name vos.CategoryName, clock Clock) error {
+func (c *Category) Update(name vos.CategoryName, sequence int, clock Clock) error {
 	if name.String() == "" {
 		return domain.ErrInvalidCategoryName
 	}
 	c.name = name
+	c.sequence = sequence
 	c.updatedAt = clock.Now().UTC()
 	return nil
 }
 
-func (c *Category) ChangeAppearance(color vos.CategoryColor, icon vos.CategoryIcon, clock Clock) {
-	c.color = color
-	c.icon = icon
-	c.updatedAt = clock.Now().UTC()
-}
-
-func (c *Category) Reparent(newParent *vos.CategoryID, clock Clock) error {
-	if newParent == nil {
-		return domain.ErrParentNotFound
-	}
-	c.parentID = newParent
-	c.updatedAt = clock.Now().UTC()
-	return nil
-}
-
-func (c *Category) MarkDeleted(at time.Time) {
-	if c.deletedAt != nil {
+func (c *Category) Deactivate(at time.Time) {
+	if !c.active {
 		return
 	}
-	deleted := at.UTC()
-	c.deletedAt = &deleted
-	c.updatedAt = deleted
+	c.active = false
+	c.updatedAt = at.UTC()
 }
 
-func (c *Category) IsActive() bool      { return c.deletedAt == nil }
-func (c *Category) IsRoot() bool        { return c.parentID == nil }
-func (c *Category) IsSubcategory() bool { return c.parentID != nil }
-func (c *Category) ID() vos.CategoryID  { return c.id }
-func (c *Category) UserID() identityvo.UserID {
-	return c.userID
-}
-func (c *Category) ParentID() *vos.CategoryID { return c.parentID }
-func (c *Category) Name() vos.CategoryName    { return c.name }
-func (c *Category) Color() vos.CategoryColor  { return c.color }
-func (c *Category) Icon() vos.CategoryIcon    { return c.icon }
-func (c *Category) CreatedAt() time.Time      { return c.createdAt }
-func (c *Category) UpdatedAt() time.Time      { return c.updatedAt }
-func (c *Category) DeletedAt() *time.Time     { return c.deletedAt }
-
-func buildVOs(name, color, icon string) (vos.CategoryName, vos.CategoryColor, vos.CategoryIcon, error) {
-	categoryName, err := vos.NewCategoryName(name)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	categoryColor, err := vos.NewCategoryColor(color)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	categoryIcon, err := vos.NewCategoryIcon(icon)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	return categoryName, categoryColor, categoryIcon, nil
-}
+func (c *Category) IsActive() bool         { return c.active }
+func (c *Category) ID() vos.CategoryID     { return c.id }
+func (c *Category) Name() vos.CategoryName { return c.name }
+func (c *Category) Sequence() int          { return c.sequence }
+func (c *Category) CreatedAt() time.Time   { return c.createdAt }
+func (c *Category) UpdatedAt() time.Time   { return c.updatedAt }

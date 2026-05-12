@@ -9,7 +9,11 @@ import (
 type Runners = platformmodules.CLIRunner
 
 func Execute() error {
-	return NewRootCommand(NewAppRunners()).Execute()
+	r, err := NewAppRunners()
+	if err != nil {
+		return err
+	}
+	return NewRootCommand(r).Execute()
 }
 
 func NewRootCommand(r Runners) *cobra.Command {

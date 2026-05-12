@@ -5,14 +5,13 @@ import (
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	bootstraphttp "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/http"
-	billinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing/http"
 	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	categories "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories"
 	categorieshandlers "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
+	finance "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance"
+	financehandlers "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/http/handlers"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
-	invoicinghttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/http"
-	transactionshttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/http"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 
 	"github.com/stretchr/testify/require"
@@ -35,14 +34,21 @@ func stubCategoriesModule() *categories.Module {
 	}
 }
 
+func stubFinanceModule() *finance.Module {
+	return &finance.Module{
+		TransactionHandler: financehandlers.NewTransactionHandler(nil, nil, nil, nil, nil, nil),
+		InvoiceHandler:     financehandlers.NewInvoiceHandler(nil, nil, nil),
+		InstallmentHandler: financehandlers.NewInstallmentHandler(nil),
+		SummaryHandler:     financehandlers.NewSummaryHandler(nil),
+	}
+}
+
 func TestNewAppRegistersAPIBootstrapRoutes(t *testing.T) {
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
-		IdentityModule:        stubModule(),
-		TransactionController: &transactionshttp.TransactionController{},
-		BillController:        &billinghttp.BillController{},
-		CardsModule:           stubCardsModule(),
-		CategoriesModule:      stubCategoriesModule(),
-		InvoiceController:     &invoicinghttp.InvoiceController{},
+		IdentityModule:   stubModule(),
+		CardsModule:      stubCardsModule(),
+		CategoriesModule: stubCategoriesModule(),
+		FinanceModule:    stubFinanceModule(),
 	})
 
 	routes := app.GetRoutes(true)
@@ -57,12 +63,12 @@ func TestNewAppRegistersAPIBootstrapRoutes(t *testing.T) {
 	require.True(t, routeIndex["/api/v1/token"]["POST"])
 	require.True(t, routeIndex["/api/v1/users"]["POST"])
 	require.True(t, routeIndex["/api/v1/me"]["GET"])
-	require.True(t, routeIndex["/api/v1/transactions"]["GET"])
-	require.True(t, routeIndex["/api/v1/transactions"]["POST"])
-	require.True(t, routeIndex["/api/v1/bills"]["GET"])
 	require.True(t, routeIndex["/api/v1/cards"]["POST"])
-	require.True(t, routeIndex["/api/v1/invoices-import"]["POST"])
 	require.True(t, routeIndex["/api/v1/categories"]["GET"])
+	require.True(t, routeIndex["/api/v1/finance/transactions"]["POST"])
+	require.True(t, routeIndex["/api/v1/finance/transactions"]["GET"])
+	require.True(t, routeIndex["/api/v1/finance/invoices"]["GET"])
+	require.True(t, routeIndex["/api/v1/finance/summary"]["GET"])
 }
 
 func TestNewAppBootstrapsWithRuntimeConfigLoaded(t *testing.T) {
@@ -72,12 +78,10 @@ func TestNewAppBootstrapsWithRuntimeConfigLoaded(t *testing.T) {
 	require.NoError(t, err)
 
 	app := bootstraphttp.NewApp(&bootstrapcontainer.Container{
-		IdentityModule:        stubModule(),
-		TransactionController: &transactionshttp.TransactionController{},
-		BillController:        &billinghttp.BillController{},
-		CardsModule:           stubCardsModule(),
-		CategoriesModule:      stubCategoriesModule(),
-		InvoiceController:     &invoicinghttp.InvoiceController{},
+		IdentityModule:   stubModule(),
+		CardsModule:      stubCardsModule(),
+		CategoriesModule: stubCategoriesModule(),
+		FinanceModule:    stubFinanceModule(),
 	})
 
 	require.NotNil(t, app)

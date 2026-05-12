@@ -34,10 +34,11 @@ func (s *FlagRepositorySuite) SetupSuite() {
 }
 
 func (s *FlagRepositorySuite) TestListReturnsSeed() {
-	db, _, err := dbmssql.GetSharedTestDatabase()
+	mgr, _, err := dbmssql.GetSharedTestManager()
 	s.Require().NoError(err)
 
-	repo := repomssql.NewFlagRepository(db)
+	dbtx := mgr.DBTX(s.T().Context())
+	repo := repomssql.NewFlagRepository(dbtx)
 	flags, err := repo.List(s.T().Context())
 	s.Require().NoError(err)
 	s.NotEmpty(flags, "List should return at least the seed flag")
@@ -64,7 +65,11 @@ VALUES ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Mastercard', 1)
 `)
 	s.Require().NoError(err)
 
-	repo := repomssql.NewFlagRepository(db)
+	mgr, _, err := dbmssql.GetSharedTestManager()
+	s.Require().NoError(err)
+
+	dbtx := mgr.DBTX(s.T().Context())
+	repo := repomssql.NewFlagRepository(dbtx)
 
 	allFlags, err := repo.List(s.T().Context())
 	s.Require().NoError(err)
@@ -72,10 +77,11 @@ VALUES ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'Mastercard', 1)
 }
 
 func (s *FlagRepositorySuite) TestExists() {
-	db, _, err := dbmssql.GetSharedTestDatabase()
+	mgr, _, err := dbmssql.GetSharedTestManager()
 	s.Require().NoError(err)
 
-	repo := repomssql.NewFlagRepository(db)
+	dbtx := mgr.DBTX(s.T().Context())
+	repo := repomssql.NewFlagRepository(dbtx)
 
 	existingID, err := vos.ParseFlagID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	s.Require().NoError(err)

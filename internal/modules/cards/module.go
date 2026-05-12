@@ -1,18 +1,18 @@
 package cards
 
 import (
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/routes"
 	mssqlrepo "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/persistence/mssql"
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 )
 
 // Deps holds the external dependencies required to build the cards module.
 type Deps struct {
-	DB        database.ISqlConnection
+	DB        devkitdb.DBTX
 	JwtParser pkgjwt.Parser
 }
 
@@ -30,10 +30,8 @@ type Module struct {
 
 // NewModule builds the cards module from its external dependencies.
 func NewModule(deps Deps) *Module {
-	db := deps.DB.Connect()
-
-	cardRepo := mssqlrepo.NewCardRepository(db)
-	flagRepo := mssqlrepo.NewFlagRepository(db)
+	cardRepo := mssqlrepo.NewCardRepository(deps.DB)
+	flagRepo := mssqlrepo.NewFlagRepository(deps.DB)
 
 	listCards := usecase.NewListCards(cardRepo)
 	getCard := usecase.NewGetCard(cardRepo)

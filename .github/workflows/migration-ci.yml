@@ -1,0 +1,34 @@
+name: migration-ci
+on:
+  pull_request:
+    paths:
+      - 'pkg/database/**'
+      - 'cmd/migration/**'
+      - 'internal/bootstrap/migration/**'
+      - 'Dockerfile.migration'
+      - '.github/workflows/migration-ci.yml'
+      - '.github/scripts/lint-migrations.sh'
+jobs:
+  lint-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash .github/scripts/lint-migrations.sh
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: 'go.mod' }
+      - run: go build -trimpath ./cmd/migration
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - run: docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.migration .
+  integration:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: 'go.mod' }
+      - run: go test -tags=integration -timeout 15m ./internal/bootstrap/migration/...

@@ -145,6 +145,26 @@ O workflow em `.github/workflows/ci-cd.yml` executa:
 5. build e push da imagem a partir de `deployments/docker/Dockerfile`
 6. deploy dos manifests em `deployments/k8s/`
 
+## Migrations
+
+O schema do banco e gerenciado pelo binario CLI `cmd/migration`, executado como Init Container ou Job no Kubernetes antes da subida da API.
+
+Consulte o runbook completo em [`cmd/migration/README.md`](cmd/migration/README.md) para:
+- Variaveis de ambiente suportadas (`MSSQL_CONNECTION_STRING`, `MIGRATION_TIMEOUT`, `MIGRATION_BASELINE`).
+- Exit codes e padroes de log JSON estruturado.
+- Procedimento de baseline em ambientes preexistentes.
+- Rollback manual via snapshot.
+- Recomendacoes de TLS em producao.
+- SLA por categoria de migracao e estrategia de rollout faseado.
+
+Build e execucao local:
+
+```bash
+make migrate-build          # compila o binario migration
+make migrate-up             # aplica migracoes pendentes
+make migrate-baseline BASELINE=1  # baseline em ambiente preexistente
+```
+
 ## Contrato HTTP
 
 O contrato publico permanece sob o prefixo `/api/v1`. Os testes de bootstrap e de registro no composition point ativo em `internal/bootstrap/http/http_test.go` e `internal/platform/http/router_test.go` ajudam a garantir a preservacao dos endpoints durante a reorganizacao estrutural.

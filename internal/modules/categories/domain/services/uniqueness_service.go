@@ -28,6 +28,7 @@ func (s *CategoryUniquenessService) EnsureUnique(
 	parentID *vos.CategoryID,
 	excludeID *vos.CategoryID,
 ) error {
+	_ = parentID
 	exists, err := s.repo.ExistsByName(ctx, userID, name, parentID, excludeID)
 	if err != nil {
 		return err

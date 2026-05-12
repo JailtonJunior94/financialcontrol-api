@@ -14,10 +14,7 @@ type Clock interface {
 	Now() time.Time
 }
 
-// CategoryDeletionService orchestrates soft delete according to ADR-002:
-// when the target is a root category the operation cascades to all active
-// children inside a single transaction; when the target is a subcategory the
-// service performs a simple soft delete leaving the parent untouched.
+// CategoryDeletionService deactivates rows according to the legacy Category schema.
 type CategoryDeletionService struct {
 	repo  interfaces.CategoryRepository
 	clock Clock

@@ -52,7 +52,7 @@ func (s *MSSQLTestDatabaseSuite) TestGetSharedTestDatabase() {
 				s.Require().NoError(err2)
 				defer cleanup2()
 
-				s.Same(db1, db2, "singleton deve retornar a mesma instância de *sqlx.DB")
+				s.Same(db1, db2, "singleton deve retornar a mesma instância de *sql.DB")
 			},
 		},
 	}

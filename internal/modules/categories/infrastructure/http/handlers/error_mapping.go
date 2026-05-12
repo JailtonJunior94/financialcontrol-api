@@ -19,6 +19,7 @@ func MapError(err error) (int, any) {
 		return fiber.StatusConflict, fiber.Map{"error": canonical.Error()}
 	case canonical == domain.ErrInvalidCategoryID,
 		canonical == domain.ErrInvalidCategoryName,
+		canonical == domain.ErrCategoryHierarchyUnsupported,
 		canonical == domain.ErrInvalidCategoryColor,
 		canonical == domain.ErrInvalidCategoryIcon,
 		canonical == domain.ErrSubcategoryDepthExceeded,
@@ -42,6 +43,8 @@ func canonicalDomainError(err error) error {
 		return domain.ErrInvalidCategoryID
 	case errors.Is(err, domain.ErrInvalidCategoryName):
 		return domain.ErrInvalidCategoryName
+	case errors.Is(err, domain.ErrCategoryHierarchyUnsupported):
+		return domain.ErrCategoryHierarchyUnsupported
 	case errors.Is(err, domain.ErrInvalidCategoryColor):
 		return domain.ErrInvalidCategoryColor
 	case errors.Is(err, domain.ErrInvalidCategoryIcon):

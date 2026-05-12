@@ -1,31 +1,31 @@
 package identity_test
 
 import (
-	"database/sql"
+	"context"
 	"testing"
+
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
 	interfacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces/mocks"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/suite"
 )
 
-// sqlConnectionStub satisfies database.ISqlConnection returning a nil *sqlx.DB
+// dbtxStub satisfies devkitdb.DBTX returning zero values
 // (sufficient for wiring tests that never trigger actual queries).
-type sqlConnectionStub struct{}
+type dbtxStub struct{}
 
-func (s *sqlConnectionStub) Connect() *sqlx.DB { return nil }
-func (s *sqlConnectionStub) Disconnect()       {}
-func (s *sqlConnectionStub) OpenConnectionAndMountStatement(_ string) (*sql.Stmt, error) {
+func (s *dbtxStub) ExecContext(_ context.Context, _ string, _ ...any) (devkitdb.Result, error) {
 	return nil, nil
 }
-func (s *sqlConnectionStub) ValidateResult(_ sql.Result, err error) error { return err }
-func (s *sqlConnectionStub) Begin() (*sqlx.Tx, error)                     { return nil, nil }
-func (s *sqlConnectionStub) Rollback() error                              { return nil }
-func (s *sqlConnectionStub) Commit() error                                { return nil }
-func (s *sqlConnectionStub) End(fn func() error) error                    { return fn() }
+func (s *dbtxStub) QueryContext(_ context.Context, _ string, _ ...any) (devkitdb.Rows, error) {
+	return nil, nil
+}
+func (s *dbtxStub) QueryRowContext(_ context.Context, _ string, _ ...any) devkitdb.Row {
+	return nil
+}
 
 // ModuleWiringSuite validates that NewModule composes all dependencies correctly.
 type ModuleWiringSuite struct {
@@ -41,7 +41,7 @@ func (s *ModuleWiringSuite) SetupTest() {
 	s.hasher = interfacemocks.NewHasher(s.T())
 	s.tokenIssuer = interfacemocks.NewTokenIssuer(s.T())
 	s.deps = identity.Deps{
-		DB:          &sqlConnectionStub{},
+		DB:          &dbtxStub{},
 		Hasher:      s.hasher,
 		TokenIssuer: s.tokenIssuer,
 	}

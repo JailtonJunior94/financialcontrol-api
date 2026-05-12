@@ -64,3 +64,19 @@ mocks: mocks/clean
 	@echo "Generating mocks..."
 	@$(MOCKERY) --config mockery.yml
 	@echo "Mocks generated."
+
+VERSION ?= dev
+COMMIT  ?= $(shell git rev-parse --short HEAD)
+BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+MIGRATION_LDFLAGS := -X 'github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/migration.Version=$(VERSION)' \
+                     -X 'github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/migration.Commit=$(COMMIT)' \
+                     -X 'github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/migration.BuildDate=$(BUILD_DATE)'
+
+.PHONY: migrate-build migrate-up migrate-baseline
+migrate-build:
+	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w $(MIGRATION_LDFLAGS)" -o bin/migration ./cmd/migration
+migrate-up: migrate-build
+	./bin/migration
+migrate-baseline: migrate-build
+	@test -n "$(BASELINE)" || (echo "usage: make migrate-baseline BASELINE=N" && exit 2)
+	MIGRATION_BASELINE=$(BASELINE) ./bin/migration

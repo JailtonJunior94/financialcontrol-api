@@ -6,22 +6,23 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
+	pkgdatabase "github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 var _ interfaces.CardRepository = (*CardRepository)(nil)
 
 type CardRepository struct {
-	db *sqlx.DB
+	db devkitdb.DBTX
 }
 
-func NewCardRepository(db *sqlx.DB) *CardRepository {
+func NewCardRepository(db devkitdb.DBTX) *CardRepository {
 	return &CardRepository{db: db}
 }
 
@@ -36,33 +37,42 @@ func (r *CardRepository) List(ctx context.Context, userID identityvo.UserID, pag
 		)
 	}
 
-	rows, err := r.db.QueryxContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("mssql: list cards: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
 
-	cards := make([]entities.Card, 0)
-	for rows.Next() {
+	// Column order: Id, UserId, FlagId, Name, Number, Description, ClosingDay,
+	// ExpirationDate, CreatedAt, UpdatedAt, Active, FlagEntityId, FlagName, FlagActive
+	return pkgdatabase.ScanAll[entities.Card](rows, func(r devkitdb.Rows) (entities.Card, error) {
 		var row CardRow
-		if err := rows.StructScan(&row); err != nil {
-			return nil, fmt.Errorf("mssql: list cards scan: %w", err)
+		if err := r.Scan(
+			&row.ID, &row.UserID, &row.FlagID, &row.Name, &row.Number, &row.Description,
+			&row.ClosingDay, &row.ExpirationDate, &row.CreatedAt, &row.UpdatedAt, &row.Active,
+			&row.FlagEntityID, &row.FlagName, &row.FlagActive,
+		); err != nil {
+			return entities.Card{}, fmt.Errorf("mssql: list cards scan: %w", err)
 		}
 		card, err := RowToCard(&row)
 		if err != nil {
-			return nil, fmt.Errorf("mssql: list cards map: %w", err)
+			return entities.Card{}, fmt.Errorf("mssql: list cards map: %w", err)
 		}
-		cards = append(cards, *card)
-	}
-	return cards, nil
+		return *card, nil
+	})
 }
 
 func (r *CardRepository) GetByID(ctx context.Context, userID identityvo.UserID, id vos.CardID) (*entities.Card, error) {
+	// Column order: Id, UserId, FlagId, Name, Number, Description, ClosingDay,
+	// ExpirationDate, CreatedAt, UpdatedAt, Active, FlagEntityId, FlagName, FlagActive
 	var row CardRow
-	err := r.db.QueryRowxContext(ctx, getCardByID,
+	err := r.db.QueryRowContext(ctx, getCardByID,
 		sql.Named("userId", userID.String()),
 		sql.Named("id", id.String()),
-	).StructScan(&row)
+	).Scan(
+		&row.ID, &row.UserID, &row.FlagID, &row.Name, &row.Number, &row.Description,
+		&row.ClosingDay, &row.ExpirationDate, &row.CreatedAt, &row.UpdatedAt, &row.Active,
+		&row.FlagEntityID, &row.FlagName, &row.FlagActive,
+	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrCardNotFound
 	}

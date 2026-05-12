@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	mssqldrv "github.com/denisenkom/go-mssqldb"
+	mssqldrv "github.com/microsoft/go-mssqldb"
 	"github.com/stretchr/testify/assert"
 
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"

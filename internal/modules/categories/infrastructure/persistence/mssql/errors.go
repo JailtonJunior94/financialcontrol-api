@@ -3,7 +3,7 @@ package mssql
 import (
 	"errors"
 
-	mssqldrv "github.com/denisenkom/go-mssqldb"
+	mssqldrv "github.com/microsoft/go-mssqldb"
 
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 )

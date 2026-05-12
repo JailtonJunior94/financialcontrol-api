@@ -29,23 +29,13 @@ func mustUserID(t *testing.T) identityvo.UserID {
 	return id
 }
 
-func newCategory(t *testing.T, parent *vos.CategoryID, deleted bool) *entities.Category {
+func newCategory(t *testing.T, active bool) *entities.Category {
 	t.Helper()
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	id := vos.NewCategoryID()
 	name, err := vos.NewCategoryName("comida")
 	require.NoError(t, err)
-	color, err := vos.NewCategoryColor("red")
-	require.NoError(t, err)
-	icon, err := vos.NewCategoryIcon("ic-food")
-	require.NoError(t, err)
-
-	var deletedAt *time.Time
-	if deleted {
-		d := now
-		deletedAt = &d
-	}
-	return entities.RehydrateCategory(id, mustUserID(t), parent, name, color, icon, now, now, deletedAt)
+	return entities.RehydrateCategory(id, name, 1, now, now, active)
 }
 
 func TestCategoryDeletionService_Delete(t *testing.T) {
@@ -53,25 +43,14 @@ func TestCategoryDeletionService_Delete(t *testing.T) {
 	fixed := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
 	clock := fixedClock{now: fixed}
 
-	t.Run("root cascade", func(t *testing.T) {
+	t.Run("deactivates active category", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		root := newCategory(t, nil, false)
-		repo.EXPECT().GetByID(mock.Anything, userID, root.ID()).Return(root, nil)
-		repo.EXPECT().SoftDeleteCascade(mock.Anything, userID, root.ID(), fixed).Return(nil)
+		category := newCategory(t, true)
+		repo.EXPECT().GetByID(mock.Anything, userID, category.ID()).Return(category, nil)
+		repo.EXPECT().SoftDeleteCascade(mock.Anything, userID, category.ID(), fixed).Return(nil)
 
 		svc := services.NewCategoryDeletionService(repo, clock)
-		require.NoError(t, svc.Delete(context.Background(), userID, root.ID()))
-	})
-
-	t.Run("standalone subcategory", func(t *testing.T) {
-		repo := mocks.NewCategoryRepository(t)
-		parentID := vos.NewCategoryID()
-		sub := newCategory(t, &parentID, false)
-		repo.EXPECT().GetByID(mock.Anything, userID, sub.ID()).Return(sub, nil)
-		repo.EXPECT().SoftDeleteCascade(mock.Anything, userID, sub.ID(), fixed).Return(nil)
-
-		svc := services.NewCategoryDeletionService(repo, clock)
-		require.NoError(t, svc.Delete(context.Background(), userID, sub.ID()))
+		require.NoError(t, svc.Delete(context.Background(), userID, category.ID()))
 	})
 
 	t.Run("propagates domain not found", func(t *testing.T) {
@@ -95,15 +74,15 @@ func TestCategoryDeletionService_Delete(t *testing.T) {
 		assert.ErrorIs(t, err, boom)
 	})
 
-	t.Run("propagates repository error on cascade", func(t *testing.T) {
+	t.Run("propagates repository error on deactivate", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		root := newCategory(t, nil, false)
+		category := newCategory(t, true)
 		boom := errors.New("tx aborted")
-		repo.EXPECT().GetByID(mock.Anything, userID, root.ID()).Return(root, nil)
-		repo.EXPECT().SoftDeleteCascade(mock.Anything, userID, root.ID(), fixed).Return(boom)
+		repo.EXPECT().GetByID(mock.Anything, userID, category.ID()).Return(category, nil)
+		repo.EXPECT().SoftDeleteCascade(mock.Anything, userID, category.ID(), fixed).Return(boom)
 
 		svc := services.NewCategoryDeletionService(repo, clock)
-		err := svc.Delete(context.Background(), userID, root.ID())
+		err := svc.Delete(context.Background(), userID, category.ID())
 		assert.ErrorIs(t, err, boom)
 	})
 }

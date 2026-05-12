@@ -2,10 +2,6 @@ package modules
 
 import (
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/billing"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/planning"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions"
 	pkgauthmiddleware "github.com/jailtonjunior94/financialcontrol-api/pkg/authmiddleware"
 	platformmodules "github.com/jailtonjunior94/financialcontrol-api/pkg/modules"
 
@@ -14,12 +10,7 @@ import (
 )
 
 func Registrations() []platformmodules.ModuleRegistration {
-	return []platformmodules.ModuleRegistration{
-		billing.Registration(),
-		transactions.Registration(),
-		invoicing.Registration(),
-		planning.Registration(),
-	}
+	return []platformmodules.ModuleRegistration{}
 }
 
 func RegisterHTTP(router fiber.Router, container *bootstrapcontainer.Container) {
@@ -30,22 +21,9 @@ func RegisterHTTP(router fiber.Router, container *bootstrapcontainer.Container) 
 
 	container.CardsModule.RegisterHTTP(router, container.JwtParser)
 	container.CategoriesModule.RegisterHTTP(router, container.JwtParser)
-
-	for _, registration := range Registrations() {
-		if registration.RegisterHTTP == nil {
-			continue
-		}
-
-		registration.RegisterHTTP(router, container)
-	}
+	container.FinanceModule.RegisterHTTP(router, container.JwtParser)
 }
 
-func RegisterCLI(root *cobra.Command, runners platformmodules.CLIRunner) {
-	for _, registration := range Registrations() {
-		if registration.RegisterCLI == nil {
-			continue
-		}
-
-		registration.RegisterCLI(root, runners)
-	}
-}
+// RegisterCLI is kept for interface compatibility. All legacy CLI hooks were removed
+// together with billing, transactions, invoicing, and planning/sync in task 9.0.
+func RegisterCLI(_ *cobra.Command, _ platformmodules.CLIRunner) {}

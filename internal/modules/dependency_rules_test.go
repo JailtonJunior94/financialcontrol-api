@@ -15,16 +15,15 @@ import (
 )
 
 var allModules = []string{
-	"identity", "categories", "cards", "billing",
-	"transactions", "invoicing", "planning",
+	"identity", "categories", "cards", "finance", "planning",
 }
 
-func TestContainerWiresInvoiceEventThroughModuleContracts(t *testing.T) {
+func TestContainerWiresFinanceThroughModuleContracts(t *testing.T) {
 	imports := fileImports(t, "internal/bootstrap/container/container.go")
 
 	assert.NotContains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/application/handlers")
-	assert.Contains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/modules/invoicing/application")
-	assert.Contains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/modules/transactions/application")
+	assert.Contains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance")
+	assert.Contains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/persistence/mssql")
 }
 
 func TestModularContractsAvoidCrossModuleInfrastructureImports(t *testing.T) {
@@ -59,6 +58,9 @@ func TestModularContractsAvoidCrossModuleInfrastructureImports(t *testing.T) {
 
 // TestNoCrossModuleDomainImports verifies that no module's .go files import the
 // domain/ package of another module (RF-12).
+// Exception: infrastructure/providers/ directories contain intentional Ports & Adapters
+// cross-module adapters (accepted design from task 5.0 — CardProviderAdapter,
+// CategoryProviderAdapter). Those files are skipped in this check.
 func TestNoCrossModuleDomainImports(t *testing.T) {
 	_, currentFile, _, ok := runtime.Caller(0)
 	require.True(t, ok)
@@ -69,6 +71,10 @@ func TestNoCrossModuleDomainImports(t *testing.T) {
 			modPath := filepath.Join(repoRoot, "internal", "modules", mod)
 			if err := filepath.WalkDir(modPath, func(path string, d os.DirEntry, err error) error {
 				if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+					return nil
+				}
+				// Skip infrastructure/providers/ — cross-module adapters by design.
+				if strings.Contains(path, string(filepath.Separator)+"infrastructure"+string(filepath.Separator)+"providers"+string(filepath.Separator)) {
 					return nil
 				}
 				imports := parseFileImports(t, path)

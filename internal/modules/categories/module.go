@@ -3,6 +3,7 @@ package categories
 import (
 	"time"
 
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase"
@@ -10,13 +11,12 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/routes"
 	mssqlrepo "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/persistence/mssql"
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 )
 
 // Deps holds the external dependencies required to build the categories module.
 type Deps struct {
-	DB        database.ISqlConnection
+	DB        devkitdb.DBTX
 	JwtParser pkgjwt.Parser
 }
 
@@ -36,8 +36,7 @@ func (systemClock) Now() time.Time { return time.Now().UTC() }
 
 // NewModule builds the categories module from its external dependencies.
 func NewModule(deps Deps) *Module {
-	db := deps.DB.Connect()
-	repo := mssqlrepo.NewCategoryRepository(db)
+	repo := mssqlrepo.NewCategoryRepository(deps.DB)
 
 	clock := systemClock{}
 	uniqueness := services.NewCategoryUniquenessService(repo)

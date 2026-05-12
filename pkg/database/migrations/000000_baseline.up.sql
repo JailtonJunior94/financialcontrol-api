@@ -1,0 +1,5 @@
+-- 000000_baseline: empty baseline migration.
+-- Establishes schema_migrations.version = 0 starting point.
+-- Existing environments (dev/staging/prod) MUST run `migrator.Force(ctx, 1)`
+-- before the first `Up` to mark `000001_initial_schema` as already applied.
+-- See cmd/migration/README.md for the runbook.

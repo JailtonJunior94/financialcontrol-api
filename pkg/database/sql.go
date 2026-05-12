@@ -2,105 +2,30 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"log"
+	"fmt"
+	"strings"
 
-	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
-
-	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/jmoiron/sqlx"
+	"github.com/JailtonJunior94/devkit-go/pkg/database/manager"
+	"github.com/JailtonJunior94/devkit-go/pkg/database/mssql"
 )
 
-type ISqlConnection interface {
-	Connect() *sqlx.DB
-	Disconnect()
-	OpenConnectionAndMountStatement(query string) (*sql.Stmt, error)
-	ValidateResult(result sql.Result, err error) error
-	IUnitOfWork
-}
+const dsnPrefix = "sqlserver://"
 
-type IUnitOfWork interface {
-	Begin() (*sqlx.Tx, error)
-	Rollback() error
-	Commit() error
-	End(txFunc func() error) error
-}
-
-type SqlConnection struct {
-	DB *sqlx.DB
-	TX *sqlx.Tx
-}
-
-func NewConnection() ISqlConnection {
-	db, err := sqlx.Connect("sqlserver", config.SqlConnectionString)
-	if err != nil {
-		log.Fatal(err)
+// OpenManager opens a MSSQL Manager from the configured DSN and validates the DSN format.
+// DSN must start with "sqlserver://". Returns ErrConfigMissingDSN when DSN is empty.
+func OpenManager(_ context.Context, dsn string, opts ...manager.Option) (manager.Manager, error) {
+	if dsn == "" {
+		return nil, ErrConfigMissingDSN
 	}
-
-	if err = db.Ping(); err != nil {
-		log.Fatal(err)
+	if !strings.HasPrefix(dsn, dsnPrefix) {
+		return nil, fmt.Errorf("database: DSN must start with %q, got scheme %q", dsnPrefix, extractScheme(dsn))
 	}
-
-	return &SqlConnection{DB: db}
+	return manager.New(mssql.MSSQLConfig{DSN: dsn}, opts...)
 }
 
-func (s *SqlConnection) Connect() *sqlx.DB {
-	return s.DB
-}
-
-func (s *SqlConnection) Disconnect() {
-	if err := s.DB.Close(); err != nil {
-		log.Fatal(err)
+func extractScheme(dsn string) string {
+	if idx := strings.Index(dsn, "://"); idx >= 0 {
+		return dsn[:idx+3]
 	}
-}
-
-func (s *SqlConnection) OpenConnectionAndMountStatement(query string) (*sql.Stmt, error) {
-	stmt, err := s.DB.Prepare(query)
-	if err != nil {
-		return nil, err
-	}
-	return stmt, nil
-}
-
-func (s *SqlConnection) ValidateResult(result sql.Result, err error) error {
-	if err != nil {
-		return err
-	}
-
-	rows, err := result.RowsAffected()
-	if rows == 0 {
-		return err
-	}
-	return nil
-}
-
-func (s *SqlConnection) Begin() (*sqlx.Tx, error) {
-	tx, err := s.DB.BeginTxx(context.Background(), nil)
-	return tx, err
-}
-
-func (s *SqlConnection) Rollback() error {
-	return s.TX.Rollback()
-}
-
-func (s *SqlConnection) Commit() error {
-	return s.TX.Commit()
-}
-
-func (s *SqlConnection) End(txFunc func() error) error {
-	var err error
-	tx := s.TX
-
-	defer func() {
-		if p := recover(); p != nil {
-			_ = tx.Rollback()
-			panic(p)
-		} else if err != nil {
-			_ = tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-	err = txFunc()
-	return err
+	return "(no scheme)"
 }

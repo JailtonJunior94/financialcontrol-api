@@ -10,19 +10,7 @@ import (
 
 func TestRegistrationsExposeExpectedFoundationModules(t *testing.T) {
 	registrations := modules.Registrations()
-	names := make([]string, 0, len(registrations))
-
-	for _, registration := range registrations {
-		names = append(names, registration.Name)
-	}
-
-	require.Equal(t, 4, len(registrations))
-	require.ElementsMatch(t, []string{
-		"billing",
-		"transactions",
-		"invoicing",
-		"planning",
-	}, names)
+	require.Empty(t, registrations, "all legacy module registrations removed in task 9.0")
 }
 
 func TestRegistrationsSeparateHTTPAndCLIHooks(t *testing.T) {

@@ -8,12 +8,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
+	pkgdatabase "github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
@@ -21,14 +22,14 @@ var _ interfaces.CategoryRepository = (*CategoryRepository)(nil)
 
 const moduleName = "categories"
 
-// CategoryRepository implements the persistence contract for the Category
-// aggregate against SQL Server. All queries are scoped to userID and ignore
-// soft-deleted rows unless explicitly required by the operation.
+// CategoryRepository implements the legacy Category table in SQL Server.
+// The authenticated userID is still accepted for interface compatibility but
+// no longer participates in SQL filtering because the schema is global.
 type CategoryRepository struct {
-	db *sqlx.DB
+	db devkitdb.DBTX
 }
 
-func NewCategoryRepository(db *sqlx.DB) *CategoryRepository {
+func NewCategoryRepository(db devkitdb.DBTX) *CategoryRepository {
 	return &CategoryRepository{db: db}
 }
 
@@ -40,9 +41,9 @@ func (r *CategoryRepository) List(
 	args := buildListArgs(userID, filter)
 
 	var total int64
-	if err := r.db.QueryRowxContext(ctx, listCategoriesCount, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, listCategoriesCount, args...).Scan(&total); err != nil {
 		slog.ErrorContext(ctx, "categories list count failed",
-			slog.String("module", moduleName), slog.String("userId", userID.String()), slog.String("error", err.Error()))
+			slog.String("module", moduleName), slog.String("error", err.Error()))
 		return nil, 0, fmt.Errorf("mssql: list categories count: %w", err)
 	}
 
@@ -55,26 +56,28 @@ func (r *CategoryRepository) List(
 		)
 	}
 
-	rows, err := r.db.QueryxContext(ctx, query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "categories list query failed",
-			slog.String("module", moduleName), slog.String("userId", userID.String()), slog.String("error", err.Error()))
+			slog.String("module", moduleName), slog.String("error", err.Error()))
 		return nil, 0, fmt.Errorf("mssql: list categories: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
 
-	items := make([]entities.Category, 0)
-	for rows.Next() {
+	items, err := pkgdatabase.ScanAll[entities.Category](rows, func(r devkitdb.Rows) (entities.Category, error) {
 		var row CategoryRow
-		if err := rows.StructScan(&row); err != nil {
-			return nil, 0, fmt.Errorf("mssql: list categories scan: %w", err)
+		if err := r.Scan(&row.ID, &row.Name, &row.Sequence, &row.CreatedAt, &row.UpdatedAt, &row.Active); err != nil {
+			return entities.Category{}, fmt.Errorf("mssql: list categories scan: %w", err)
 		}
 		category, err := RowToCategory(&row)
 		if err != nil {
-			return nil, 0, fmt.Errorf("mssql: list categories map: %w", err)
+			return entities.Category{}, fmt.Errorf("mssql: list categories map: %w", err)
 		}
-		items = append(items, *category)
+		return *category, nil
+	})
+	if err != nil {
+		return nil, 0, err
 	}
+
 	return items, total, nil
 }
 
@@ -96,21 +99,19 @@ func (r *CategoryRepository) GetByIDIncludingDeleted(
 
 func (r *CategoryRepository) getByIDWithQuery(
 	ctx context.Context,
-	userID identityvo.UserID,
+	_ identityvo.UserID,
 	id vos.CategoryID,
 	query string,
 ) (*entities.Category, error) {
 	var row CategoryRow
-	err := r.db.QueryRowxContext(ctx, query,
-		sql.Named("userId", userID.String()),
-		sql.Named("id", id.String()),
-	).StructScan(&row)
+	err := r.db.QueryRowContext(ctx, query, sql.Named("id", id.String())).
+		Scan(&row.ID, &row.Name, &row.Sequence, &row.CreatedAt, &row.UpdatedAt, &row.Active)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrCategoryNotFound
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "categories get by id failed",
-			slog.String("module", moduleName), slog.String("userId", userID.String()),
+			slog.String("module", moduleName),
 			slog.String("categoryId", id.String()), slog.String("error", err.Error()))
 		return nil, fmt.Errorf("mssql: get category by id: %w", err)
 	}
@@ -119,58 +120,48 @@ func (r *CategoryRepository) getByIDWithQuery(
 
 func (r *CategoryRepository) GetActiveChildren(
 	ctx context.Context,
-	userID identityvo.UserID,
-	parentID vos.CategoryID,
+	_ identityvo.UserID,
+	_ vos.CategoryID,
 ) ([]entities.Category, error) {
-	rows, err := r.db.QueryxContext(ctx, getActiveChildren,
-		sql.Named("userId", userID.String()),
-		sql.Named("parentId", parentID.String()),
-	)
+	rows, err := r.db.QueryContext(ctx, getActiveChildren)
 	if err != nil {
 		slog.ErrorContext(ctx, "categories get active children failed",
-			slog.String("module", moduleName), slog.String("userId", userID.String()),
-			slog.String("parentId", parentID.String()), slog.String("error", err.Error()))
+			slog.String("module", moduleName), slog.String("error", err.Error()))
 		return nil, fmt.Errorf("mssql: get active children: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
 
-	items := make([]entities.Category, 0)
-	for rows.Next() {
+	items, err := pkgdatabase.ScanAll[entities.Category](rows, func(r devkitdb.Rows) (entities.Category, error) {
 		var row CategoryRow
-		if err := rows.StructScan(&row); err != nil {
-			return nil, fmt.Errorf("mssql: get active children scan: %w", err)
+		if err := r.Scan(&row.ID, &row.Name, &row.Sequence, &row.CreatedAt, &row.UpdatedAt, &row.Active); err != nil {
+			return entities.Category{}, fmt.Errorf("mssql: get active children scan: %w", err)
 		}
 		category, err := RowToCategory(&row)
 		if err != nil {
-			return nil, fmt.Errorf("mssql: get active children map: %w", err)
+			return entities.Category{}, fmt.Errorf("mssql: get active children map: %w", err)
 		}
-		items = append(items, *category)
+		return *category, nil
+	})
+	if err != nil {
+		return nil, err
 	}
+
 	return items, nil
 }
 
 func (r *CategoryRepository) ExistsByName(
 	ctx context.Context,
-	userID identityvo.UserID,
+	_ identityvo.UserID,
 	name vos.CategoryName,
-	parentID *vos.CategoryID,
+	_ *vos.CategoryID,
 	excludeID *vos.CategoryID,
 ) (bool, error) {
-	query := existsByNameRoot
-	args := []any{
-		sql.Named("userId", userID.String()),
+	var count int
+	if err := r.db.QueryRowContext(ctx, existsByNameRoot,
 		sql.Named("name", name.String()),
 		sql.Named("excludeId", nullableIDArg(excludeID)),
-	}
-	if parentID != nil {
-		query = existsByNameSub
-		args = append(args, sql.Named("parentId", parentID.String()))
-	}
-
-	var count int
-	if err := r.db.QueryRowxContext(ctx, query, args...).Scan(&count); err != nil {
+	).Scan(&count); err != nil {
 		slog.ErrorContext(ctx, "categories exists by name failed",
-			slog.String("module", moduleName), slog.String("userId", userID.String()), slog.String("error", err.Error()))
+			slog.String("module", moduleName), slog.String("error", err.Error()))
 		return false, fmt.Errorf("mssql: exists by name: %w", err)
 	}
 	return count > 0, nil
@@ -179,14 +170,11 @@ func (r *CategoryRepository) ExistsByName(
 func (r *CategoryRepository) Add(ctx context.Context, category *entities.Category) error {
 	_, err := r.db.ExecContext(ctx, addCategory,
 		sql.Named("id", category.ID().String()),
-		sql.Named("userId", category.UserID().String()),
-		sql.Named("parentId", parentIDArg(category.ParentID())),
 		sql.Named("name", category.Name().String()),
-		sql.Named("color", category.Color().String()),
-		sql.Named("icon", category.Icon().String()),
+		sql.Named("sequence", category.Sequence()),
 		sql.Named("createdAt", category.CreatedAt()),
 		sql.Named("updatedAt", category.UpdatedAt()),
-		sql.Named("deletedAt", deletedAtArg(category.DeletedAt())),
+		sql.Named("active", category.IsActive()),
 	)
 	if err != nil {
 		mapped := MapDriverError(err)
@@ -194,8 +182,8 @@ func (r *CategoryRepository) Add(ctx context.Context, category *entities.Categor
 			return mapped
 		}
 		slog.ErrorContext(ctx, "categories add failed",
-			slog.String("module", moduleName), slog.String("userId", category.UserID().String()),
-			slog.String("categoryId", category.ID().String()), slog.String("error", err.Error()))
+			slog.String("module", moduleName), slog.String("categoryId", category.ID().String()),
+			slog.String("error", err.Error()))
 		return fmt.Errorf("mssql: add category: %w", err)
 	}
 	return nil
@@ -203,14 +191,11 @@ func (r *CategoryRepository) Add(ctx context.Context, category *entities.Categor
 
 func (r *CategoryRepository) Update(ctx context.Context, category *entities.Category) error {
 	result, err := r.db.ExecContext(ctx, updateCategory,
-		sql.Named("parentId", parentIDArg(category.ParentID())),
 		sql.Named("name", category.Name().String()),
-		sql.Named("color", category.Color().String()),
-		sql.Named("icon", category.Icon().String()),
+		sql.Named("sequence", category.Sequence()),
 		sql.Named("updatedAt", category.UpdatedAt()),
-		sql.Named("deletedAt", deletedAtArg(category.DeletedAt())),
+		sql.Named("active", category.IsActive()),
 		sql.Named("id", category.ID().String()),
-		sql.Named("userId", category.UserID().String()),
 	)
 	if err != nil {
 		mapped := MapDriverError(err)
@@ -218,8 +203,8 @@ func (r *CategoryRepository) Update(ctx context.Context, category *entities.Cate
 			return mapped
 		}
 		slog.ErrorContext(ctx, "categories update failed",
-			slog.String("module", moduleName), slog.String("userId", category.UserID().String()),
-			slog.String("categoryId", category.ID().String()), slog.String("error", err.Error()))
+			slog.String("module", moduleName), slog.String("categoryId", category.ID().String()),
+			slog.String("error", err.Error()))
 		return fmt.Errorf("mssql: update category: %w", err)
 	}
 	rowsAffected, err := result.RowsAffected()
@@ -232,22 +217,17 @@ func (r *CategoryRepository) Update(ctx context.Context, category *entities.Cate
 	return nil
 }
 
+// SoftDeleteCascade is kept for interface compatibility; under the legacy
+// schema it simply deactivates the target row.
 func (r *CategoryRepository) SoftDeleteCascade(
 	ctx context.Context,
-	userID identityvo.UserID,
+	_ identityvo.UserID,
 	rootID vos.CategoryID,
 	deletedAt time.Time,
 ) error {
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("mssql: soft delete cascade begin tx: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
-
 	var exists int
-	if err := tx.QueryRowxContext(ctx, categoryExistsForUser,
+	if err := r.db.QueryRowContext(ctx, categoryExistsForUser,
 		sql.Named("id", rootID.String()),
-		sql.Named("userId", userID.String()),
 	).Scan(&exists); err != nil {
 		return fmt.Errorf("mssql: soft delete cascade lookup: %w", err)
 	}
@@ -255,61 +235,27 @@ func (r *CategoryRepository) SoftDeleteCascade(
 		return domain.ErrCategoryNotFound
 	}
 
-	if _, err := tx.ExecContext(ctx, softDeleteCascade,
-		sql.Named("userId", userID.String()),
+	if _, err := r.db.ExecContext(ctx, softDeleteCascade,
 		sql.Named("rootId", rootID.String()),
-		sql.Named("deletedAt", deletedAt.UTC()),
+		sql.Named("updatedAt", deletedAt.UTC()),
 	); err != nil {
 		slog.ErrorContext(ctx, "categories soft delete cascade failed",
-			slog.String("module", moduleName), slog.String("userId", userID.String()),
-			slog.String("rootId", rootID.String()), slog.String("error", err.Error()))
+			slog.String("module", moduleName), slog.String("rootId", rootID.String()),
+			slog.String("error", err.Error()))
 		return fmt.Errorf("mssql: soft delete cascade: %w", err)
 	}
 
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("mssql: soft delete cascade commit: %w", err)
-	}
 	return nil
 }
 
-func buildListArgs(userID identityvo.UserID, filter interfaces.ListFilter) []any {
+func buildListArgs(_ identityvo.UserID, filter interfaces.ListFilter) []any {
 	var nameLike any
 	if filter.NameLike != "" {
 		nameLike = "%" + filter.NameLike + "%"
 	}
-	var parentID any
-	if filter.ParentID != nil {
-		parentID = filter.ParentID.String()
-	}
-	onlyRoots := 0
-	if filter.OnlyRoots {
-		onlyRoots = 1
-	}
-	onlySubs := 0
-	if filter.OnlySubs {
-		onlySubs = 1
-	}
 	return []any{
-		sql.Named("userId", userID.String()),
 		sql.Named("nameLike", nameLike),
-		sql.Named("onlyRoots", onlyRoots),
-		sql.Named("onlySubs", onlySubs),
-		sql.Named("parentId", parentID),
 	}
-}
-
-func parentIDArg(parentID *vos.CategoryID) any {
-	if parentID == nil {
-		return nil
-	}
-	return parentID.String()
-}
-
-func deletedAtArg(deletedAt *time.Time) any {
-	if deletedAt == nil {
-		return nil
-	}
-	return deletedAt.UTC()
 }
 
 func nullableIDArg(id *vos.CategoryID) any {

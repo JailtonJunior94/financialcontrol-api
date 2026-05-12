@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/dtos"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
@@ -56,32 +57,12 @@ func buildListFilter(q dtos.ListCategoriesQuery) (interfaces.ListFilter, int, in
 	page = pagination.Page
 	size = pagination.Size
 
-	filter := interfaces.ListFilter{
+	if q.ParentID != "" || q.Scope == dtos.ScopeSubs {
+		return interfaces.ListFilter{}, 0, 0, domain.ErrCategoryHierarchyUnsupported
+	}
+
+	return interfaces.ListFilter{
 		Pagination: pagination,
 		NameLike:   q.Name,
-	}
-
-	if q.ParentID != "" {
-		parsed, err := vos.ParseCategoryID(q.ParentID)
-		if err != nil {
-			return interfaces.ListFilter{}, 0, 0, err
-		}
-		filter.ParentID = &parsed
-		filter.OnlySubs = true
-	}
-
-	if filter.ParentID != nil {
-		return filter, page, size, nil
-	}
-
-	switch q.Scope {
-	case dtos.ScopeRoots:
-		filter.OnlyRoots = true
-	case dtos.ScopeSubs:
-		filter.OnlySubs = true
-	case dtos.ScopeAll, "":
-		// no extra filter
-	}
-
-	return filter, page, size, nil
+	}, page, size, nil
 }

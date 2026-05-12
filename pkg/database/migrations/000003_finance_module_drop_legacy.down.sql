@@ -1,0 +1,5 @@
+-- Rollback intentionally empty (decision C2.a / D4.a / RF-39 / ADR-006).
+-- This migration is IRREVERSIBLE: once the legacy tables are dropped,
+-- recovery requires restoring from the pre-migration backup snapshot.
+-- Do NOT add DDL here — a false rollback would re-create empty tables
+-- and silently hide data loss.

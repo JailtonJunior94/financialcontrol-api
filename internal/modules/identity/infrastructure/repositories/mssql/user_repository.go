@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces"
@@ -28,10 +28,10 @@ type userRow struct {
 var _ interfaces.UserRepository = (*UserRepository)(nil)
 
 type UserRepository struct {
-	db *sqlx.DB
+	db devkitdb.DBTX
 }
 
-func NewUserRepository(db *sqlx.DB) *UserRepository {
+func NewUserRepository(db devkitdb.DBTX) *UserRepository {
 	return &UserRepository{db: db}
 }
 
@@ -49,27 +49,31 @@ func (r *UserRepository) Add(ctx context.Context, u *entities.User) error {
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email vos.Email) (*entities.User, error) {
-	var row userRow
-	err := r.db.QueryRowxContext(ctx, getUserByEmail, sql.Named("email", email.String())).StructScan(&row)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
+	// Column order: Id, Name, Email, Password, CreatedAt, UpdatedAt, Active
+	var rec userRow
+	if err := r.db.QueryRowContext(ctx, getUserByEmail, sql.Named("email", email.String())).Scan(
+		&rec.ID, &rec.Name, &rec.Email, &rec.Password, &rec.CreatedAt, &rec.UpdatedAt, &rec.Active,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	return rowToEntity(&row)
+	return rowToEntity(&rec)
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id vos.UserID) (*entities.User, error) {
-	var row userRow
-	err := r.db.QueryRowxContext(ctx, getUserByID, sql.Named("id", id.String())).StructScan(&row)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
+	// Column order: Id, Name, Email, Password, CreatedAt, UpdatedAt, Active
+	var rec userRow
+	if err := r.db.QueryRowContext(ctx, getUserByID, sql.Named("id", id.String())).Scan(
+		&rec.ID, &rec.Name, &rec.Email, &rec.Password, &rec.CreatedAt, &rec.UpdatedAt, &rec.Active,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	return rowToEntity(&row)
+	return rowToEntity(&rec)
 }
 
 func rowToEntity(row *userRow) (*entities.User, error) {

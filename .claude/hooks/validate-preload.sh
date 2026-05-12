@@ -20,11 +20,23 @@
 #   GOVERNANCE_PRELOAD_CONFIRMED=1  — bypass do bloqueio para sessoes que ja
 #                                     confirmaram o contrato. Util em ferramentas
 #                                     single-round (Codex, Copilot, Gemini CLI).
+#
+# Gate adicional por linguagem (Etapa 2.4 de execute-task):
+#   GOVERNANCE_LANG_LOADED  — CSV das linguagens cuja SKILL de implementacao foi
+#                             lida na sessao. Mapping extensao -> linguagem:
+#                               .go            -> go
+#                               .py            -> python
+#                               .ts/.tsx/.js/.jsx -> node
+#                             Se a linguagem do arquivo editado nao estiver na lista,
+#                             o hook bloqueia (fail) ou avisa (warn). Bypass com
+#                             GOVERNANCE_LANG_CONFIRMED=1 para sessoes single-round.
 
 set -euo pipefail
 
 GOVERNANCE_PRELOAD_MODE="${GOVERNANCE_PRELOAD_MODE:-fail}"
 GOVERNANCE_PRELOAD_CONFIRMED="${GOVERNANCE_PRELOAD_CONFIRMED:-0}"
+GOVERNANCE_LANG_LOADED="${GOVERNANCE_LANG_LOADED:-}"
+GOVERNANCE_LANG_CONFIRMED="${GOVERNANCE_LANG_CONFIRMED:-0}"
 
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=../../scripts/lib/parse-hook-input.sh
@@ -37,22 +49,46 @@ file_path="$(printf '%s' "$_stdin" | parse_file_path)"
 
 [[ -n "$file_path" ]] || exit 0
 
-# Only check code files, not governance files themselves
-case "$file_path" in
-  *.go|*.py|*.ts|*.js|*.tsx|*.jsx)
-    echo "LEMBRETE: antes de editar codigo, confirme que AGENTS.md e agent-governance/SKILL.md foram lidos nesta sessao." >&2
+# Mapeia extensao do arquivo para a linguagem cuja SKILL deve estar carregada.
+# Retorna string vazia se a extensao nao for de codigo de producao rastreado.
+detect_lang() {
+  case "$1" in
+    *.go)                       echo "go" ;;
+    *.py)                       echo "python" ;;
+    *.ts|*.tsx|*.js|*.jsx)      echo "node" ;;
+    *)                          echo "" ;;
+  esac
+}
 
-    # Unlock: sessao ja confirmou o contrato (util para Codex/Copilot/single-round)
-    if [[ "$GOVERNANCE_PRELOAD_CONFIRMED" == "1" ]]; then
-      exit 0
-    fi
+lang="$(detect_lang "$file_path")"
 
+# Arquivo nao-codigo: passa direto.
+[[ -z "$lang" ]] && exit 0
+
+echo "LEMBRETE: antes de editar codigo, confirme que AGENTS.md e agent-governance/SKILL.md foram lidos nesta sessao." >&2
+
+# Gate 1: contrato de carga base (governance).
+if [[ "$GOVERNANCE_PRELOAD_CONFIRMED" != "1" ]]; then
+  if [[ "$GOVERNANCE_PRELOAD_MODE" == "fail" ]]; then
+    echo "GOVERNANCE_PRELOAD_MODE=fail: bloqueando edicao ate que contrato de carga seja confirmado." >&2
+    echo "Para prosseguir: export GOVERNANCE_PRELOAD_CONFIRMED=1" >&2
+    exit 1
+  fi
+fi
+
+# Gate 2: skill da linguagem afetada (Etapa 2.4 de execute-task).
+# Bypass: GOVERNANCE_LANG_CONFIRMED=1 (single-round) OU lang em GOVERNANCE_LANG_LOADED (CSV).
+if [[ "$GOVERNANCE_LANG_CONFIRMED" != "1" ]]; then
+  # Procura $lang na CSV (com ou sem espacos), em qualquer posicao.
+  if ! printf '%s' ",$GOVERNANCE_LANG_LOADED," | tr -d '[:space:]' | grep -Fq ",$lang,"; then
+    echo "LEMBRETE: editando arquivo $lang, mas .agents/skills/$lang-implementation/SKILL.md nao consta como carregada." >&2
     if [[ "$GOVERNANCE_PRELOAD_MODE" == "fail" ]]; then
-      echo "GOVERNANCE_PRELOAD_MODE=fail: bloqueando edicao ate que contrato de carga seja confirmado." >&2
-      echo "Para prosseguir: export GOVERNANCE_PRELOAD_CONFIRMED=1" >&2
+      echo "GOVERNANCE_PRELOAD_MODE=fail: bloqueando edicao ate que a skill de linguagem seja carregada." >&2
+      echo "Para prosseguir: export GOVERNANCE_LANG_LOADED=\"\${GOVERNANCE_LANG_LOADED:+\$GOVERNANCE_LANG_LOADED,}$lang\"" >&2
+      echo "Ou, em single-round: export GOVERNANCE_LANG_CONFIRMED=1" >&2
       exit 1
     fi
-    ;;
-esac
+  fi
+fi
 
 exit 0

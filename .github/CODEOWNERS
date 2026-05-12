@@ -1,0 +1,6 @@
+# Migrations require DBA/tech lead review (D-25)
+/pkg/database/migrations/      @JailtonJunior94
+/pkg/database/migration_assets.go  @JailtonJunior94
+# Bootstrap of migration CLI
+/internal/bootstrap/migration/ @JailtonJunior94
+/cmd/migration/                @JailtonJunior94

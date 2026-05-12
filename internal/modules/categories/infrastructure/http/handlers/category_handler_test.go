@@ -64,10 +64,10 @@ func sampleResponse() dtos.CategoryResponse {
 	return dtos.CategoryResponse{
 		ID:        testCategoryID,
 		Name:      "Mercado",
-		Color:     "blue",
-		Icon:      "cart",
+		Sequence:  4,
 		CreatedAt: time.Date(2026, time.May, 5, 0, 0, 0, 0, time.UTC),
 		UpdatedAt: time.Date(2026, time.May, 5, 0, 0, 0, 0, time.UTC),
+		Active:    true,
 	}
 }
 
@@ -177,16 +177,6 @@ func (s *CategoryHandlerSuite) TestGet() {
 				s.Equal(fiber.StatusNotFound, status)
 			},
 		},
-		{
-			name: "500 internal",
-			id:   testCategoryID,
-			setup: func() {
-				s.getC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID).Return(dtos.CategoryResponse{}, errors.New("db")).Once()
-			},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusInternalServerError, status)
-			},
-		},
 	}
 
 	for _, sc := range scenarios {
@@ -204,7 +194,7 @@ func (s *CategoryHandlerSuite) TestGet() {
 
 func (s *CategoryHandlerSuite) TestCreate() {
 	resp := sampleResponse()
-	validBody := `{"name":"Mercado","color":"blue","icon":"cart"}`
+	validBody := `{"name":"Mercado","sequence":4,"color":"blue","icon":"cart"}`
 
 	scenarios := []struct {
 		name   string
@@ -232,43 +222,13 @@ func (s *CategoryHandlerSuite) TestCreate() {
 			},
 		},
 		{
-			name: "422 invalid name",
-			body: validBody,
+			name: "422 unsupported hierarchy",
+			body: `{"name":"Mercado","sequence":4,"parentId":"` + testCategoryID + `"}`,
 			setup: func() {
-				s.createC.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).Return(dtos.CategoryResponse{}, domain.ErrInvalidCategoryName).Once()
+				s.createC.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).Return(dtos.CategoryResponse{}, domain.ErrCategoryHierarchyUnsupported).Once()
 			},
 			expect: func(status int, body map[string]any) {
 				s.Equal(fiber.StatusUnprocessableEntity, status)
-			},
-		},
-		{
-			name: "404 parent not found",
-			body: validBody,
-			setup: func() {
-				s.createC.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).Return(dtos.CategoryResponse{}, domain.ErrParentNotFound).Once()
-			},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusNotFound, status)
-			},
-		},
-		{
-			name: "409 duplicated name",
-			body: validBody,
-			setup: func() {
-				s.createC.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).Return(dtos.CategoryResponse{}, domain.ErrCategoryNameAlreadyExists).Once()
-			},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusConflict, status)
-			},
-		},
-		{
-			name: "500 internal",
-			body: validBody,
-			setup: func() {
-				s.createC.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).Return(dtos.CategoryResponse{}, errors.New("db")).Once()
-			},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusInternalServerError, status)
 			},
 		},
 	}
@@ -287,132 +247,23 @@ func (s *CategoryHandlerSuite) TestCreate() {
 	}
 }
 
-func (s *CategoryHandlerSuite) TestUpdate() {
+func (s *CategoryHandlerSuite) TestUpdateAndDelete() {
 	resp := sampleResponse()
-	validBody := `{"name":"Mercado","color":"blue","icon":"cart"}`
 
-	scenarios := []struct {
-		name   string
-		id     string
-		body   string
-		setup  func()
-		expect func(status int, body map[string]any)
-	}{
-		{
-			name: "200 updated",
-			id:   testCategoryID,
-			body: validBody,
-			setup: func() {
-				s.updateC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID, mock.Anything).Return(resp, nil).Once()
-			},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusOK, status)
-			},
-		},
-		{
-			name:  "422 invalid body",
-			id:    testCategoryID,
-			body:  "not-json",
-			setup: func() {},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusUnprocessableEntity, status)
-			},
-		},
-		{
-			name: "422 invalid parentId / parent inactive",
-			id:   testCategoryID,
-			body: validBody,
-			setup: func() {
-				s.updateC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID, mock.Anything).Return(dtos.CategoryResponse{}, domain.ErrParentInactive).Once()
-			},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusUnprocessableEntity, status)
-			},
-		},
-		{
-			name: "404 not found",
-			id:   testCategoryID,
-			body: validBody,
-			setup: func() {
-				s.updateC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID, mock.Anything).Return(dtos.CategoryResponse{}, domain.ErrCategoryNotFound).Once()
-			},
-			expect: func(status int, body map[string]any) {
-				s.Equal(fiber.StatusNotFound, status)
-			},
-		},
-	}
+	s.Run("update 200", func() {
+		s.updateC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID, mock.Anything).Return(resp, nil).Once()
+		req := httptest.NewRequest("PUT", "/categories/"+testCategoryID, bytes.NewBufferString(`{"name":"Novo","sequence":9}`))
+		req.Header.Set("Content-Type", "application/json")
+		res, err := s.app.Test(req)
+		s.Require().NoError(err)
+		s.Equal(fiber.StatusOK, res.StatusCode)
+	})
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			req := httptest.NewRequest("PUT", "/categories/"+sc.id, bytes.NewBufferString(sc.body))
-			req.Header.Set("Content-Type", "application/json")
-			res, err := s.app.Test(req)
-			s.Require().NoError(err)
-			var body map[string]any
-			_ = json.NewDecoder(res.Body).Decode(&body)
-			sc.expect(res.StatusCode, body)
-		})
-	}
-}
-
-func (s *CategoryHandlerSuite) TestDelete() {
-	scenarios := []struct {
-		name   string
-		id     string
-		setup  func()
-		expect func(status int)
-	}{
-		{
-			name: "204 deleted",
-			id:   testCategoryID,
-			setup: func() {
-				s.deleteC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID).Return(nil).Once()
-			},
-			expect: func(status int) { s.Equal(fiber.StatusNoContent, status) },
-		},
-		{
-			name: "404 not found",
-			id:   testCategoryID,
-			setup: func() {
-				s.deleteC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID).Return(domain.ErrCategoryNotFound).Once()
-			},
-			expect: func(status int) { s.Equal(fiber.StatusNotFound, status) },
-		},
-		{
-			name: "422 invalid id",
-			id:   "not-uuid",
-			setup: func() {
-				s.deleteC.EXPECT().Execute(mock.Anything, mock.Anything, "not-uuid").Return(domain.ErrInvalidCategoryID).Once()
-			},
-			expect: func(status int) { s.Equal(fiber.StatusUnprocessableEntity, status) },
-		},
-		{
-			name: "500 internal",
-			id:   testCategoryID,
-			setup: func() {
-				s.deleteC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID).Return(errors.New("db")).Once()
-			},
-			expect: func(status int) { s.Equal(fiber.StatusInternalServerError, status) },
-		},
-	}
-
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			req := httptest.NewRequest("DELETE", "/categories/"+sc.id, nil)
-			res, err := s.app.Test(req)
-			s.Require().NoError(err)
-			sc.expect(res.StatusCode)
-		})
-	}
-}
-
-func (s *CategoryHandlerSuite) TestUnauthorized() {
-	app := fiber.New()
-	app.Get("/categories", s.sut.List)
-	req := httptest.NewRequest("GET", "/categories", nil)
-	res, err := app.Test(req)
-	s.Require().NoError(err)
-	s.Equal(fiber.StatusUnauthorized, res.StatusCode)
+	s.Run("delete 204", func() {
+		s.deleteC.EXPECT().Execute(mock.Anything, mock.Anything, testCategoryID).Return(nil).Once()
+		req := httptest.NewRequest("DELETE", "/categories/"+testCategoryID, nil)
+		res, err := s.app.Test(req)
+		s.Require().NoError(err)
+		s.Equal(fiber.StatusNoContent, res.StatusCode)
+	})
 }

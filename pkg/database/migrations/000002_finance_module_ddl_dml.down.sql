@@ -1,0 +1,3 @@
+-- rollback via restore de backup — RF-39 / ADR-006
+-- This migration is intentionally irreversible (decision C2.a / D4.a).
+-- To revert, restore the database from a pre-migration backup snapshot.

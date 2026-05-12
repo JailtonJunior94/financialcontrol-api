@@ -38,6 +38,9 @@ require_heading() {
   fi
 }
 
+# Identificação da tarefa — caminho do arquivo de tarefa real
+require_pattern "arquivo[[:space:]]*:[[:space:]]*tasks/prd-" "caminho do arquivo de tarefa (Arquivo: tasks/prd-<slug>/NN_*.md)"
+
 # Contexto carregado (PRD e TechSpec) — exigir como heading Markdown
 require_heading "contexto carregado" "seção Contexto Carregado"
 require_pattern "PRD[[:space:]]*:" "referência ao PRD consultado"

@@ -4,12 +4,15 @@ package mssql
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"sync"
 	"time"
 
-	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/jmoiron/sqlx"
+	_ "github.com/microsoft/go-mssqldb"
+
+	devkitmgr "github.com/JailtonJunior94/devkit-go/pkg/database/manager"
+	devkitmssql "github.com/JailtonJunior94/devkit-go/pkg/database/mssql"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -24,17 +27,18 @@ const (
 
 var (
 	once      sync.Once
-	sharedDB  *sqlx.DB
+	sharedDB  *sql.DB
+	sharedDSN string
 	sharedErr error
 	container testcontainers.Container
 )
 
-// GetSharedTestDatabase returns a shared *sqlx.DB backed by a SQL Server testcontainer.
+// GetSharedTestDatabase returns a shared *sql.DB backed by a SQL Server testcontainer.
 // The container is started once per test binary via sync.Once.
 // The returned cleanup func truncates all user tables in the test database.
-func GetSharedTestDatabase() (*sqlx.DB, func(), error) {
+func GetSharedTestDatabase() (*sql.DB, func(), error) {
 	once.Do(func() {
-		sharedDB, sharedErr = startMSSQLContainer(context.Background())
+		sharedDB, sharedDSN, sharedErr = startMSSQLContainer(context.Background())
 	})
 	if sharedErr != nil {
 		return nil, nil, sharedErr
@@ -47,7 +51,43 @@ func GetSharedTestDatabase() (*sqlx.DB, func(), error) {
 	return sharedDB, cleanup, nil
 }
 
-func startMSSQLContainer(ctx context.Context) (*sqlx.DB, error) {
+// GetSharedTestDSN returns the DSN of the shared SQL Server testcontainer.
+// The container is started once per test binary via sync.Once.
+func GetSharedTestDSN() (string, error) {
+	once.Do(func() {
+		sharedDB, sharedDSN, sharedErr = startMSSQLContainer(context.Background())
+	})
+	if sharedErr != nil {
+		return "", sharedErr
+	}
+	return sharedDSN, nil
+}
+
+// GetSharedTestManager returns a devkit-go Manager connected to the shared SQL Server
+// testcontainer. The container is started once per test binary via sync.Once.
+// The returned cleanup func shuts down the manager and truncates all user tables.
+func GetSharedTestManager() (devkitmgr.Manager, func(), error) {
+	once.Do(func() {
+		sharedDB, sharedDSN, sharedErr = startMSSQLContainer(context.Background())
+	})
+	if sharedErr != nil {
+		return nil, nil, sharedErr
+	}
+
+	mgr, err := devkitmgr.New(devkitmssql.MSSQLConfig{DSN: sharedDSN})
+	if err != nil {
+		return nil, nil, fmt.Errorf("mssql testcontainer: manager: %w", err)
+	}
+
+	cleanup := func() {
+		_ = mgr.Shutdown(context.Background())
+		truncateAllTables(sharedDB)
+	}
+
+	return mgr, cleanup, nil
+}
+
+func startMSSQLContainer(ctx context.Context) (*sql.DB, string, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        mssqlImage,
 		ExposedPorts: []string{mssqlPort},
@@ -65,18 +105,18 @@ func startMSSQLContainer(ctx context.Context) (*sqlx.DB, error) {
 		Started:          true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("mssql testcontainer: start: %w", err)
+		return nil, "", fmt.Errorf("mssql testcontainer: start: %w", err)
 	}
 	container = c
 
 	host, err := c.Host(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("mssql testcontainer: host: %w", err)
+		return nil, "", fmt.Errorf("mssql testcontainer: host: %w", err)
 	}
 
 	mappedPort, err := c.MappedPort(ctx, mssqlPort)
 	if err != nil {
-		return nil, fmt.Errorf("mssql testcontainer: port: %w", err)
+		return nil, "", fmt.Errorf("mssql testcontainer: port: %w", err)
 	}
 
 	dsn := fmt.Sprintf(
@@ -84,9 +124,15 @@ func startMSSQLContainer(ctx context.Context) (*sqlx.DB, error) {
 		mssqlSAPass, host, mappedPort.Port(),
 	)
 
-	var db *sqlx.DB
+	db, err := sql.Open("sqlserver", dsn)
+	if err != nil {
+		return nil, "", fmt.Errorf("mssql testcontainer: open: %w", err)
+	}
+
 	for i := range connectMaxRetries {
-		db, err = sqlx.Connect("sqlserver", dsn)
+		pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		err = db.PingContext(pingCtx)
+		cancel()
 		if err == nil {
 			break
 		}
@@ -95,15 +141,16 @@ func startMSSQLContainer(ctx context.Context) (*sqlx.DB, error) {
 		}
 	}
 	if err != nil {
-		return nil, fmt.Errorf("mssql testcontainer: connect: %w", err)
+		_ = db.Close()
+		return nil, "", fmt.Errorf("mssql testcontainer: connect: %w", err)
 	}
 
-	return db, nil
+	return db, dsn, nil
 }
 
 // truncateAllTables removes all rows from every user table in the test database.
 // FK constraints are disabled during truncation to avoid ordering issues.
-func truncateAllTables(db *sqlx.DB) {
+func truncateAllTables(db *sql.DB) {
 	if db == nil {
 		return
 	}

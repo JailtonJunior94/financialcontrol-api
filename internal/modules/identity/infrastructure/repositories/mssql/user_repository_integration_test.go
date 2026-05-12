@@ -6,7 +6,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
+	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
+	devkitmgr "github.com/JailtonJunior94/devkit-go/pkg/database/manager"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
@@ -35,7 +36,8 @@ CREATE TABLE dbo.[User] (
 type UserRepositorySuite struct {
 	suite.Suite
 
-	db      *sqlx.DB
+	mgr     devkitmgr.Manager
+	dbtx    devkitdb.DBTX
 	ctx     context.Context
 	cleanup func()
 }
@@ -45,16 +47,22 @@ func TestUserRepositorySuite(t *testing.T) {
 }
 
 func (s *UserRepositorySuite) SetupSuite() {
+	// Use sqlx for DDL setup (table creation)
 	db, _, err := dbmssql.GetSharedTestDatabase()
 	s.Require().NoError(err, "failed to get shared test database")
-	s.db = db
 
-	_, err = s.db.ExecContext(context.Background(), createUserTable)
+	_, err = db.ExecContext(context.Background(), createUserTable)
 	s.Require().NoError(err, "failed to create user table")
+
+	// Use manager for DBTX (repository operations)
+	mgr, _, err := dbmssql.GetSharedTestManager()
+	s.Require().NoError(err, "failed to get shared test manager")
+	s.mgr = mgr
 }
 
 func (s *UserRepositorySuite) SetupTest() {
 	s.ctx = context.Background()
+	s.dbtx = s.mgr.DBTX(s.ctx)
 
 	_, cleanup, err := dbmssql.GetSharedTestDatabase()
 	s.Require().NoError(err, "failed to get shared test database")
@@ -80,7 +88,7 @@ func (s *UserRepositorySuite) newUser(name, email, password string) *entities.Us
 }
 
 func (s *UserRepositorySuite) TestAdd() {
-	repo := repomssql.NewUserRepository(s.db)
+	repo := repomssql.NewUserRepository(s.dbtx)
 
 	scenarios := []struct {
 		name   string
@@ -123,7 +131,7 @@ func (s *UserRepositorySuite) TestAdd() {
 }
 
 func (s *UserRepositorySuite) TestGetByEmail() {
-	repo := repomssql.NewUserRepository(s.db)
+	repo := repomssql.NewUserRepository(s.dbtx)
 
 	alice := s.newUser("Alice", "alice-getemail@example.com", "$2a$10$hash")
 	s.Require().NoError(repo.Add(s.ctx, alice))
@@ -170,7 +178,7 @@ func (s *UserRepositorySuite) TestGetByEmail() {
 }
 
 func (s *UserRepositorySuite) TestGetByID() {
-	repo := repomssql.NewUserRepository(s.db)
+	repo := repomssql.NewUserRepository(s.dbtx)
 
 	bob := s.newUser("Bob", "bob-getid@example.com", "$2a$10$hash")
 	s.Require().NoError(repo.Add(s.ctx, bob))

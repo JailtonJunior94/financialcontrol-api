@@ -2,91 +2,62 @@ package mssql
 
 const (
 	categorySelectColumns = `
-		CAST([Id] AS CHAR(36))       [Id],
-		CAST([UserId] AS CHAR(36))   [UserId],
-		CAST([ParentId] AS CHAR(36)) [ParentId],
+		CAST([Id] AS CHAR(36)) [Id],
 		[Name],
-		[Color],
-		[Icon],
+		[Sequence],
 		[CreatedAt],
 		[UpdatedAt],
-		[DeletedAt]`
+		[Active]`
 
 	getCategoryByID = `SELECT` + categorySelectColumns + `
 		FROM dbo.[Category] (NOLOCK)
-		WHERE [UserId] = @userId
-		  AND [Id] = @id
-		  AND [DeletedAt] IS NULL`
+		WHERE [Id] = @id
+		  AND [Active] = 1`
 
 	getCategoryByIDIncludingDeleted = `SELECT` + categorySelectColumns + `
 		FROM dbo.[Category] (NOLOCK)
-		WHERE [UserId] = @userId
-		  AND [Id] = @id`
+		WHERE [Id] = @id`
 
 	getActiveChildren = `SELECT` + categorySelectColumns + `
 		FROM dbo.[Category] (NOLOCK)
-		WHERE [UserId] = @userId
-		  AND [ParentId] = @parentId
-		  AND [DeletedAt] IS NULL
-		ORDER BY [Name] ASC`
+		WHERE 1 = 0`
 
 	addCategory = `INSERT INTO dbo.[Category]
-		([Id], [UserId], [ParentId], [Name], [Color], [Icon], [CreatedAt], [UpdatedAt], [DeletedAt])
-		VALUES (@id, @userId, @parentId, @name, @color, @icon, @createdAt, @updatedAt, @deletedAt)`
+		([Id], [Name], [Sequence], [CreatedAt], [UpdatedAt], [Active])
+		VALUES (@id, @name, @sequence, @createdAt, @updatedAt, @active)`
 
 	updateCategory = `UPDATE dbo.[Category]
-		SET [ParentId]  = @parentId,
-		    [Name]      = @name,
-		    [Color]     = @color,
-		    [Icon]      = @icon,
+		SET [Name]      = @name,
+		    [Sequence]  = @sequence,
 		    [UpdatedAt] = @updatedAt,
-		    [DeletedAt] = @deletedAt
+		    [Active]    = @active
 		WHERE [Id]     = @id
-		  AND [UserId] = @userId
-		  AND [DeletedAt] IS NULL`
+		  AND [Active] = 1`
 
-	// Single-statement soft delete cascade: matches the root row and any active
-	// child whose ParentId equals the root id, scoped to the user. Already
-	// soft-deleted rows are filtered out, making the call idempotent.
 	softDeleteCascade = `UPDATE dbo.[Category]
-		SET [DeletedAt] = @deletedAt,
-		    [UpdatedAt] = @deletedAt
-		WHERE [UserId] = @userId
-		  AND [DeletedAt] IS NULL
-		  AND ([Id] = @rootId OR [ParentId] = @rootId)`
+		SET [Active]    = 0,
+		    [UpdatedAt] = @updatedAt
+		WHERE [Id]      = @rootId
+		  AND [Active]  = 1`
 
 	categoryExistsForUser = `SELECT COUNT(1)
 		FROM dbo.[Category] (NOLOCK)
-		WHERE [Id] = @id AND [UserId] = @userId`
+		WHERE [Id] = @id`
 
 	existsByNameRoot = `SELECT COUNT(1)
 		FROM dbo.[Category] (NOLOCK)
-		WHERE [UserId] = @userId
-		  AND [ParentId] IS NULL
-		  AND [Name] = @name
-		  AND [DeletedAt] IS NULL
-		  AND (@excludeId IS NULL OR CAST([Id] AS CHAR(36)) <> @excludeId)`
-
-	existsByNameSub = `SELECT COUNT(1)
-		FROM dbo.[Category] (NOLOCK)
-		WHERE [UserId] = @userId
-		  AND [ParentId] = @parentId
-		  AND [Name] = @name
-		  AND [DeletedAt] IS NULL
+		WHERE [Name] = @name
+		  AND [Active] = 1
 		  AND (@excludeId IS NULL OR CAST([Id] AS CHAR(36)) <> @excludeId)`
 
 	listCategoriesBase = `FROM dbo.[Category] (NOLOCK)
-		WHERE [UserId] = @userId
-		  AND [DeletedAt] IS NULL
-		  AND (@nameLike IS NULL OR [Name] LIKE @nameLike)
-		  AND (@onlyRoots = 0 OR [ParentId] IS NULL)
-		  AND (@onlySubs = 0 OR [ParentId] IS NOT NULL)
-		  AND (@parentId IS NULL OR [ParentId] = @parentId)`
+		WHERE [Active] = 1
+		  AND (@nameLike IS NULL OR [Name] LIKE @nameLike)`
 
 	listCategoriesCount = `SELECT COUNT(1) ` + listCategoriesBase
 
 	listCategories = `SELECT` + categorySelectColumns + ` ` + listCategoriesBase + `
-		ORDER BY [CreatedAt] DESC`
+		ORDER BY [Sequence] ASC, [CreatedAt] DESC`
 
 	listCategoriesPaginated = listCategories + `
 		OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY`

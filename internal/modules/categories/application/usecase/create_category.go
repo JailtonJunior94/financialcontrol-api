@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -35,23 +34,15 @@ func (uc *createCategory) Execute(ctx context.Context, userID identityvo.UserID,
 	if err != nil {
 		return dtos.CategoryResponse{}, err
 	}
+	if req.ParentID != nil && *req.ParentID != "" {
+		return dtos.CategoryResponse{}, domain.ErrCategoryHierarchyUnsupported
+	}
 
-	parentID, err := parseOptionalParentID(req.ParentID)
-	if err != nil {
+	if err := uc.uniqueness.EnsureUnique(ctx, userID, name, nil, nil); err != nil {
 		return dtos.CategoryResponse{}, err
 	}
 
-	if parentID != nil {
-		if err := uc.assertParentEligible(ctx, userID, *parentID); err != nil {
-			return dtos.CategoryResponse{}, err
-		}
-	}
-
-	if err := uc.uniqueness.EnsureUnique(ctx, userID, name, parentID, nil); err != nil {
-		return dtos.CategoryResponse{}, err
-	}
-
-	category, err := entities.NewCategory(userID, parentID, req.Name, req.Color, req.Icon, uc.clock)
+	category, err := entities.NewCategory(req.Name, req.Sequence, uc.clock)
 	if err != nil {
 		return dtos.CategoryResponse{}, err
 	}
@@ -60,32 +51,4 @@ func (uc *createCategory) Execute(ctx context.Context, userID identityvo.UserID,
 		return dtos.CategoryResponse{}, fmt.Errorf("usecase create_category: %w", err)
 	}
 	return dtos.ToCategoryResponse(category), nil
-}
-
-func (uc *createCategory) assertParentEligible(ctx context.Context, userID identityvo.UserID, parentID vos.CategoryID) error {
-	parent, err := uc.repo.GetByIDIncludingDeleted(ctx, userID, parentID)
-	if err != nil {
-		if errors.Is(err, domain.ErrCategoryNotFound) {
-			return domain.ErrParentNotFound
-		}
-		return fmt.Errorf("usecase create_category: %w", err)
-	}
-	if !parent.IsActive() {
-		return domain.ErrParentInactive
-	}
-	if !parent.IsRoot() {
-		return domain.ErrSubcategoryDepthExceeded
-	}
-	return nil
-}
-
-func parseOptionalParentID(raw *string) (*vos.CategoryID, error) {
-	if raw == nil || *raw == "" {
-		return nil, nil
-	}
-	id, err := vos.ParseCategoryID(*raw)
-	if err != nil {
-		return nil, err
-	}
-	return &id, nil
 }
