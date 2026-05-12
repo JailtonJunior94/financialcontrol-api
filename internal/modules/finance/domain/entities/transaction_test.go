@@ -389,3 +389,129 @@ func mustMoney(t *testing.T, s string) vos.Money {
 	require.NoError(t, err)
 	return m
 }
+
+// BUG-003 regression: Replace must reject when the caller signals that at least
+// one installment is bound to a closed/paid invoice — even though every
+// installment carries status=scheduled (RF-46 keeps status='scheduled' while the
+// invoice is closed-but-unpaid, so the previous installment-status-only guard
+// missed this case for RF-11/RF-54).
+func TestTransaction_Replace_RejectsWhenHasClosedOrPaidInvoiceFlag(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC)
+	tx := newTestTransaction(t, now)
+
+	number, _ := vos.NewInstallmentNumber(1)
+	total, _ := vos.NewInstallmentCount(1)
+	amount, _ := vos.NewMoney("100.00")
+	scheduledInst := RehydrateInstallment(
+		vos.NewInstallmentID(), tx.ID(), vos.NewInvoiceID(),
+		number, total, amount,
+		vos.InstallmentStatusScheduled, nil, now, now, nil,
+	)
+	tx.SetInstallments([]*Installment{scheduledInst})
+
+	input := ReplaceInput{
+		Description:            "New desc",
+		Amount:                 mustAmount(t, "100.00"),
+		OccurredAt:             now,
+		TransactionType:        vos.TransactionTypeExpense,
+		PaymentMethod:          vos.PaymentMethodPix,
+		CategoryID:             vos.NewCategoryID(),
+		Now:                    now,
+		HasClosedOrPaidInvoice: true,
+	}
+	err := tx.Replace(input, nil, nil)
+	assert.ErrorIs(t, err, domain.ErrInstallmentInClosedOrPaidInvoice)
+}
+
+// BUG-005 regression: Replace must soft-delete pre-existing installments when
+// transitioning a transaction from installment_purchase to a non-card type so
+// the update use case doesn't try to re-insert them (PK conflict in AddBatch).
+func TestTransaction_Replace_SoftDeletesInstallmentsOnTypeTransitionAwayFromInstallmentPurchase(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC)
+	clock := &mockClock{now: now}
+	cardID := vos.NewCardID()
+	catID := vos.NewCategoryID()
+	amount := mustAmount(t, "90.00")
+
+	tx, err := NewTransaction(
+		vos.NewTransactionID(),
+		identityvo.NewUserID(),
+		"Original installment",
+		amount,
+		now,
+		vos.TransactionTypeInstallmentPurchase,
+		vos.PaymentMethodCreditCard,
+		&cardID,
+		catID,
+		nil,
+		nil,
+		clock,
+	)
+	require.NoError(t, err)
+
+	number, _ := vos.NewInstallmentNumber(1)
+	total, _ := vos.NewInstallmentCount(3)
+	m, _ := vos.NewMoney("30.00")
+	oldInst := newInstallment(vos.NewInstallmentID(), tx.ID(), vos.NewInvoiceID(), number, total, m, now)
+	tx.SetInstallments([]*Installment{oldInst})
+
+	input := ReplaceInput{
+		Description:     "Converted to PIX",
+		Amount:          mustAmount(t, "90.00"),
+		OccurredAt:      now,
+		TransactionType: vos.TransactionTypeExpense,
+		PaymentMethod:   vos.PaymentMethodPix,
+		CategoryID:      catID,
+		Now:             now,
+	}
+	err = tx.Replace(input, nil, nil)
+	require.NoError(t, err)
+
+	allInst := tx.Installments()
+	require.Len(t, allInst, 1)
+	assert.Equal(t, vos.InstallmentStatusRefunded, allInst[0].Status())
+	assert.NotNil(t, allInst[0].DeletedAt())
+}
+
+// BUG-008 regression: Replace must surface a contract error instead of silently
+// no-oping when transitioning to installment_purchase without splitter/assigner.
+func TestTransaction_Replace_RequiresSplitterAndAssignerForInstallmentPurchase(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 5, 11, 12, 0, 0, 0, time.UTC)
+	clock := &mockClock{now: now}
+	cardID := vos.NewCardID()
+	catID := vos.NewCategoryID()
+	amount := mustAmount(t, "90.00")
+
+	tx, err := NewTransaction(
+		vos.NewTransactionID(),
+		identityvo.NewUserID(),
+		"Purchase",
+		amount,
+		now,
+		vos.TransactionTypeExpense,
+		vos.PaymentMethodPix,
+		nil,
+		catID,
+		nil,
+		nil,
+		clock,
+	)
+	require.NoError(t, err)
+
+	input := ReplaceInput{
+		Description:      "Now installment_purchase",
+		Amount:           amount,
+		OccurredAt:       now,
+		TransactionType:  vos.TransactionTypeInstallmentPurchase,
+		PaymentMethod:    vos.PaymentMethodCreditCard,
+		CardID:           &cardID,
+		CategoryID:       catID,
+		InstallmentCount: 3,
+		Now:              now,
+	}
+	err = tx.Replace(input, nil, nil)
+	assert.ErrorIs(t, err, domain.ErrSplitterRequired)
+}

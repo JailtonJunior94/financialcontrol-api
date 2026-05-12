@@ -28,6 +28,7 @@ var (
 	ErrTransactionHasDependentRefund    = errors.New("transação possui estorno dependente")
 	ErrIdempotencyMismatch              = errors.New("idempotency key reutilizada com payload distinto")
 	ErrUnsupportedCurrency              = errors.New("moeda não suportada")
+	ErrSplitterRequired                 = errors.New("splitter e assigner são obrigatórios para installment_purchase")
 
 	// Sentinelas de validação de fronteira (HTTP 400) — decisão G3.a
 	ErrInvalidDateRange            = errors.New("intervalo de datas inválido: 'from' deve ser <= 'to'")

@@ -39,12 +39,12 @@ type Runner interface {
 type Option func(*runner)
 
 type runner struct {
-	cfg         Config
-	logger      *slog.Logger
-	open        func(context.Context, string, *slog.Logger) (manager.Manager, error)
-	factory     func(manager.Manager) (migration.Migrator, error)
-	smokeHook   string
-	testHookFn  SmokeHookFn // injected in tests; overrides globalHooks lookup
+	cfg        Config
+	logger     *slog.Logger
+	open       func(context.Context, string, *slog.Logger) (manager.Manager, error)
+	factory    func(manager.Manager) (migration.Migrator, error)
+	smokeHook  string
+	testHookFn SmokeHookFn // injected in tests; overrides globalHooks lookup
 }
 
 // WithOpenFunc overrides the Manager open function (for tests).

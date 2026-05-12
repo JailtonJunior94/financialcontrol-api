@@ -44,7 +44,7 @@ func TestDeleteTransaction_GoldenPath(t *testing.T) {
 	txRepo.On("HasActiveRefundFor", mock.Anything, userID, txID).Return(false, nil)
 	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
 	txRepo.On("SoftDelete", mock.Anything, mock.Anything, mock.AnythingOfType("time.Time")).Return(nil)
-	instRepo.On("SoftDeleteByTransaction", mock.Anything, txID, mock.AnythingOfType("time.Time")).Return(nil)
+	instRepo.On("SoftDeleteByTransaction", mock.Anything, userID, txID, mock.AnythingOfType("time.Time")).Return(nil)
 
 	uc := newDeleteTransactionUC(t, mgr, txRepo, instRepo, clock)
 	err := uc.Execute(ctx, userID, txID)
@@ -74,6 +74,36 @@ func TestDeleteTransaction_HasActiveRefund_ReturnsError(t *testing.T) {
 	err := uc.Execute(ctx, userID, txID)
 
 	assert.ErrorIs(t, err, domain.ErrTransactionHasDependentRefund)
+}
+
+// BUG-003 regression: DeleteTransaction must surface
+// ErrInstallmentInClosedOrPaidInvoice when any installment is bound to a closed
+// or paid invoice. After fixing the SQL to JOIN finance.Invoices, the repository
+// returns true even when installment.status='scheduled' (RF-46 keeps it that
+// way while the invoice is closed-but-unpaid).
+func TestDeleteTransaction_BlocksWhenInstallmentInClosedOrPaidInvoice(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	userID := identityvo.NewUserID()
+	txID := vos.NewTransactionID()
+
+	mgr, _ := newMockMgr(t)
+	txRepo := portmocks.NewTransactionRepository(t)
+	instRepo := portmocks.NewInstallmentRepository(t)
+	clock := portmocks.NewClock(t)
+
+	tx := newExpenseTransaction(t, userID)
+
+	clock.On("Now").Return(fixedNow)
+	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
+	txRepo.On("HasActiveRefundFor", mock.Anything, userID, txID).Return(false, nil)
+	// repository now reflects the invoice-state check — returns true for closed-unpaid
+	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(true, nil)
+
+	uc := newDeleteTransactionUC(t, mgr, txRepo, instRepo, clock)
+	err := uc.Execute(ctx, userID, txID)
+
+	assert.ErrorIs(t, err, domain.ErrInstallmentInClosedOrPaidInvoice)
 }
 
 func TestDeleteTransaction_NotFound_ReturnsError(t *testing.T) {

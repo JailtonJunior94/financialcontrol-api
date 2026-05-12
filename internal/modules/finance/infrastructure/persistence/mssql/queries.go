@@ -163,9 +163,20 @@ const (
 		[DeletedAt]   = @deletedAt
 	WHERE [Id] = @id AND [DeletedAt] IS NULL`
 
-	softDeleteInstallmentsByTransaction = `UPDATE finance.Installments SET
-		[DeletedAt] = @deletedAt, [UpdatedAt] = @updatedAt, [Status] = 'refunded'
-	WHERE [TransactionId] = @transactionId AND [DeletedAt] IS NULL`
+	// softDeleteInstallmentsByTransaction soft-deletes every active installment of
+	// the given transaction. The JOIN with finance.Transactions enforces user
+	// authorization (t.[UserId] = @userId). It intentionally does NOT filter
+	// t.[DeletedAt] IS NULL: DeleteTransaction.Execute soft-deletes the parent
+	// row first inside the same database.Do transaction, so a DeletedAt-IS-NULL
+	// predicate here would exclude the just-soft-deleted parent and the UPDATE
+	// would affect zero installments (RF-44/RF-55 regression).
+	softDeleteInstallmentsByTransaction = `UPDATE i SET
+		i.[DeletedAt] = @deletedAt, i.[UpdatedAt] = @updatedAt, i.[Status] = 'refunded'
+	FROM finance.Installments i
+	INNER JOIN finance.Transactions t ON t.[Id] = i.[TransactionId]
+	WHERE i.[TransactionId] = @transactionId
+	  AND i.[DeletedAt] IS NULL
+	  AND t.[UserId] = @userId`
 
 	listInstallmentsByInvoice = `SELECT
 		CAST([Id] AS CHAR(36)),
@@ -187,10 +198,21 @@ const (
 	WHERE [TransactionId] = @transactionId AND [DeletedAt] IS NULL
 	ORDER BY [Number] ASC`
 
-	hasClosedOrPaidForTransaction = `SELECT COUNT(1) FROM finance.Installments (NOLOCK)
-	WHERE [TransactionId] = @transactionId
-	  AND [Status] = 'paid_via_invoice'
-	  AND [DeletedAt] IS NULL`
+	// hasClosedOrPaidForTransaction returns >0 when any non-deleted installment of the
+	// transaction is bound to an invoice whose state is 'closed' or 'paid'.
+	// Reads the parent invoice state directly (RF-46 keeps installment.status=='scheduled'
+	// while the invoice is closed-but-unpaid, so checking installment.status alone
+	// would miss the closed case required by RF-11/RF-14/RF-44).
+	// Invoices is read WITHOUT (NOLOCK) on purpose: inv.[State] is load-bearing for
+	// authorization (RF-44/RF-55) and a dirty read of an in-flight close that later
+	// rolls back would block legitimate updates/deletes.
+	hasClosedOrPaidForTransaction = `SELECT COUNT(1)
+	FROM finance.Installments i (NOLOCK)
+	INNER JOIN finance.Invoices inv ON inv.[Id] = i.[InvoiceId]
+	WHERE i.[TransactionId] = @transactionId
+	  AND i.[DeletedAt] IS NULL
+	  AND inv.[DeletedAt] IS NULL
+	  AND inv.[State] IN ('closed','paid')`
 
 	sumByMonthCompetence = `SELECT ISNULL(SUM(i.[Amount]), 0)
 	FROM finance.Installments i (NOLOCK)

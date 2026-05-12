@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -58,9 +59,9 @@ func buildSmoke(
 	var auditWritten bool
 	_ = auditWritten
 	return &financeSmoke{
-		http:   &stubHTTP{handler: handler},
-		issuer: &stubIssuer{},
-		logger: newDiscardLogger(),
+		http:       &stubHTTP{handler: handler},
+		issuer:     &stubIssuer{},
+		logger:     newDiscardLogger(),
 		queryUsers: func(_ context.Context) ([]string, error) { return users, nil },
 		writeAudit: func(_ context.Context) error { return nil },
 	}
@@ -201,6 +202,90 @@ func TestFinanceSmoke_Failure_WriteAudit(t *testing.T) {
 
 	err := s.run(context.Background())
 	require.ErrorIs(t, err, auditErr)
+}
+
+type mockSmokeRows struct {
+	items    []string
+	index    int
+	rowsErr  error
+	scanErr  error
+	closeErr error
+	closed   bool
+}
+
+func (m *mockSmokeRows) Next() bool { return m.index < len(m.items) }
+
+func (m *mockSmokeRows) Scan(dest ...any) error {
+	if m.scanErr != nil {
+		return m.scanErr
+	}
+	ptr := dest[0].(*string)
+	*ptr = m.items[m.index]
+	m.index++
+	return nil
+}
+
+func (m *mockSmokeRows) Err() error { return m.rowsErr }
+
+func (m *mockSmokeRows) Close() error {
+	m.closed = true
+	return m.closeErr
+}
+
+type mockReadCloser struct {
+	reader   io.Reader
+	closeErr error
+}
+
+func (m *mockReadCloser) Read(p []byte) (int, error) {
+	return m.reader.Read(p)
+}
+
+func (m *mockReadCloser) Close() error {
+	return m.closeErr
+}
+
+func TestCollectUserIDs_PropagatesCloseError(t *testing.T) {
+	t.Parallel()
+
+	closeErr := errors.New("close failed")
+	rows := &mockSmokeRows{
+		items:    []string{"user-1"},
+		closeErr: closeErr,
+	}
+
+	users, err := collectUserIDs(rows)
+
+	require.Equal(t, []string{"user-1"}, users)
+	require.ErrorIs(t, err, closeErr)
+	require.True(t, rows.closed)
+}
+
+func TestReadBody_PropagatesReadError(t *testing.T) {
+	t.Parallel()
+
+	readErr := errors.New("read failed")
+	body := &mockReadCloser{reader: iotest.ErrReader(readErr)}
+
+	content, err := readBody(body)
+
+	require.Nil(t, content)
+	require.ErrorIs(t, err, readErr)
+}
+
+func TestReadBody_PropagatesCloseError(t *testing.T) {
+	t.Parallel()
+
+	closeErr := errors.New("close failed")
+	body := &mockReadCloser{
+		reader:   bytes.NewReader([]byte("ok")),
+		closeErr: closeErr,
+	}
+
+	content, err := readBody(body)
+
+	require.Equal(t, []byte("ok"), content)
+	require.ErrorIs(t, err, closeErr)
 }
 
 func TestFinanceSmoke_Failure_IssuerError(t *testing.T) {

@@ -307,7 +307,7 @@ func (uc *createTransaction) buildMultipleInstallments(
 	installments := make([]*entities.Installment, len(amounts))
 	now := uc.clock.Now().UTC()
 	for i, amt := range amounts {
-		instOccurredAt := occurredAtLocal.AddDate(0, i, 0)
+		instOccurredAt := addMonthsClamped(occurredAtLocal, i)
 		invoice, invErr := uc.invRepo.AssignOrCreateOpen(ctx, userID, *cardID, instOccurredAt, cardView, uc.clock)
 		if invErr != nil {
 			return nil, invErr

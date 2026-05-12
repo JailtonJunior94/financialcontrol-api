@@ -7,6 +7,7 @@ import (
 
 	database "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/database"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/application/dtos"
+	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/vos"
@@ -63,6 +64,14 @@ func (uc *anticipateInstallment) Execute(ctx context.Context, userID identityvo.
 		return dtos.TransactionResponse{}, nil
 	}
 
+	// RF-14: refuse anticipation when the installment is bound to an invoice in
+	// 'closed' or 'paid' state. The installment.status alone cannot detect this
+	// (RF-46 keeps status='scheduled' while the invoice is closed-but-unpaid),
+	// so the current invoice state must be loaded from the repository here.
+	if err := uc.ensureCurrentInvoiceOpen(ctx, userID, ptrs, installmentID); err != nil {
+		return dtos.TransactionResponse{}, err
+	}
+
 	targetInvoice, err := uc.invRepo.NextOpenFor(ctx, userID, *tx.CardID(), uc.clock)
 	if err != nil {
 		return dtos.TransactionResponse{}, err
@@ -84,4 +93,33 @@ func (uc *anticipateInstallment) Execute(ctx context.Context, userID identityvo.
 	}
 
 	return toTransactionResponse(tx), nil
+}
+
+// ensureCurrentInvoiceOpen blocks anticipation when the installment is bound to
+// a 'closed' or 'paid' invoice (RF-14). Returns ErrInstallmentNotFound when the
+// installmentID does not belong to the transaction.
+func (uc *anticipateInstallment) ensureCurrentInvoiceOpen(
+	ctx context.Context,
+	userID identityvo.UserID,
+	installments []*entities.Installment,
+	installmentID vos.InstallmentID,
+) error {
+	var target *entities.Installment
+	for _, inst := range installments {
+		if inst.ID() == installmentID {
+			target = inst
+			break
+		}
+	}
+	if target == nil {
+		return domain.ErrInstallmentNotFound
+	}
+	currentInvoice, err := uc.invRepo.GetByID(ctx, userID, target.InvoiceID())
+	if err != nil {
+		return err
+	}
+	if currentInvoice.IsClosed() || currentInvoice.IsPaid() {
+		return domain.ErrInstallmentInClosedOrPaidInvoice
+	}
+	return nil
 }

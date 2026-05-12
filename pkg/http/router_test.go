@@ -58,22 +58,22 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 	}
 
 	expected := map[string][]string{
-		"/api/v1/token":                              {"POST"},
-		"/api/v1/me":                                 {"GET"},
-		"/api/v1/users":                              {"POST"},
-		"/api/v1/cards":                              {"GET", "POST"},
-		"/api/v1/cards/flags":                        {"GET"},
-		"/api/v1/cards/:id":                          {"GET", "PUT", "DELETE"},
-		"/api/v1/categories":                         {"GET", "POST"},
-		"/api/v1/categories/:id":                     {"GET", "PUT", "DELETE"},
-		"/api/v1/finance/transactions":               {"GET", "POST"},
-		"/api/v1/finance/transactions/:id":           {"GET", "PUT", "DELETE"},
-		"/api/v1/finance/transactions/:id/refund":    {"POST"},
-		"/api/v1/finance/invoices":                   {"GET"},
-		"/api/v1/finance/invoices/:id":               {"GET"},
-		"/api/v1/finance/invoices/:id/pay":           {"PATCH"},
+		"/api/v1/token":                               {"POST"},
+		"/api/v1/me":                                  {"GET"},
+		"/api/v1/users":                               {"POST"},
+		"/api/v1/cards":                               {"GET", "POST"},
+		"/api/v1/cards/flags":                         {"GET"},
+		"/api/v1/cards/:id":                           {"GET", "PUT", "DELETE"},
+		"/api/v1/categories":                          {"GET", "POST"},
+		"/api/v1/categories/:id":                      {"GET", "PUT", "DELETE"},
+		"/api/v1/finance/transactions":                {"GET", "POST"},
+		"/api/v1/finance/transactions/:id":            {"GET", "PUT", "DELETE"},
+		"/api/v1/finance/transactions/:id/refund":     {"POST"},
+		"/api/v1/finance/invoices":                    {"GET"},
+		"/api/v1/finance/invoices/:id":                {"GET"},
+		"/api/v1/finance/invoices/:id/pay":            {"PATCH"},
 		"/api/v1/finance/installments/:id/anticipate": {"POST"},
-		"/api/v1/finance/summary":                    {"GET"},
+		"/api/v1/finance/summary":                     {"GET"},
 	}
 
 	for path, methods := range expected {

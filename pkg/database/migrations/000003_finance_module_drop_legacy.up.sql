@@ -10,10 +10,14 @@
 IF NOT EXISTS (
     SELECT 1 FROM finance.MigrationAudit WHERE [Status] = 'smoke_ok'
 )
-    RAISERROR(
+BEGIN
+    -- THROW aborts the batch unconditionally, so the legacy DROP statements
+    -- below cannot run when the smoke gate has not been satisfied —
+    -- independent of XACT_ABORT or the migration driver's error handling.
+    THROW 50001,
         '000003: smoke validation not confirmed — Status=''smoke_ok'' required in finance.MigrationAudit. Run cmd/migration with --smoke=finance flag.',
-        16, 1
-    );
+        1;
+END;
 
 -- ============================================================
 -- Drop child tables first (removes inbound FK references)

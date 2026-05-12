@@ -115,10 +115,10 @@ func TestInstallmentRepository_SoftDeleteByTransaction_Success(t *testing.T) {
 	repo, db := newInstallmentRepo(t)
 
 	result := devkitmocks.NewMockResult(t)
-	// ctx + query + deletedAt + updatedAt + transactionId = 5 total
-	db.On("ExecContext", anyArgs(5)...).Return(result, nil)
+	// ctx + query + deletedAt + updatedAt + transactionId + userId = 6 total
+	db.On("ExecContext", anyArgs(6)...).Return(result, nil)
 
-	require.NoError(t, repo.SoftDeleteByTransaction(ctx, vos.NewTransactionID(), time.Now()))
+	require.NoError(t, repo.SoftDeleteByTransaction(ctx, identityvo.NewUserID(), vos.NewTransactionID(), time.Now()))
 }
 
 func TestInstallmentRepository_SoftDeleteByTransaction_DBError(t *testing.T) {
@@ -126,9 +126,9 @@ func TestInstallmentRepository_SoftDeleteByTransaction_DBError(t *testing.T) {
 	ctx := context.Background()
 	repo, db := newInstallmentRepo(t)
 
-	db.On("ExecContext", anyArgs(5)...).Return(nil, errors.New("lock"))
+	db.On("ExecContext", anyArgs(6)...).Return(nil, errors.New("lock"))
 
-	err := repo.SoftDeleteByTransaction(ctx, vos.NewTransactionID(), time.Now())
+	err := repo.SoftDeleteByTransaction(ctx, identityvo.NewUserID(), vos.NewTransactionID(), time.Now())
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "mssql: soft delete installments by transaction")
 }

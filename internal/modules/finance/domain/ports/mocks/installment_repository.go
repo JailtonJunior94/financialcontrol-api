@@ -96,14 +96,14 @@ func (_c *InstallmentRepository_UpdateBatch_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-func (_m *InstallmentRepository) SoftDeleteByTransaction(ctx context.Context, transactionID vos.TransactionID, at time.Time) error {
-	ret := _m.Called(ctx, transactionID, at)
+func (_m *InstallmentRepository) SoftDeleteByTransaction(ctx context.Context, userID identityvo.UserID, transactionID vos.TransactionID, at time.Time) error {
+	ret := _m.Called(ctx, userID, transactionID, at)
 	if len(ret) == 0 {
 		panic("no return value specified for SoftDeleteByTransaction")
 	}
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, vos.TransactionID, time.Time) error); ok {
-		r0 = rf(ctx, transactionID, at)
+	if rf, ok := ret.Get(0).(func(context.Context, identityvo.UserID, vos.TransactionID, time.Time) error); ok {
+		r0 = rf(ctx, userID, transactionID, at)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -112,13 +112,13 @@ func (_m *InstallmentRepository) SoftDeleteByTransaction(ctx context.Context, tr
 
 type InstallmentRepository_SoftDeleteByTransaction_Call struct{ *mock.Call }
 
-func (_e *InstallmentRepository_Expecter) SoftDeleteByTransaction(ctx, transactionID, at interface{}) *InstallmentRepository_SoftDeleteByTransaction_Call {
-	return &InstallmentRepository_SoftDeleteByTransaction_Call{Call: _e.mock.On("SoftDeleteByTransaction", ctx, transactionID, at)}
+func (_e *InstallmentRepository_Expecter) SoftDeleteByTransaction(ctx, userID, transactionID, at interface{}) *InstallmentRepository_SoftDeleteByTransaction_Call {
+	return &InstallmentRepository_SoftDeleteByTransaction_Call{Call: _e.mock.On("SoftDeleteByTransaction", ctx, userID, transactionID, at)}
 }
 
-func (_c *InstallmentRepository_SoftDeleteByTransaction_Call) Run(run func(ctx context.Context, transactionID vos.TransactionID, at time.Time)) *InstallmentRepository_SoftDeleteByTransaction_Call {
+func (_c *InstallmentRepository_SoftDeleteByTransaction_Call) Run(run func(ctx context.Context, userID identityvo.UserID, transactionID vos.TransactionID, at time.Time)) *InstallmentRepository_SoftDeleteByTransaction_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(vos.TransactionID), args[2].(time.Time))
+		run(args[0].(context.Context), args[1].(identityvo.UserID), args[2].(vos.TransactionID), args[3].(time.Time))
 	})
 	return _c
 }
@@ -128,7 +128,7 @@ func (_c *InstallmentRepository_SoftDeleteByTransaction_Call) Return(_a0 error) 
 	return _c
 }
 
-func (_c *InstallmentRepository_SoftDeleteByTransaction_Call) RunAndReturn(run func(context.Context, vos.TransactionID, time.Time) error) *InstallmentRepository_SoftDeleteByTransaction_Call {
+func (_c *InstallmentRepository_SoftDeleteByTransaction_Call) RunAndReturn(run func(context.Context, identityvo.UserID, vos.TransactionID, time.Time) error) *InstallmentRepository_SoftDeleteByTransaction_Call {
 	_c.Call.Return(run)
 	return _c
 }

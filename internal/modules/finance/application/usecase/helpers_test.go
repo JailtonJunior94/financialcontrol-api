@@ -179,3 +179,24 @@ func newOpenInvoice(t *testing.T, userID identityvo.UserID, cardID vos.CardID) *
 	}
 	return inv
 }
+
+// newClosedInvoice builds an invoice already past its closing date (state=closed).
+func newClosedInvoice(t *testing.T, userID identityvo.UserID, cardID vos.CardID) *entities.Invoice {
+	t.Helper()
+	inv := newOpenInvoice(t, userID, cardID)
+	// Force state=closed by calling CloseIfDue with a time past closing.
+	if !inv.CloseIfDue(inv.ClosingDate().Add(time.Hour)) {
+		t.Fatalf("newClosedInvoice: CloseIfDue did not transition open invoice")
+	}
+	return inv
+}
+
+// newPaidInvoice builds an invoice in state=paid for tests.
+func newPaidInvoice(t *testing.T, userID identityvo.UserID, cardID vos.CardID) *entities.Invoice {
+	t.Helper()
+	inv := newClosedInvoice(t, userID, cardID)
+	if err := inv.MarkPaid(inv.ClosingDate().Add(2 * time.Hour)); err != nil {
+		t.Fatalf("newPaidInvoice: MarkPaid failed: %v", err)
+	}
+	return inv
+}

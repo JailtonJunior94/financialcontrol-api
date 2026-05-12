@@ -63,6 +63,6 @@ func (uc *deleteTransaction) Execute(ctx context.Context, userID identityvo.User
 		if delErr := uc.txRepo.SoftDelete(ctx, tx, now); delErr != nil {
 			return delErr
 		}
-		return uc.instRepo.SoftDeleteByTransaction(ctx, txID, now)
+		return uc.instRepo.SoftDeleteByTransaction(ctx, userID, txID, now)
 	})
 }

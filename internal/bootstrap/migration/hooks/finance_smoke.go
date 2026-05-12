@@ -34,6 +34,13 @@ type financeSmoke struct {
 	writeAudit func(ctx context.Context) error
 }
 
+type closableRows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Err() error
+	Close() error
+}
+
 // smokeInvoiceList is the minimal shape of GET /finance/invoices for parsing total + first ID.
 type smokeInvoiceList struct {
 	Total int64              `json:"total"`
@@ -82,16 +89,7 @@ func FinanceSmokeHook(ctx context.Context, logger *slog.Logger) error {
 			if err != nil {
 				return nil, err
 			}
-			defer rows.Close()
-			var users []string
-			for rows.Next() {
-				var id string
-				if err := rows.Scan(&id); err != nil {
-					return nil, err
-				}
-				users = append(users, id)
-			}
-			return users, rows.Err()
+			return collectUserIDs(rows)
 		},
 		writeAudit: func(aCtx context.Context) error {
 			_, err := db.ExecContext(aCtx, `
@@ -182,12 +180,47 @@ func (s *financeSmoke) probeGETBody(path, authHeader string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("test request %s: %w", path, err)
 	}
-	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := readBody(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body for %s: %w", path, err)
+	}
 
 	if resp.StatusCode/100 != 2 {
 		return nil, fmt.Errorf("expected 2xx for %s, got %d: %s", path, resp.StatusCode, body)
 	}
 	return body, nil
+}
+
+func collectUserIDs(rows closableRows) (_ []string, err error) {
+	defer closeInto(&err, rows)
+
+	users := make([]string, 0)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		users = append(users, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func readBody(body io.ReadCloser) (_ []byte, err error) {
+	defer closeInto(&err, body)
+
+	content, err := io.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
+}
+
+func closeInto(retErr *error, closer io.Closer) {
+	if closeErr := closer.Close(); closeErr != nil && *retErr == nil {
+		*retErr = closeErr
+	}
 }

@@ -55,6 +55,7 @@ func TestUpdateTransaction_GoldenPath_Expense(t *testing.T) {
 
 	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
 	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
 	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
 	txRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
 
@@ -101,6 +102,7 @@ func TestUpdateTransaction_InstallmentPurchase(t *testing.T) {
 
 	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
 	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
 	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
 	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
 
@@ -152,6 +154,7 @@ func TestUpdateTransaction_WithSubcategory(t *testing.T) {
 
 	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
 	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
 
 	catView := newActiveCategoryView(userID, catID)
 	cats.On("GetByID", mock.Anything, userID, catID).Return(catView, nil)
@@ -240,6 +243,7 @@ func TestUpdateTransaction_CreditCard_GoldenPath(t *testing.T) {
 
 	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
 	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
 	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
 	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
 	txRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
@@ -292,4 +296,55 @@ func TestUpdateTransaction_NotFound_ReturnsError(t *testing.T) {
 	_, err := uc.Execute(ctx, userID, txID, req)
 
 	assert.ErrorIs(t, err, domain.ErrTransactionNotFound)
+}
+
+// Regression: when HasClosedOrPaidForTransaction returns true, the use case must
+// reject with ErrInstallmentInClosedOrPaidInvoice BEFORE invoking
+// invRepo.AssignOrCreateOpen — otherwise auto-created invoices would persist
+// outside the transactional wrapper and become orphans on rejection. The strict
+// mocks here would fail if AssignOrCreateOpen were called.
+func TestUpdateTransaction_BlocksBeforeAssigningInvoicesWhenClosedOrPaid(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	userID := identityvo.NewUserID()
+	catID := vos.NewCategoryID()
+	cardID := vos.NewCardID()
+	txID := vos.NewTransactionID()
+
+	mgr, _ := newMockMgr(t)
+	txRepo := portmocks.NewTransactionRepository(t)
+	invRepo := portmocks.NewInvoiceRepository(t)
+	instRepo := portmocks.NewInstallmentRepository(t)
+	cards := portmocks.NewCardProvider(t)
+	cats := portmocks.NewCategoryProvider(t)
+	clock := portmocks.NewClock(t)
+	ids := portmocks.NewIDGenerator(t)
+
+	tx := newCreditPurchaseTransaction(t, userID, cardID)
+	clock.On("Now").Return(fixedNow)
+
+	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(true, nil)
+	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
+
+	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
+	cid := cardID.String()
+	req := dtos.UpdateTransactionRequest{
+		Description:      "Installment buy 2x",
+		Amount:           "200.00",
+		OccurredAt:       fixedNow,
+		TransactionType:  "installment_purchase",
+		PaymentMethod:    "credit_card",
+		CardID:           &cid,
+		CategoryID:       catID.String(),
+		InstallmentCount: 2,
+	}
+	_, err := uc.Execute(ctx, userID, txID, req)
+
+	require.ErrorIs(t, err, domain.ErrInstallmentInClosedOrPaidInvoice)
+	invRepo.AssertNotCalled(t, "AssignOrCreateOpen")
+	txRepo.AssertNotCalled(t, "Update")
+	instRepo.AssertNotCalled(t, "AddBatch")
 }

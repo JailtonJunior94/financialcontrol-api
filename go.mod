@@ -4,7 +4,6 @@ go 1.26.3
 
 require (
 	github.com/JailtonJunior94/devkit-go v0.4.0
-	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0

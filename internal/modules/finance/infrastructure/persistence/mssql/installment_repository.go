@@ -82,11 +82,12 @@ func (r *InstallmentRepository) updateOne(ctx context.Context, item *entities.In
 	return nil
 }
 
-func (r *InstallmentRepository) SoftDeleteByTransaction(ctx context.Context, transactionID vos.TransactionID, at time.Time) error {
+func (r *InstallmentRepository) SoftDeleteByTransaction(ctx context.Context, userID identityvo.UserID, transactionID vos.TransactionID, at time.Time) error {
 	_, err := r.db.ExecContext(ctx, softDeleteInstallmentsByTransaction,
 		sql.Named("deletedAt", at.UTC()),
 		sql.Named("updatedAt", at.UTC()),
 		sql.Named("transactionId", transactionID.String()),
+		sql.Named("userId", userID.String()),
 	)
 	if err != nil {
 		return fmt.Errorf("mssql: soft delete installments by transaction: %w", err)

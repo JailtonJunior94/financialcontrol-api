@@ -108,6 +108,17 @@ func (uc *updateTransaction) Execute(ctx context.Context, userID identityvo.User
 
 	now := uc.clock.Now()
 
+	hasClosedOrPaid, err := uc.instRepo.HasClosedOrPaidForTransaction(ctx, txID)
+	if err != nil {
+		return dtos.TransactionResponse{}, err
+	}
+	// Short-circuit before buildUpdateAdapters: AssignOrCreateOpen runs outside
+	// the database.Do wrapper and may persist invoices that would be discarded
+	// once tx.Replace rejects the request with ErrInstallmentInClosedOrPaidInvoice.
+	if hasClosedOrPaid {
+		return dtos.TransactionResponse{}, domain.ErrInstallmentInClosedOrPaidInvoice
+	}
+
 	var splitterAdapt entities.Splitter
 	var assignerAdapt entities.Assigner
 	if txType == vos.TransactionTypeInstallmentPurchase {
@@ -118,16 +129,17 @@ func (uc *updateTransaction) Execute(ctx context.Context, userID identityvo.User
 	}
 
 	input := entities.ReplaceInput{
-		Description:      req.Description,
-		Amount:           amount,
-		OccurredAt:       req.OccurredAt,
-		TransactionType:  txType,
-		PaymentMethod:    pm,
-		CardID:           cardID,
-		CategoryID:       catID,
-		SubcategoryID:    subcatID,
-		InstallmentCount: req.InstallmentCount,
-		Now:              now,
+		Description:            req.Description,
+		Amount:                 amount,
+		OccurredAt:             req.OccurredAt,
+		TransactionType:        txType,
+		PaymentMethod:          pm,
+		CardID:                 cardID,
+		CategoryID:             catID,
+		SubcategoryID:          subcatID,
+		InstallmentCount:       req.InstallmentCount,
+		Now:                    now,
+		HasClosedOrPaidInvoice: hasClosedOrPaid,
 	}
 	if err := tx.Replace(input, splitterAdapt, assignerAdapt); err != nil {
 		return dtos.TransactionResponse{}, err
@@ -237,7 +249,7 @@ func (uc *updateTransaction) buildUpdateAdapters(
 
 	invoiceIDs := make(map[int]vos.InvoiceID, len(amounts))
 	for i := range amounts {
-		instOccurredAt := occurredAtLocal.AddDate(0, i, 0)
+		instOccurredAt := addMonthsClamped(occurredAtLocal, i)
 		invoice, invErr := uc.invRepo.AssignOrCreateOpen(ctx, userID, *cardID, instOccurredAt, cardView, uc.clock)
 		if invErr != nil {
 			return nil, nil, invErr

@@ -42,6 +42,10 @@ type ReplaceInput struct {
 	SubcategoryID    *vos.CategoryID
 	InstallmentCount int
 	Now              time.Time
+	// HasClosedOrPaidInvoice signals that the caller observed at least one installment
+	// bound to an invoice in state 'closed' or 'paid' (RF-11). Required because the
+	// installment.status alone cannot detect 'closed-but-unpaid' invoices (RF-46).
+	HasClosedOrPaidInvoice bool
 }
 
 // Transaction is the aggregate root for all financial transactions (RF-01..RF-08).
@@ -157,8 +161,14 @@ func (t *Transaction) SetInstallments(items []*Installment) {
 
 // Replace updates the transaction's mutable fields (RF-11/RF-12).
 // For installment_purchase it re-splits installments via splitter/assigner.
-// Returns ErrInstallmentInClosedOrPaidInvoice if any current installment is in a closed/paid invoice.
+// Returns ErrInstallmentInClosedOrPaidInvoice if any current installment is in a
+// closed/paid invoice (either signalled via input.HasClosedOrPaidInvoice — primary
+// guard reading the parent invoice state — or detected by the installment.status
+// defense-in-depth loop).
 func (t *Transaction) Replace(input ReplaceInput, splitter Splitter, assigner Assigner) error {
+	if input.HasClosedOrPaidInvoice {
+		return domain.ErrInstallmentInClosedOrPaidInvoice
+	}
 	for _, inst := range t.installments {
 		if inst.IsClosedOrPaid() {
 			return domain.ErrInstallmentInClosedOrPaidInvoice
@@ -179,21 +189,17 @@ func (t *Transaction) Replace(input ReplaceInput, splitter Splitter, assigner As
 	t.updatedAt = input.Now.UTC()
 
 	if input.TransactionType != vos.TransactionTypeInstallmentPurchase {
+		t.softDeleteActiveInstallments(input.Now.UTC())
 		return nil
 	}
 	if splitter == nil || assigner == nil {
-		return nil
+		return domain.ErrSplitterRequired
 	}
 	count, err := vos.NewInstallmentCount(input.InstallmentCount)
 	if err != nil {
 		return err
 	}
-	now := input.Now.UTC()
-	for _, inst := range t.installments {
-		inst.status = vos.InstallmentStatusRefunded
-		inst.deletedAt = &now
-		inst.updatedAt = now
-	}
+	t.softDeleteActiveInstallments(input.Now.UTC())
 	amounts, ids := splitter.Split(input.Amount.Money(), count)
 	for i, amount := range amounts {
 		number, _ := vos.NewInstallmentNumber(i + 1)
@@ -204,6 +210,21 @@ func (t *Transaction) Replace(input ReplaceInput, splitter Splitter, assigner As
 		t.installments = append(t.installments, newInstallment(ids[i], t.id, invoiceID, number, count, amount, input.Now))
 	}
 	return nil
+}
+
+// softDeleteActiveInstallments marks every non-deleted installment as refunded and
+// sets its deleted_at to now. Used by Replace when discarding old installments —
+// either to recreate them for installment_purchase (RF-12) or to release them when
+// the transaction type transitions away from card-based (RF-11/RF-54).
+func (t *Transaction) softDeleteActiveInstallments(now time.Time) {
+	for _, inst := range t.installments {
+		if inst.IsDeleted() {
+			continue
+		}
+		inst.status = vos.InstallmentStatusRefunded
+		inst.deletedAt = &now
+		inst.updatedAt = now
+	}
 }
 
 // SoftDelete applies RF-44/RF-55 guards before marking the transaction deleted.
