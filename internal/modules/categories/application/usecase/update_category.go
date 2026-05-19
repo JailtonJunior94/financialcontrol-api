@@ -6,19 +6,19 @@ import (
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type updateCategory struct {
-	repo       interfaces.CategoryRepository
+	repo       ports.CategoryRepository
 	uniqueness *services.CategoryUniquenessService
-	clock      Clock
+	clock      ports.Clock
 }
 
-func NewUpdateCategory(repo interfaces.CategoryRepository, uniqueness *services.CategoryUniquenessService, clock Clock) UpdateCategory {
+func NewUpdateCategory(repo ports.CategoryRepository, uniqueness *services.CategoryUniquenessService, clock ports.Clock) UpdateCategory {
 	return &updateCategory{repo: repo, uniqueness: uniqueness, clock: clock}
 }
 

@@ -8,7 +8,6 @@ import (
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/filters"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/vos"
-	financehttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/http"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
@@ -36,13 +35,13 @@ func (h *InvoiceHandler) List(c *fiber.Ctx) error {
 
 	f, err := buildInvoiceFilter(c, userID)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 
 	out, err := h.list.Execute(c.UserContext(), userID, f)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)
@@ -62,7 +61,7 @@ func (h *InvoiceHandler) Get(c *fiber.Ctx) error {
 
 	out, err := h.get.Execute(c.UserContext(), userID, invoiceID)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)
@@ -86,13 +85,13 @@ func (h *InvoiceHandler) Pay(c *fiber.Ctx) error {
 	}
 
 	if err := req.Validate(); err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 
 	out, err := h.pay.Execute(c.UserContext(), userID, invoiceID, req)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)

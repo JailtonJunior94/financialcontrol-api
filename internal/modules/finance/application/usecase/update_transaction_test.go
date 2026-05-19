@@ -51,13 +51,13 @@ func TestUpdateTransaction_GoldenPath_Expense(t *testing.T) {
 	ids := portmocks.NewIDGenerator(t)
 
 	tx := newExpenseTransaction(t, userID)
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	txRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(false, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	txRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
 
 	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
 	req := dtos.UpdateTransactionRequest{
@@ -96,22 +96,22 @@ func TestUpdateTransaction_InstallmentPurchase(t *testing.T) {
 	ids := portmocks.NewIDGenerator(t)
 
 	tx := newCreditPurchaseTransaction(t, userID, cardID)
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 	ids.On("NewInstallmentID").Return(instID1).Once()
 	ids.On("NewInstallmentID").Return(instID2).Once()
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(false, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	cards.EXPECT().GetByID(mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
 
 	openInv := newOpenInvoice(t, userID, cardID)
 	_ = invoiceID
-	invRepo.On("AssignOrCreateOpen", mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
+	invRepo.EXPECT().AssignOrCreateOpen(mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
 
-	txRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
-	instRepo.On("AddBatch", mock.Anything, mock.Anything).Return(nil)
+	txRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	instRepo.EXPECT().AddBatch(mock.Anything, mock.Anything).Return(nil)
 
 	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
 	cid := cardID.String()
@@ -150,20 +150,20 @@ func TestUpdateTransaction_WithSubcategory(t *testing.T) {
 	ids := portmocks.NewIDGenerator(t)
 
 	tx := newExpenseTransaction(t, userID)
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(false, nil)
 
 	catView := newActiveCategoryView(userID, catID)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(catView, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(catView, nil)
 
 	subView := newActiveCategoryView(userID, subcatID)
 	subView.ParentID = &catID
-	cats.On("GetByID", mock.Anything, userID, subcatID).Return(subView, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, subcatID).Return(subView, nil)
 
-	txRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	txRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
 
 	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
 	scid := subcatID.String()
@@ -200,12 +200,12 @@ func TestUpdateTransaction_CategoryNotActive_ReturnsError(t *testing.T) {
 
 	tx := newExpenseTransaction(t, userID)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{}, nil)
 
 	inactiveView := newActiveCategoryView(userID, catID)
 	inactiveView.Active = false
-	cats.On("GetByID", mock.Anything, userID, catID).Return(inactiveView, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(inactiveView, nil)
 
 	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
 	req := dtos.UpdateTransactionRequest{
@@ -239,14 +239,14 @@ func TestUpdateTransaction_CreditCard_GoldenPath(t *testing.T) {
 	ids := portmocks.NewIDGenerator(t)
 
 	tx := newCreditPurchaseTransaction(t, userID, cardID)
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
-	txRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(false, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	cards.EXPECT().GetByID(mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
+	txRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
 
 	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
 	cid := cardID.String()
@@ -282,7 +282,7 @@ func TestUpdateTransaction_NotFound_ReturnsError(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
 
 	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
 	req := dtos.UpdateTransactionRequest{
@@ -321,13 +321,13 @@ func TestUpdateTransaction_BlocksBeforeAssigningInvoicesWhenClosedOrPaid(t *test
 	ids := portmocks.NewIDGenerator(t)
 
 	tx := newCreditPurchaseTransaction(t, userID, cardID)
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(true, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{}, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(true, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	cards.EXPECT().GetByID(mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
 
 	uc := newUpdateTransactionUC(t, mgr, txRepo, invRepo, instRepo, cards, cats, clock, ids)
 	cid := cardID.String()

@@ -12,13 +12,13 @@ import (
 
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	pkgdatabase "github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-var _ interfaces.CategoryRepository = (*CategoryRepository)(nil)
+var _ ports.CategoryRepository = (*CategoryRepository)(nil)
 
 const moduleName = "categories"
 
@@ -36,7 +36,7 @@ func NewCategoryRepository(db devkitdb.DBTX) *CategoryRepository {
 func (r *CategoryRepository) List(
 	ctx context.Context,
 	userID identityvo.UserID,
-	filter interfaces.ListFilter,
+	filter ports.ListFilter,
 ) ([]entities.Category, int64, error) {
 	args := buildListArgs(userID, filter)
 
@@ -248,7 +248,7 @@ func (r *CategoryRepository) SoftDeleteCascade(
 	return nil
 }
 
-func buildListArgs(_ identityvo.UserID, filter interfaces.ListFilter) []any {
+func buildListArgs(_ identityvo.UserID, filter ports.ListFilter) []any {
 	var nameLike any
 	if filter.NameLike != "" {
 		nameLike = "%" + filter.NameLike + "%"

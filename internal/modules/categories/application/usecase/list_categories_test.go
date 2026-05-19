@@ -13,8 +13,8 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces/mocks"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports/mocks"
 )
 
 func TestListCategories_Execute(t *testing.T) {
@@ -22,7 +22,7 @@ func TestListCategories_Execute(t *testing.T) {
 
 	t.Run("default pagination", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
+		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f ports.ListFilter) bool {
 			return f.Pagination.Page == 1 && f.Pagination.Size == 10 && f.NameLike == ""
 		})).Return([]entities.Category{}, int64(0), nil).Once()
 
@@ -56,7 +56,7 @@ func TestListCategories_Execute(t *testing.T) {
 
 	t.Run("custom pagination and filter", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
+		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f ports.ListFilter) bool {
 			return f.Pagination.Page == 3 && f.Pagination.Size == 10 && f.NameLike == "co"
 		})).Return([]entities.Category{}, int64(42), nil).Once()
 
@@ -68,7 +68,7 @@ func TestListCategories_Execute(t *testing.T) {
 
 	t.Run("page size capped at one hundred", func(t *testing.T) {
 		repo := mocks.NewCategoryRepository(t)
-		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f interfaces.ListFilter) bool {
+		repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(f ports.ListFilter) bool {
 			return f.Pagination.Page == 1 && f.Pagination.Size == 100
 		})).Return([]entities.Category{}, int64(0), nil).Once()
 

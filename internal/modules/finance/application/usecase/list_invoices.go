@@ -14,11 +14,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// ListInvoices is the use case interface for listing invoices with lazy close (RF-50).
-type ListInvoices interface {
-	Execute(ctx context.Context, userID identityvo.UserID, f filters.InvoiceFilter) (dtos.PaginatedResponse[dtos.InvoiceResponse], error)
-}
-
 type listInvoices struct {
 	mgr     manager.Manager
 	invRepo ports.InvoiceRepository

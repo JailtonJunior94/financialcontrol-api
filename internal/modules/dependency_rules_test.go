@@ -15,15 +15,31 @@ import (
 )
 
 var allModules = []string{
-	"identity", "categories", "cards", "finance", "planning",
+	"identity", "categories", "cards", "finance",
 }
 
+// TestContainerWiresFinanceThroughModuleContracts asserts the container wires
+// finance only through its module contract (the finance package facade) plus
+// the documented cross-module providers adapter. The container must NOT reach
+// into finance-owned infrastructure (persistence/clock/idgen/idempotency):
+// those are constructed inside finance.NewModule, matching every other module's
+// encapsulation. This is the canonical module form.
 func TestContainerWiresFinanceThroughModuleContracts(t *testing.T) {
 	imports := fileImports(t, "internal/bootstrap/container/container.go")
 
 	assert.NotContains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/application/handlers")
 	assert.Contains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance")
-	assert.Contains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/persistence/mssql")
+
+	leakedInfra := []string{
+		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/persistence/mssql",
+		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/clock",
+		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/idgen",
+		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/idempotency",
+	}
+	for _, imp := range leakedInfra {
+		assert.NotContains(t, imports, imp,
+			"container must not construct finance-owned infrastructure; build it inside finance.NewModule")
+	}
 }
 
 func TestModularContractsAvoidCrossModuleInfrastructureImports(t *testing.T) {

@@ -6,7 +6,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/vos"
-	financehttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/http"
 )
 
 // SummaryHandler handles HTTP endpoints for the monthly financial summary.
@@ -30,13 +29,13 @@ func (h *SummaryHandler) Get(c *fiber.Ctx) error {
 
 	period, err := vos.NewPeriod(year, month, nil)
 	if err != nil {
-		status, body := financehttp.MapError(domain.ErrInvalidYearMonth)
+		status, body := MapError(domain.ErrInvalidYearMonth)
 		return c.Status(status).JSON(body)
 	}
 
 	out, err := h.summary.Execute(c.UserContext(), userID, period)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)

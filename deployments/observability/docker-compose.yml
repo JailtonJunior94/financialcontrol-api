@@ -1,0 +1,58 @@
+# NOTE: grafana/otel-lgtm:0.7.5 bundles otelcol-core (not contrib) and does NOT
+# include sqlserverreceiver. Therefore a separate otelcol-contrib sidecar is
+# required to scrape MSSQL DMVs — see R2 mitigation in techspec §"Riscos Conhecidos".
+#
+# Usage:
+#   docker compose -f deployments/observability/docker-compose.yml up
+# or:
+#   make observability-up
+#
+# Grafana UI:  http://localhost:3001  (admin / admin)
+# OTLP gRPC:  localhost:4317
+# OTLP HTTP:  localhost:4318
+
+services:
+  # All-in-one Loki + Grafana + Tempo + Mimir (Prometheus-compatible)
+  lgtm:
+    container_name: obs_lgtm
+    image: grafana/otel-lgtm:0.7.5
+    ports:
+      - "3001:3000"   # Grafana UI
+      - "4317:4317"   # OTLP gRPC  (application → lgtm)
+      - "4318:4318"   # OTLP HTTP  (application → lgtm)
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - obs_lgtm_data:/data
+    networks:
+      - obs_net
+    restart: unless-stopped
+
+  # OTel Collector contrib — required because otel-lgtm does not embed sqlserverreceiver.
+  # Receives MSSQL metrics via sqlserverreceiver and forwards to lgtm via OTLP.
+  otelcol:
+    container_name: obs_otelcol
+    image: otel/opentelemetry-collector-contrib:0.103.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    environment:
+      - MSSQL_HOST=${MSSQL_HOST:-host.docker.internal}
+      - MSSQL_METRICS_USER=${MSSQL_METRICS_USER:-obs_reader}
+      - MSSQL_METRICS_PASSWORD=${MSSQL_METRICS_PASSWORD:-obs_reader_password}
+      - MSSQL_INSTANCE=${MSSQL_INSTANCE:-MSSQLSERVER}
+      - OTLP_ENDPOINT=lgtm:4317
+    depends_on:
+      - lgtm
+    networks:
+      - obs_net
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  obs_lgtm_data:
+
+networks:
+  obs_net:
+    driver: bridge

@@ -109,6 +109,37 @@ Predominio de packages internos coesos, com estrutura orientada por dominio ou c
 - Dominio nao deve conhecer detalhes de HTTP, banco, filas, serializacao ou drivers.
 - Infraestrutura pode implementar contratos consumidos pela aplicacao, preservando dependencia para dentro.
 
+### Forma Canonica de Modulo (`internal/modules/<m>/`)
+
+Todo modulo de negocio segue a mesma forma. Divergencias precisam de justificativa explicita.
+
+1. Camadas: `application/` (`dtos`, `usecase`, `usecase/mocks`), `domain/`
+   (`entities`, `vos`, `ports`, `ports/mocks`, `errors.go`; `services/` quando
+   houver regra de dominio sem estado), `infrastructure/`
+   (`http/handlers`, `http/routes`, `persistence/mssql`).
+2. `module.go` expoe o quarteto `Deps` / `Module` / `NewModule` / `RegisterHTTP`.
+3. `Deps` carrega apenas dependencias externas brutas (`DB devkitdb.DBTX` e/ou
+   `Manager manager.Manager`) e adapters cross-module/cross-cutting que **nao
+   pertencem** ao modulo. Repositorios, clock e id generator **internos** sao
+   construidos dentro de `NewModule` — nunca no container.
+4. `infrastructure/http/handlers/error_mapping.go` no pacote `handlers`.
+5. `infrastructure/persistence/mssql/`: `queries.go`, `row_mappers.go`,
+   `errors.go` (`MapDriverError` traduzindo erro de driver para sentinela de
+   dominio quando houver constraint mapeavel) e `<entidade>_repository.go`.
+6. Clock como porta de dominio + `infrastructure/clock/system_clock.go` apenas
+   quando o modulo precisar de tempo.
+7. Naming: `application/dtos/pagination.go`; rotas em `<modulo>_routes.go` (ou
+   `<recurso>_routes.go` por recurso).
+8. Excecao documentada: `infrastructure/providers/` guarda adapters de portas
+   cross-module por design (enforcada em `dependency_rules_test.go` e
+   `governance_rules_test.go`). Nao renomear. `infrastructure/adapters/` e para
+   adapters cross-cutting (ex.: hasher, token issuer) — proposito distinto.
+
+Divergencias legitimas (sem acao): modulo sem `domain/services`/clock quando nao
+ha regra sem estado nem dependencia de tempo; modulo sem paginacao quando nao
+lista colecao; subpastas extras de dominio (`filters`, `projections`) conforme
+complexidade real.
+
 ## Modo de trabalho
 
 1. Entender o contexto antes de editar qualquer arquivo.
@@ -193,6 +224,25 @@ Carregar o minimo necessario para a tarefa reduz custo de tokens em 35-50%:
 - Classificar a complexidade **antes** de carregar qualquer referencia.
 - Quando a reference tiver bloco `<!-- TL;DR ... -->`, preferir o TL;DR ao documento completo em tarefas standard.
 - Override explicito via `--complexity=<nivel>` prevalece sobre classificacao automatica.
+
+## Denylist de PII (RF-27)
+
+Campos listados abaixo sao automaticamente redacionados em logs, atributos de span e `db.statement` pelo redator em `internal/bootstrap/observability/redactor/denylist.go`.
+
+**Nunca sugira codigo que leia, imprima ou propague esses campos sem passar pelo redator.**
+
+Campos cobertos:
+
+| Categoria | Campos |
+|-----------|--------|
+| PCI / credenciais | `pan`, `card_number`, `cardnumber`, `cvv`, `cvc`, `password`, `passwd`, `secret`, `token`, `access_token`, `refresh_token`, `authorization` |
+| Documentos BR | `cpf`, `cnpj`, `rg` |
+| Contato | `email`, `phone`, `telefone`, `address`, `endereco`, `zipcode`, `cep` |
+| Bancario e identidade | `account_number`, `agency`, `bank_account`, `pix_key`, `pix_chave`, `full_name`, `holder_name`, `nome_completo` |
+
+Sentinela: `[REDACTED]`. Matching case-insensitive, recursivo em qualquer profundidade, atravessa arrays/listas de objetos.
+
+Evolucao da lista: PR direto + entrada no CHANGELOG. Auditoria trimestral obrigatoria (PR template em `.github/PULL_REQUEST_TEMPLATE/pii-quarterly-review.md`, cron em `.github/workflows/pii-quarterly-review.yml`).
 
 ## Validacao
 

@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	bootstrapmigration "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/migration"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/migration"
 
 	// Register named smoke hooks via their init() functions.
 	_ "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/migration/hooks"
@@ -21,12 +21,12 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
-	var opts []bootstrapmigration.Option
+	var opts []migration.Option
 	if *smokeHook != "" {
-		opts = append(opts, bootstrapmigration.WithSmokeHook(*smokeHook))
+		opts = append(opts, migration.WithSmokeHook(*smokeHook))
 	}
 
-	if err := bootstrapmigration.Run(ctx, opts...); err != nil {
+	if err := migration.Run(ctx, opts...); err != nil {
 		log.SetFlags(0)
 		log.Println(err.Error())
 		os.Exit(1)

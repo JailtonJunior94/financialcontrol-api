@@ -51,7 +51,7 @@ func (r *TransactionRepository) Add(ctx context.Context, t *entities.Transaction
 		sql.Named("deletedAt", t.DeletedAt()),
 	)
 	if err != nil {
-		return fmt.Errorf("mssql: add transaction: %w", err)
+		return MapDriverError(fmt.Errorf("mssql: add transaction: %w", err))
 	}
 	return nil
 }
@@ -73,7 +73,7 @@ func (r *TransactionRepository) Update(ctx context.Context, t *entities.Transact
 		sql.Named("userId", t.UserID().String()),
 	)
 	if err != nil {
-		return fmt.Errorf("mssql: update transaction: %w", err)
+		return MapDriverError(fmt.Errorf("mssql: update transaction: %w", err))
 	}
 	return nil
 }

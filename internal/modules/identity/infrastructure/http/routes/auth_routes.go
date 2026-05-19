@@ -9,5 +9,5 @@ import (
 
 func RegisterAuthRoutes(router fiber.Router, authHandler *handlers.AuthHandler, protected fiber.Handler) {
 	router.Post(pkgroutes.Token, authHandler.Authenticate)
-	router.Get("/me", protected, authHandler.Me)
+	router.Get(pkgroutes.Me, protected, authHandler.Me)
 }

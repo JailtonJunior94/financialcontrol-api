@@ -5,95 +5,84 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
-	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces/mocks"
+	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-type ListCardsSuite struct {
-	suite.Suite
-	ctx      context.Context
-	cardRepo *ifacemocks.CardRepository
-	sut      usecase.ListCards
-}
-
-func TestListCardsSuite(t *testing.T) { suite.Run(t, new(ListCardsSuite)) }
-
-func (s *ListCardsSuite) SetupTest() {
-	s.ctx = context.Background()
-	s.cardRepo = ifacemocks.NewCardRepository(s.T())
-	s.sut = usecase.NewListCards(s.cardRepo)
-}
-
-func (s *ListCardsSuite) TestExecute() {
+func TestListCards_Execute(t *testing.T) {
+	ctx := context.Background()
 	userID := identityvo.NewUserID()
 	card := mustNewCard(userID)
 
 	unpaged := dtos.Pagination{}
 	clampedPagination := dtos.NewPagination(1, 1000)
 
-	scenarios := []struct {
+	tests := []struct {
 		name       string
 		pagination dtos.Pagination
-		setup      func()
-		expect     func(out []dtos.CardResponse, err error)
+		setup      func(*ifacemocks.CardRepository)
+		assert     func(t *testing.T, out []dtos.CardResponse, err error)
 	}{
 		{
 			name:       "sucesso sem paginacao preserva contrato legado",
 			pagination: unpaged,
-			setup: func() {
-				s.cardRepo.EXPECT().List(s.ctx, userID, unpaged).Return([]entities.Card{*card}, nil).Once()
+			setup: func(cardRepo *ifacemocks.CardRepository) {
+				cardRepo.EXPECT().List(ctx, userID, unpaged).Return([]entities.Card{*card}, nil).Once()
 			},
-			expect: func(out []dtos.CardResponse, err error) {
-				s.NoError(err)
-				s.Len(out, 1)
+			assert: func(t *testing.T, out []dtos.CardResponse, err error) {
+				require.NoError(t, err)
+				assert.Len(t, out, 1)
 			},
 		},
 		{
 			name:       "paginacao zero nao e normalizada para truncar a lista",
 			pagination: dtos.Pagination{Page: 0, Size: 0},
-			setup: func() {
-				s.cardRepo.EXPECT().List(s.ctx, userID, unpaged).Return([]entities.Card{*card}, nil).Once()
+			setup: func(cardRepo *ifacemocks.CardRepository) {
+				cardRepo.EXPECT().List(ctx, userID, unpaged).Return([]entities.Card{*card}, nil).Once()
 			},
-			expect: func(out []dtos.CardResponse, err error) {
-				s.NoError(err)
-				s.Len(out, 1)
+			assert: func(t *testing.T, out []dtos.CardResponse, err error) {
+				require.NoError(t, err)
+				assert.Len(t, out, 1)
 			},
 		},
 		{
 			name:       "size acima do max e clampado",
 			pagination: dtos.Pagination{Page: 1, Size: 1000},
-			setup: func() {
-				s.cardRepo.EXPECT().List(s.ctx, userID, clampedPagination).Return([]entities.Card{*card}, nil).Once()
-				s.Equal(200, clampedPagination.Size)
+			setup: func(cardRepo *ifacemocks.CardRepository) {
+				assert.Equal(t, 200, clampedPagination.Size)
+				cardRepo.EXPECT().List(ctx, userID, clampedPagination).Return([]entities.Card{*card}, nil).Once()
 			},
-			expect: func(out []dtos.CardResponse, err error) {
-				s.NoError(err)
-				s.Len(out, 1)
+			assert: func(t *testing.T, out []dtos.CardResponse, err error) {
+				require.NoError(t, err)
+				assert.Len(t, out, 1)
 			},
 		},
 		{
 			name:       "repo retorna erro",
 			pagination: unpaged,
-			setup: func() {
-				s.cardRepo.EXPECT().List(s.ctx, userID, unpaged).Return(nil, errors.New("db error")).Once()
+			setup: func(cardRepo *ifacemocks.CardRepository) {
+				cardRepo.EXPECT().List(ctx, userID, unpaged).Return(nil, errors.New("db error")).Once()
 			},
-			expect: func(out []dtos.CardResponse, err error) {
-				s.Error(err)
-				s.Nil(out)
+			assert: func(t *testing.T, out []dtos.CardResponse, err error) {
+				assert.Error(t, err)
+				assert.Nil(t, out)
 			},
 		},
 	}
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			out, err := s.sut.Execute(s.ctx, userID, sc.pagination)
-			sc.expect(out, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cardRepo := ifacemocks.NewCardRepository(t)
+			tt.setup(cardRepo)
+			sut := usecase.NewListCards(cardRepo)
+			out, err := sut.Execute(ctx, userID, tt.pagination)
+			tt.assert(t, out, err)
 		})
 	}
 }

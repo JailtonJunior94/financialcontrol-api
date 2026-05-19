@@ -1,6 +1,7 @@
 package cards_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"strings"
@@ -15,8 +16,7 @@ import (
 	ucmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/routes"
-	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
-	jwtmocks "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt/mocks"
+	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
 )
 
 const (
@@ -46,15 +46,19 @@ func buildSmokeApp(t *testing.T) (
 	cardHandler := handlers.NewCardHandler(listCards, getCard, createCard, updateCard, deactivate)
 	flagHandler := handlers.NewFlagHandler(listFlags)
 
-	parserMock := jwtmocks.NewParser(t)
-	parserMock.EXPECT().
-		Parse(mock.Anything, mock.AnythingOfType("string")).
-		Return(pkgjwt.Identity{UserID: smokeUserID, Email: "smoke@test.com"}, nil).
-		Maybe()
-
 	app = fiber.New()
-	routes.RegisterCardRoutes(app, cardHandler, flagHandler, parserMock)
+	routes.RegisterCardRoutes(app, cardHandler, flagHandler, smokeProtected())
 	return
+}
+
+func smokeProtected() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		c.SetUserContext(identitycontext.WithIdentity(context.Background(), identitycontext.Identity{
+			UserID: smokeUserID,
+			Email:  "smoke@test.com",
+		}))
+		return c.Next()
+	}
 }
 
 func smokeCard() dtos.CardResponse {

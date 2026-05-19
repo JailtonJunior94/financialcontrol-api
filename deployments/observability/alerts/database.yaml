@@ -1,0 +1,22 @@
+groups:
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # Alert: MSSQLDeadlocksRecurring
+      # Fires when deadlocks accumulate over a 10-minute window.
+      # Metric `sqlserver_deadlocks` is emitted by otelcol-contrib sqlserverreceiver
+      # and represents deadlocks/s (gauge). An increase > 0 sustained for 5m
+      # indicates recurring contention requiring DBA investigation.
+      - alert: MSSQLDeadlocksRecurring
+        expr: |
+          sum(increase(sqlserver_deadlocks[10m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Recurring MSSQL deadlocks detected"
+          description: >
+            Deadlocks have been accumulating over the last 10 minutes
+            (increase: {{ $value }}). Investigate long-running transactions,
+            missing indexes or application-level lock ordering.
+          runbook_url: "TBD"

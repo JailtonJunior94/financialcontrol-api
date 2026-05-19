@@ -48,13 +48,13 @@ func TestAnticipateInstallment_GoldenPath(t *testing.T) {
 	currentInv := newOpenInvoice(t, userID, cardID)
 	targetInv := newOpenInvoice(t, userID, cardID)
 
-	clock.On("Now").Return(fixedNow)
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{inst}, nil)
-	invRepo.On("GetByID", mock.Anything, userID, invoiceID).Return(currentInv, nil)
-	invRepo.On("NextOpenFor", mock.Anything, userID, cardID, mock.Anything).Return(targetInv, nil)
-	txRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
-	instRepo.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{inst}, nil)
+	invRepo.EXPECT().GetByID(mock.Anything, userID, invoiceID).Return(currentInv, nil)
+	invRepo.EXPECT().NextOpenFor(mock.Anything, userID, cardID, mock.Anything).Return(targetInv, nil)
+	txRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	instRepo.EXPECT().UpdateBatch(mock.Anything, mock.Anything).Return(nil)
 
 	uc := newAnticipateInstallmentUC(t, mgr, txRepo, invRepo, instRepo, clock)
 	resp, err := uc.Execute(ctx, userID, txID, instID)
@@ -79,8 +79,8 @@ func TestAnticipateInstallment_NoCardID_ReturnsEmpty(t *testing.T) {
 	// expense transaction has no cardID
 	tx := newExpenseTransaction(t, userID)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{}, nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{}, nil)
 
 	uc := newAnticipateInstallmentUC(t, mgr, txRepo, invRepo, instRepo, clock)
 	resp, err := uc.Execute(ctx, userID, txID, instID)
@@ -114,9 +114,9 @@ func TestAnticipateInstallment_BlocksWhenCurrentInvoiceIsClosed(t *testing.T) {
 	inst := newScheduledInstallment(instID, tx.ID(), invoiceID)
 	currentInv := newClosedInvoice(t, userID, cardID)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{inst}, nil)
-	invRepo.On("GetByID", mock.Anything, userID, invoiceID).Return(currentInv, nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{inst}, nil)
+	invRepo.EXPECT().GetByID(mock.Anything, userID, invoiceID).Return(currentInv, nil)
 
 	uc := newAnticipateInstallmentUC(t, mgr, txRepo, invRepo, instRepo, clock)
 	_, err := uc.Execute(ctx, userID, txID, instID)
@@ -144,9 +144,9 @@ func TestAnticipateInstallment_BlocksWhenCurrentInvoiceIsPaid(t *testing.T) {
 	inst := newScheduledInstallment(instID, tx.ID(), invoiceID)
 	currentInv := newPaidInvoice(t, userID, cardID)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return([]entities.Installment{inst}, nil)
-	invRepo.On("GetByID", mock.Anything, userID, invoiceID).Return(currentInv, nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return([]entities.Installment{inst}, nil)
+	invRepo.EXPECT().GetByID(mock.Anything, userID, invoiceID).Return(currentInv, nil)
 
 	uc := newAnticipateInstallmentUC(t, mgr, txRepo, invRepo, instRepo, clock)
 	_, err := uc.Execute(ctx, userID, txID, instID)
@@ -167,7 +167,7 @@ func TestAnticipateInstallment_TransactionNotFound(t *testing.T) {
 	instRepo := portmocks.NewInstallmentRepository(t)
 	clock := portmocks.NewClock(t)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
 
 	uc := newAnticipateInstallmentUC(t, mgr, txRepo, invRepo, instRepo, clock)
 	_, err := uc.Execute(ctx, userID, txID, instID)

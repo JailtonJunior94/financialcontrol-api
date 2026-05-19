@@ -17,11 +17,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// UpdateTransaction is the use case interface for replacing a transaction (RF-54/RF-11/RF-12).
-type UpdateTransaction interface {
-	Execute(ctx context.Context, userID identityvo.UserID, txID vos.TransactionID, req dtos.UpdateTransactionRequest) (dtos.TransactionResponse, error)
-}
-
 type updateTransaction struct {
 	mgr      manager.Manager
 	txRepo   ports.TransactionRepository

@@ -14,11 +14,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// AnticipateInstallment is the use case interface for moving an installment to the next open invoice (RF-52/RF-14).
-type AnticipateInstallment interface {
-	Execute(ctx context.Context, userID identityvo.UserID, txID vos.TransactionID, installmentID vos.InstallmentID) (dtos.TransactionResponse, error)
-}
-
 type anticipateInstallment struct {
 	mgr      manager.Manager
 	txRepo   ports.TransactionRepository

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 
@@ -48,7 +49,7 @@ func (s *UserSuite) TestNewUser() {
 			expect: func(u *entities.User, err error) {
 				s.Error(err)
 				s.Nil(u)
-				s.ErrorIs(err, entities.ErrInvalidUser)
+				s.ErrorIs(err, domain.ErrInvalidUser)
 			},
 		},
 	}
@@ -67,7 +68,7 @@ func (s *UserSuite) TestRehydrate() {
 	pwd, _ := vos.NewHashedPassword("$2a$10$hash")
 	now := time.Now()
 
-	u := entities.Rehydrate(id, "John", email, pwd, now, now, true)
+	u := entities.RehydrateUser(id, "John", email, pwd, now, now, true)
 
 	s.NotNil(u)
 	s.Equal(id, u.ID())

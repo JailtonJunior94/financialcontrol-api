@@ -7,7 +7,7 @@ resolve-type-alias: false
 disable-version-string: true
 issue-845-fix: true
 packages:
-  github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports:
     interfaces:
       UserRepository:
       Hasher:
@@ -22,7 +22,7 @@ packages:
       Issuer:
       Parser:
   github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext: {}
-  github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports:
     interfaces:
       CardRepository:
       FlagRepository:
@@ -34,7 +34,7 @@ packages:
       UpdateCard:
       DeactivateCard:
       ListFlags:
-  github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces:
+  github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports:
     interfaces:
       CategoryRepository:
   github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase:

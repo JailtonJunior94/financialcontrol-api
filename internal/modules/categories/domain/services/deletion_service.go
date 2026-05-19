@@ -2,25 +2,19 @@ package services
 
 import (
 	"context"
-	"time"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// Clock abstracts time.Now to keep the deletion service deterministic in tests.
-type Clock interface {
-	Now() time.Time
-}
-
 // CategoryDeletionService deactivates rows according to the legacy Category schema.
 type CategoryDeletionService struct {
-	repo  interfaces.CategoryRepository
-	clock Clock
+	repo  ports.CategoryRepository
+	clock ports.Clock
 }
 
-func NewCategoryDeletionService(repo interfaces.CategoryRepository, clock Clock) *CategoryDeletionService {
+func NewCategoryDeletionService(repo ports.CategoryRepository, clock ports.Clock) *CategoryDeletionService {
 	return &CategoryDeletionService{repo: repo, clock: clock}
 }
 

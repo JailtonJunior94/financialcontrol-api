@@ -5,20 +5,16 @@ import (
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/dtos"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
 )
 
-type GetAuthenticatedUser interface {
-	Execute(ctx context.Context) (dtos.MeResponse, error)
-}
-
 type getAuthenticatedUser struct {
-	repo interfaces.UserRepository
+	repo ports.UserRepository
 }
 
-func NewGetAuthenticatedUser(repo interfaces.UserRepository) GetAuthenticatedUser {
+func NewGetAuthenticatedUser(repo ports.UserRepository) GetAuthenticatedUser {
 	return &getAuthenticatedUser{repo: repo}
 }
 

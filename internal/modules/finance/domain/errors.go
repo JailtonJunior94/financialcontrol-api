@@ -2,6 +2,7 @@ package domain
 
 import "errors"
 
+//nolint:staticcheck // Preserva mensagens públicas de domínio expostas pelo contrato HTTP.
 var (
 	ErrTransactionNotFound              = errors.New("transação não encontrada")
 	ErrInvoiceNotFound                  = errors.New("fatura não encontrada")

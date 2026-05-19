@@ -5,16 +5,16 @@ import (
 	"fmt"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type getCard struct {
-	cardRepo interfaces.CardRepository
+	cardRepo ports.CardRepository
 }
 
-func NewGetCard(cardRepo interfaces.CardRepository) GetCard {
+func NewGetCard(cardRepo ports.CardRepository) GetCard {
 	return &getCard{cardRepo: cardRepo}
 }
 

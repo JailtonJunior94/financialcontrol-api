@@ -14,11 +14,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// GetInvoice is the use case interface for retrieving an invoice detail with items (RF-21).
-type GetInvoice interface {
-	Execute(ctx context.Context, userID identityvo.UserID, invoiceID vos.InvoiceID) (dtos.InvoiceDetailResponse, error)
-}
-
 type getInvoice struct {
 	mgr      manager.Manager
 	invRepo  ports.InvoiceRepository

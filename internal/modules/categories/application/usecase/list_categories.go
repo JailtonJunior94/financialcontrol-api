@@ -6,7 +6,7 @@ import (
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
@@ -17,10 +17,10 @@ const (
 )
 
 type listCategories struct {
-	repo interfaces.CategoryRepository
+	repo ports.CategoryRepository
 }
 
-func NewListCategories(repo interfaces.CategoryRepository) ListCategories {
+func NewListCategories(repo ports.CategoryRepository) ListCategories {
 	return &listCategories{repo: repo}
 }
 
@@ -43,7 +43,7 @@ func (uc *listCategories) Execute(ctx context.Context, userID identityvo.UserID,
 	}, nil
 }
 
-func buildListFilter(q dtos.ListCategoriesQuery) (interfaces.ListFilter, int, int, error) {
+func buildListFilter(q dtos.ListCategoriesQuery) (ports.ListFilter, int, int, error) {
 	page := q.Page
 	if page <= 0 {
 		page = defaultListPage
@@ -58,10 +58,10 @@ func buildListFilter(q dtos.ListCategoriesQuery) (interfaces.ListFilter, int, in
 	size = pagination.Size
 
 	if q.ParentID != "" || q.Scope == dtos.ScopeSubs {
-		return interfaces.ListFilter{}, 0, 0, domain.ErrCategoryHierarchyUnsupported
+		return ports.ListFilter{}, 0, 0, domain.ErrCategoryHierarchyUnsupported
 	}
 
-	return interfaces.ListFilter{
+	return ports.ListFilter{
 		Pagination: pagination,
 		NameLike:   q.Name,
 	}, page, size, nil

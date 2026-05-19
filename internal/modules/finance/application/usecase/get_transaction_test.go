@@ -35,8 +35,8 @@ func TestGetTransaction_GoldenPath(t *testing.T) {
 
 	tx := newExpenseTransaction(t, userID)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	instRepo.On("ListByTransaction", mock.Anything, txID).Return(nil, nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	instRepo.EXPECT().ListByTransaction(mock.Anything, txID).Return(nil, nil)
 
 	uc := newGetTransactionUC(t, txRepo, instRepo)
 	resp, err := uc.Execute(ctx, userID, txID)
@@ -55,7 +55,7 @@ func TestGetTransaction_NotFound_ReturnsError(t *testing.T) {
 	txRepo := portmocks.NewTransactionRepository(t)
 	instRepo := portmocks.NewInstallmentRepository(t)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
 
 	uc := newGetTransactionUC(t, txRepo, instRepo)
 	_, err := uc.Execute(ctx, userID, txID)

@@ -6,110 +6,99 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
-	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces/mocks"
+	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
 )
 
-type GetAuthenticatedUserSuite struct {
-	suite.Suite
-	ctx      context.Context
-	userRepo *ifacemocks.UserRepository
-	sut      usecase.GetAuthenticatedUser
-}
-
-func TestGetAuthenticatedUserSuite(t *testing.T) { suite.Run(t, new(GetAuthenticatedUserSuite)) }
-
-func (s *GetAuthenticatedUserSuite) SetupTest() {
-	s.ctx = context.Background()
-	s.userRepo = ifacemocks.NewUserRepository(s.T())
-	s.sut = usecase.NewGetAuthenticatedUser(s.userRepo)
-}
-
-func (s *GetAuthenticatedUserSuite) TestExecute() {
+func TestGetAuthenticatedUser_Execute(t *testing.T) {
 	userID := vos.NewUserID()
 	email, _ := vos.NewEmail("me@example.com")
 	pwd, _ := vos.NewHashedPassword("hash")
-	user := entities.Rehydrate(userID, "Me User", email, pwd, time.Now(), time.Now(), true)
+	user := entities.RehydrateUser(userID, "Me User", email, pwd, time.Now(), time.Now(), true)
 
-	ctxWithIdentity := identitycontext.WithIdentity(s.ctx, identitycontext.Identity{
+	baseCtx := context.Background()
+	ctxWithIdentity := identitycontext.WithIdentity(baseCtx, identitycontext.Identity{
 		UserID: userID.String(),
 		Email:  email.String(),
 	})
-	ctxWithInvalidIdentity := identitycontext.WithIdentity(s.ctx, identitycontext.Identity{
+	ctxWithInvalidIdentity := identitycontext.WithIdentity(baseCtx, identitycontext.Identity{
 		UserID: "not-a-uuid",
 		Email:  email.String(),
 	})
 
-	scenarios := []struct {
+	tests := []struct {
 		name   string
 		ctx    context.Context
-		setup  func()
-		expect func(out dtos.MeResponse, err error)
+		setup  func(*ifacemocks.UserRepository)
+		assert func(t *testing.T, out dtos.MeResponse, err error)
 	}{
 		{
 			name:  "identidade ausente no contexto",
-			ctx:   s.ctx,
-			setup: func() {},
-			expect: func(out dtos.MeResponse, err error) {
-				s.ErrorIs(err, identitycontext.ErrNoIdentity)
+			ctx:   baseCtx,
+			setup: func(_ *ifacemocks.UserRepository) {},
+			assert: func(t *testing.T, out dtos.MeResponse, err error) {
+				assert.ErrorIs(t, err, identitycontext.ErrNoIdentity)
 			},
 		},
 		{
 			name: "identidade presente e repo ok",
 			ctx:  ctxWithIdentity,
-			setup: func() {
-				s.userRepo.EXPECT().GetByID(ctxWithIdentity, userID).Return(user, nil).Once()
+			setup: func(repo *ifacemocks.UserRepository) {
+				repo.EXPECT().GetByID(ctxWithIdentity, userID).Return(user, nil).Once()
 			},
-			expect: func(out dtos.MeResponse, err error) {
-				s.NoError(err)
-				s.Equal(userID.String(), out.ID)
-				s.Equal("Me User", out.Name)
-				s.Equal(email.String(), out.Email)
+			assert: func(t *testing.T, out dtos.MeResponse, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, userID.String(), out.ID)
+				assert.Equal(t, "Me User", out.Name)
+				assert.Equal(t, email.String(), out.Email)
 			},
 		},
 		{
 			name:  "user id invalido no contexto retorna ErrIdentityInvalid (BUG-IDV-003)",
 			ctx:   ctxWithInvalidIdentity,
-			setup: func() {},
-			expect: func(out dtos.MeResponse, err error) {
-				s.ErrorIs(err, domain.ErrIdentityInvalid)
-				s.NotErrorIs(err, domain.ErrUserNotFound)
+			setup: func(_ *ifacemocks.UserRepository) {},
+			assert: func(t *testing.T, out dtos.MeResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrIdentityInvalid)
+				assert.NotErrorIs(t, err, domain.ErrUserNotFound)
 			},
 		},
 		{
 			name: "repo erro",
 			ctx:  ctxWithIdentity,
-			setup: func() {
-				s.userRepo.EXPECT().GetByID(ctxWithIdentity, userID).Return(nil, errors.New("db error")).Once()
+			setup: func(repo *ifacemocks.UserRepository) {
+				repo.EXPECT().GetByID(ctxWithIdentity, userID).Return(nil, errors.New("db error")).Once()
 			},
-			expect: func(out dtos.MeResponse, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out dtos.MeResponse, err error) {
+				assert.Error(t, err)
 			},
 		},
 		{
 			name: "usuario nao encontrado no repo",
 			ctx:  ctxWithIdentity,
-			setup: func() {
-				s.userRepo.EXPECT().GetByID(ctxWithIdentity, userID).Return(nil, nil).Once()
+			setup: func(repo *ifacemocks.UserRepository) {
+				repo.EXPECT().GetByID(ctxWithIdentity, userID).Return(nil, nil).Once()
 			},
-			expect: func(out dtos.MeResponse, err error) {
-				s.ErrorIs(err, domain.ErrUserNotFound)
+			assert: func(t *testing.T, out dtos.MeResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrUserNotFound)
 			},
 		},
 	}
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			out, err := s.sut.Execute(sc.ctx)
-			sc.expect(out, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := ifacemocks.NewUserRepository(t)
+			tt.setup(repo)
+			sut := usecase.NewGetAuthenticatedUser(repo)
+			out, err := sut.Execute(tt.ctx)
+			tt.assert(t, out, err)
 		})
 	}
 }

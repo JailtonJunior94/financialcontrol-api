@@ -42,8 +42,8 @@ func TestListInvoices_GoldenPath(t *testing.T) {
 	inv := newOpenInvoice(t, userID, cardID)
 	invs := []entities.Invoice{*inv}
 
-	clock.On("Now").Return(fixedNow)
-	invRepo.On("List", mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return(invs, int64(1), nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	invRepo.EXPECT().List(mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return(invs, int64(1), nil)
 
 	pag, err := vos.NewPagination(1, 10)
 	require.NoError(t, err)
@@ -85,9 +85,9 @@ func TestListInvoices_LazyClose_ClosesOverdueInvoices(t *testing.T) {
 	overdueInv, err := entities.NewInvoice(card, pastStart, pastEnd, pastClosing, pastDue, pastStart)
 	require.NoError(t, err)
 
-	clock.On("Now").Return(fixedNow)
-	invRepo.On("List", mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{*overdueInv}, int64(1), nil)
-	invRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Invoice")).Return(nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	invRepo.EXPECT().List(mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{*overdueInv}, int64(1), nil)
+	invRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Invoice")).Return(nil)
 
 	pag, err := vos.NewPagination(1, 10)
 	require.NoError(t, err)
@@ -112,8 +112,8 @@ func TestListInvoices_Empty_ReturnsEmptyPage(t *testing.T) {
 	invRepo := portmocks.NewInvoiceRepository(t)
 	clock := portmocks.NewClock(t)
 
-	clock.On("Now").Return(fixedNow)
-	invRepo.On("List", mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{}, int64(0), nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	invRepo.EXPECT().List(mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{}, int64(0), nil)
 
 	pag, err := vos.NewPagination(1, 10)
 	require.NoError(t, err)

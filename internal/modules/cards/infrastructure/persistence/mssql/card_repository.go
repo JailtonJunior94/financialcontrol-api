@@ -10,13 +10,13 @@ import (
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	pkgdatabase "github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-var _ interfaces.CardRepository = (*CardRepository)(nil)
+var _ ports.CardRepository = (*CardRepository)(nil)
 
 type CardRepository struct {
 	db devkitdb.DBTX

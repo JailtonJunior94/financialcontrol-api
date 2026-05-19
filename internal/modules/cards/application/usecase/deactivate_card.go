@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type deactivateCard struct {
-	cardRepo interfaces.CardRepository
+	cardRepo ports.CardRepository
 }
 
-func NewDeactivateCard(cardRepo interfaces.CardRepository) DeactivateCard {
+func NewDeactivateCard(cardRepo ports.CardRepository) DeactivateCard {
 	return &deactivateCard{cardRepo: cardRepo}
 }
 

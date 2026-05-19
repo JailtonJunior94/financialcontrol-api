@@ -1,0 +1,81 @@
+# OTel Collector config — sqlserverreceiver → resourcedetection → batch → otlp/lgtm
+# Env vars injected by docker-compose.yml (or by the Kubernetes secret manager in prod).
+#
+# Production note: set tls.insecure: false and supply headers with bearer token.
+# Placeholder keys: OTLP_AUTH_HEADER, OTLP_CA_CERT_PATH.
+
+receivers:
+  # Receives spans/metrics/logs from the financialcontrol-api application.
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:55680"
+      http:
+        endpoint: "0.0.0.0:55681"
+
+  # Scrapes MSSQL DMVs and Query Store metrics.
+  # Requires SQL Server 2016+ and the obs_reader user (grant_obs_reader.sql).
+  sqlserver:
+    collection_interval: 30s
+    server: ${env:MSSQL_HOST}
+    port: 1433
+    username: ${env:MSSQL_METRICS_USER}
+    password: ${env:MSSQL_METRICS_PASSWORD}
+    instance_name: ${env:MSSQL_INSTANCE}
+    metrics:
+      sqlserver.deadlocks:
+        enabled: true
+      sqlserver.lock.wait_time.avg:
+        enabled: true
+      sqlserver.transaction_log.usage:
+        enabled: true
+      sqlserver.batch.request.rate:
+        enabled: true
+      sqlserver.user.connection.count:
+        enabled: true
+      sqlserver.page.buffer_cache.hit_ratio:
+        enabled: true
+
+processors:
+  # Adds host.name, os.type, cloud.* resource attributes.
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 5s
+
+  batch:
+    send_batch_size: 1024
+    timeout: 5s
+
+exporters:
+  # Forwards all signals to grafana/otel-lgtm.
+  otlp/lgtm:
+    endpoint: ${env:OTLP_ENDPOINT}
+    tls:
+      insecure: true
+    # Production: uncomment and provide credentials.
+    # headers:
+    #   Authorization: "Bearer ${env:OTLP_AUTH_HEADER}"
+    # tls:
+    #   insecure: false
+    #   ca_file: ${env:OTLP_CA_CERT_PATH}
+
+  # Debug exporter — remove in production.
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    metrics:
+      receivers: [sqlserver]
+      processors: [resourcedetection, batch]
+      exporters: [otlp/lgtm]
+
+    traces:
+      receivers: [otlp]
+      processors: [resourcedetection, batch]
+      exporters: [otlp/lgtm]
+
+    logs:
+      receivers: [otlp]
+      processors: [resourcedetection, batch]
+      exporters: [otlp/lgtm]

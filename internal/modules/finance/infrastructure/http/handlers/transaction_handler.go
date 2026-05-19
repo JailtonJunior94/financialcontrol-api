@@ -16,7 +16,6 @@ import (
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/filters"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/vos"
-	financehttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/http"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identitycontext"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
@@ -84,13 +83,13 @@ func (h *TransactionHandler) Create(c *fiber.Ctx) error {
 	}
 
 	if err := req.Validate(); err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 
 	out, err := h.create.Execute(c.UserContext(), userID, idempotencyKey, req)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 
@@ -107,13 +106,13 @@ func (h *TransactionHandler) List(c *fiber.Ctx) error {
 
 	f, err := transactionFilterFromCtx(c, userID)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 
 	out, err := h.list.Execute(c.UserContext(), userID, f)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)
@@ -133,7 +132,7 @@ func (h *TransactionHandler) Get(c *fiber.Ctx) error {
 
 	out, err := h.get.Execute(c.UserContext(), userID, txID)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)
@@ -161,13 +160,13 @@ func (h *TransactionHandler) Update(c *fiber.Ctx) error {
 	}
 
 	if err := req.Validate(); err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 
 	out, err := h.update.Execute(c.UserContext(), userID, txID, req)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)
@@ -187,7 +186,7 @@ func (h *TransactionHandler) Delete(c *fiber.Ctx) error {
 	}
 
 	if err := h.delete.Execute(c.UserContext(), userID, txID); err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusNoContent).Send(nil)
@@ -212,7 +211,7 @@ func (h *TransactionHandler) Refund(c *fiber.Ctx) error {
 
 	out, err := h.refund.Execute(c.UserContext(), userID, txID, req)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusCreated).JSON(out)

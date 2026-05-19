@@ -1,0 +1,12 @@
+groups:
+  - name: business_alerts
+    interval: 30s
+    rules:
+      # Business-metric alerts are reserved for a future PRD.
+      #
+      # Candidate alerts (not yet implemented):
+      #   - HighDeclinedPaymentRate: financial_operation_total{status="declined"} spike
+      #   - LargeAmountProcessed: financial_amount_processed above configurable threshold
+      #   - PartnerIntegrationLatencyHigh: partner_integration_latency P99 > SLA
+      #
+      # Add rules here once the business thresholds are agreed with the product team.

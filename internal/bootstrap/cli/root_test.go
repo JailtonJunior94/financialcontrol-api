@@ -2,7 +2,6 @@ package cli_test
 
 import (
 	"testing"
-	"time"
 
 	bootstrapcli "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/cli"
 
@@ -10,9 +9,7 @@ import (
 )
 
 type runnerCall struct {
-	name     string
-	date     time.Time
-	category string
+	name string
 }
 
 type fakeRunners struct {
@@ -24,47 +21,11 @@ func (f *fakeRunners) RunServer() error {
 	return nil
 }
 
-func (f *fakeRunners) RunBudget(date time.Time) error {
-	f.calls = append(f.calls, runnerCall{name: "budget", date: date})
-	return nil
-}
-
-func (f *fakeRunners) RunBudgetCardsAndOthers(date time.Time) error {
-	f.calls = append(f.calls, runnerCall{name: "budget-cards-and-others", date: date})
-	return nil
-}
-
-func (f *fakeRunners) RunBudgetUnified(date time.Time) error {
-	f.calls = append(f.calls, runnerCall{name: "budget-unified", date: date})
-	return nil
-}
-
-func (f *fakeRunners) RunBudgetFull(date time.Time) error {
-	f.calls = append(f.calls, runnerCall{name: "budget-full", date: date})
-	return nil
-}
-
-func (f *fakeRunners) RunBalance(date time.Time) error {
-	f.calls = append(f.calls, runnerCall{name: "balance", date: date})
-	return nil
-}
-
-func (f *fakeRunners) RunBudgetByCategory(date time.Time, category string) error {
-	f.calls = append(f.calls, runnerCall{name: "budget-category", date: date, category: category})
-	return nil
-}
-
-func (f *fakeRunners) RunSync() error {
-	f.calls = append(f.calls, runnerCall{name: "sync"})
-	return nil
-}
-
 func TestNewRootCommandRegistersNoLegacyCLISubcommands(t *testing.T) {
 	cmd := bootstrapcli.NewRootCommand(&fakeRunners{})
 
 	require.Equal(t, "financialcontrol-api", cmd.Use)
-	// All legacy planning CLI commands removed in task 9.0 together with
-	// billing, transactions, invoicing, and planning/sync modules.
+	// Planning/budget/sync CLI commands removed together with the planning module.
 	require.Empty(t, cmd.Commands(), "no subcommands expected after legacy module removal")
 }
 

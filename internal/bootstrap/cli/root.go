@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules"
 	platformmodules "github.com/jailtonjunior94/financialcontrol-api/pkg/modules"
 	"github.com/spf13/cobra"
 )
@@ -24,8 +23,6 @@ func NewRootCommand(r Runners) *cobra.Command {
 			return r.RunServer()
 		},
 	}
-
-	modules.RegisterCLI(root, r)
 
 	return root
 }

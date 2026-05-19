@@ -5,16 +5,16 @@ import (
 	"fmt"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/dtos"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type getCategory struct {
-	repo interfaces.CategoryRepository
+	repo ports.CategoryRepository
 }
 
-func NewGetCategory(repo interfaces.CategoryRepository) GetCategory {
+func NewGetCategory(repo ports.CategoryRepository) GetCategory {
 	return &getCategory{repo: repo}
 }
 

@@ -12,7 +12,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces/mocks"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 )

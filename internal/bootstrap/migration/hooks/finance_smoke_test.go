@@ -7,15 +7,54 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"testing/iotest"
 	"time"
 
+	"github.com/JailtonJunior94/devkit-go/pkg/database"
+	devkitmanager "github.com/JailtonJunior94/devkit-go/pkg/database/manager"
+	devkitobs "github.com/JailtonJunior94/devkit-go/pkg/observability"
+	"github.com/JailtonJunior94/devkit-go/pkg/observability/noop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 )
+
+// spyObs counts Observability.Shutdown calls — used to prove closeRuntime
+// shuts down observability (regression for the leak in FinanceSmokeHook).
+type spyObs struct {
+	devkitobs.Observability
+	shutdowns int32
+}
+
+func newSpyObs() *spyObs { return &spyObs{Observability: noop.NewProvider()} }
+
+func (s *spyObs) Shutdown(ctx context.Context) error {
+	atomic.AddInt32(&s.shutdowns, 1)
+	return s.Observability.Shutdown(ctx)
+}
+
+// spyManager counts DBManager.Shutdown calls.
+type spyManager struct {
+	shutdowns int32
+}
+
+func (m *spyManager) Driver() database.Driver                                            { return "" }
+func (m *spyManager) DBTX(_ context.Context) database.DBTX                               { return nil }
+func (m *spyManager) BeginTx(_ context.Context, _ database.TxOptions) (database.Tx, error) {
+	return nil, nil
+}
+func (m *spyManager) Ping(_ context.Context) error { return nil }
+func (m *spyManager) Shutdown(_ context.Context) error {
+	atomic.AddInt32(&m.shutdowns, 1)
+	return nil
+}
+
+// ensure spyManager implements the interface.
+var _ devkitmanager.Manager = (*spyManager)(nil)
 
 // stubIssuer issues a deterministic fake token for tests.
 type stubIssuer struct{ err error }
@@ -286,6 +325,28 @@ func TestReadBody_PropagatesCloseError(t *testing.T) {
 
 	require.Equal(t, []byte("ok"), content)
 	require.ErrorIs(t, err, closeErr)
+}
+
+// TestCloseRuntime_ShutsDownObservabilityAndDB is the regression test for the leak
+// previously present in FinanceSmokeHook: the deferred cleanup must release BOTH
+// the observability provider and the database manager. Without this, every smoke
+// run leaked an OTel provider (background batch processors, exporter connections).
+func TestCloseRuntime_ShutsDownObservabilityAndDB(t *testing.T) {
+	t.Parallel()
+
+	obs := newSpyObs()
+	mgr := &spyManager{}
+	c := &bootstrapcontainer.Container{
+		Observability: obs,
+		DBManager:     mgr,
+	}
+
+	closeRuntime(c)
+
+	assert.Equal(t, int32(1), atomic.LoadInt32(&obs.shutdowns),
+		"Observability.Shutdown must be invoked exactly once")
+	assert.Equal(t, int32(1), atomic.LoadInt32(&mgr.shutdowns),
+		"DBManager.Shutdown must be invoked exactly once")
 }
 
 func TestFinanceSmoke_Failure_IssuerError(t *testing.T) {

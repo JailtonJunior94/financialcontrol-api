@@ -46,9 +46,9 @@ func TestGetInvoice_GoldenPath(t *testing.T) {
 	inv := newOpenInvoice(t, userID, cardID)
 	inst := newScheduledInstallment(instID, txID, invoiceID)
 
-	clock.On("Now").Return(fixedNow)
-	invRepo.On("GetByID", mock.Anything, userID, invoiceID).Return(inv, nil)
-	instRepo.On("ListByInvoice", mock.Anything, invoiceID).Return([]entities.Installment{inst}, nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	invRepo.EXPECT().GetByID(mock.Anything, userID, invoiceID).Return(inv, nil)
+	instRepo.EXPECT().ListByInvoice(mock.Anything, invoiceID).Return([]entities.Installment{inst}, nil)
 
 	uc := newGetInvoiceUC(t, mgr, invRepo, instRepo, clock)
 	resp, err := uc.Execute(ctx, userID, invoiceID)
@@ -79,10 +79,10 @@ func TestGetInvoice_LazyClose_ClosesOverdueInvoice(t *testing.T) {
 	overdueInv, err := entities.NewInvoice(card, pastStart, pastEnd, pastClosing, pastDue, pastStart)
 	require.NoError(t, err)
 
-	clock.On("Now").Return(fixedNow)
-	invRepo.On("GetByID", mock.Anything, userID, invoiceID).Return(overdueInv, nil)
-	invRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Invoice")).Return(nil)
-	instRepo.On("ListByInvoice", mock.Anything, invoiceID).Return(nil, nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	invRepo.EXPECT().GetByID(mock.Anything, userID, invoiceID).Return(overdueInv, nil)
+	invRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Invoice")).Return(nil)
+	instRepo.EXPECT().ListByInvoice(mock.Anything, invoiceID).Return(nil, nil)
 
 	uc := newGetInvoiceUC(t, mgr, invRepo, instRepo, clock)
 	resp, err := uc.Execute(ctx, userID, invoiceID)
@@ -103,7 +103,7 @@ func TestGetInvoice_NotFound_ReturnsError(t *testing.T) {
 	instRepo := portmocks.NewInstallmentRepository(t)
 	clock := portmocks.NewClock(t)
 
-	invRepo.On("GetByID", mock.Anything, userID, invoiceID).Return(nil, domain.ErrInvoiceNotFound)
+	invRepo.EXPECT().GetByID(mock.Anything, userID, invoiceID).Return(nil, domain.ErrInvoiceNotFound)
 
 	uc := newGetInvoiceUC(t, mgr, invRepo, instRepo, clock)
 	_, err := uc.Execute(ctx, userID, invoiceID)

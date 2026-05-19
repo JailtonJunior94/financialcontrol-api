@@ -2,14 +2,14 @@ package services
 
 import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports"
 )
 
 type CredentialsChecker struct {
-	hasher interfaces.Hasher
+	hasher ports.Hasher
 }
 
-func NewCredentialsChecker(hasher interfaces.Hasher) *CredentialsChecker {
+func NewCredentialsChecker(hasher ports.Hasher) *CredentialsChecker {
 	return &CredentialsChecker{hasher: hasher}
 }
 

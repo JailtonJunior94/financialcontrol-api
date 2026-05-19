@@ -1,0 +1,70 @@
+name: "PII Denylist — Auditoria Trimestral"
+
+# Executa toda segunda-feira as 09:00 UTC, mas abre issue apenas nas semanas
+# que sao multiplos de 12 (ISO week mod 12 == 0), aproximando 12 semanas.
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Forcar abertura da issue mesmo fora do ciclo trimestral"
+        required: false
+        default: "false"
+
+jobs:
+  quarterly-review:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Verificar semana do trimestre
+        id: check_week
+        run: |
+          ISO_WEEK=$(date +%V | sed 's/^0*//')
+          FORCE="${{ github.event.inputs.force }}"
+          echo "ISO_WEEK=$ISO_WEEK" >> "$GITHUB_OUTPUT"
+          if [ "$FORCE" = "true" ] || [ $(( ISO_WEEK % 12 )) -eq 0 ]; then
+            echo "should_open=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_open=false" >> "$GITHUB_OUTPUT"
+            echo "Semana ISO $ISO_WEEK nao e multiplo de 12. Pulando abertura de issue."
+          fi
+
+      - name: Abrir issue trimestral de auditoria PII
+        if: steps.check_week.outputs.should_open == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            const isoWeek = ${{ steps.check_week.outputs.ISO_WEEK }};
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[PII Quarterly Review] Auditoria trimestral da denylist — ${today}`,
+              body: [
+                '## Auditoria Trimestral Obrigatoria da Denylist de PII (RF-09.4)',
+                '',
+                `Semana ISO: ${isoWeek} | Data: ${today}`,
+                '',
+                'Esta issue e gerada automaticamente a cada 12 semanas para garantir',
+                'rastreabilidade de conformidade LGPD.',
+                '',
+                '### Acao requerida',
+                '',
+                '1. Abrir um PR usando o template `.github/PULL_REQUEST_TEMPLATE/pii-quarterly-review.md`',
+                '2. Revisar os campos em `internal/bootstrap/observability/redactor/denylist.go`',
+                '3. Verificar se novos campos sensíveis foram introduzidos nos ultimos 3 meses',
+                '4. Adicionar entrada no `CHANGELOG.md` (`reviewed, no changes` ou listar novos campos)',
+                '5. Garantir que `TestPIIRedactedEndToEnd` continua verde (job `pii-guardrail`)',
+                '6. Mergear o PR e fechar esta issue',
+                '',
+                '### Referencias',
+                '',
+                '- Denylist: `internal/bootstrap/observability/redactor/denylist.go`',
+                '- Guardrail CI: `.github/workflows/ci-cd.yml` (job `pii-guardrail`)',
+                '- PR template: `.github/PULL_REQUEST_TEMPLATE/pii-quarterly-review.md`',
+              ].join('\n'),
+              labels: ['pii-audit', 'compliance', 'quarterly-review'],
+            });

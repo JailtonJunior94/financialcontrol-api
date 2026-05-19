@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	categoriesdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
-	categoriesinterfaces "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	categoriesinterfaces "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	categoriesvos "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	financedomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports"

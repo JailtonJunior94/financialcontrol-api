@@ -4,7 +4,9 @@ import "errors"
 
 const InvalidUserOrPasswordMessage = "Usuário e/ou senha inválidos"
 
+//nolint:staticcheck // Preserva mensagens públicas de domínio expostas pelo contrato HTTP.
 var (
+	ErrInvalidUser        = errors.New("usuário inválido")
 	ErrInvalidEmail       = errors.New("e-mail inválido")
 	ErrInvalidPassword    = errors.New("senha inválida")
 	ErrUserNotFound       = errors.New("usuário não encontrado")

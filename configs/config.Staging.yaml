@@ -1,6 +1,0 @@
-environment: Staging
-mssql:
-  connectionString: "${MSSQL_CONNECTION_STRING}"
-security:
-  expirationAt: 1
-  jwtSecret: "${JWT_SECRET}"

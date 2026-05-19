@@ -1,23 +1,20 @@
 package categories
 
 import (
-	"time"
-
 	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/services"
+	categoriesclock "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/clock"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/routes"
 	mssqlrepo "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/persistence/mssql"
-	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 )
 
 // Deps holds the external dependencies required to build the categories module.
 type Deps struct {
-	DB        devkitdb.DBTX
-	JwtParser pkgjwt.Parser
+	DB devkitdb.DBTX
 }
 
 // Module holds all wired use cases and the HTTP handler for the categories domain.
@@ -30,15 +27,11 @@ type Module struct {
 	CategoryHandler *handlers.CategoryHandler
 }
 
-type systemClock struct{}
-
-func (systemClock) Now() time.Time { return time.Now().UTC() }
-
 // NewModule builds the categories module from its external dependencies.
 func NewModule(deps Deps) *Module {
 	repo := mssqlrepo.NewCategoryRepository(deps.DB)
 
-	clock := systemClock{}
+	clock := categoriesclock.NewSystemClock()
 	uniqueness := services.NewCategoryUniquenessService(repo)
 	deletion := services.NewCategoryDeletionService(repo, clock)
 
@@ -61,6 +54,6 @@ func NewModule(deps Deps) *Module {
 }
 
 // RegisterHTTP registers all categories routes on the provided router.
-func (m *Module) RegisterHTTP(router fiber.Router, parser pkgjwt.Parser) {
-	routes.RegisterCategoryRoutes(router, m.CategoryHandler, parser)
+func (m *Module) RegisterHTTP(router fiber.Router, protected fiber.Handler) {
+	routes.RegisterCategoryRoutes(router, m.CategoryHandler, protected)
 }

@@ -21,13 +21,14 @@ func (h *UserHandler) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": "corpo da requisição inválido"})
 	}
 
-	if req.Name == "" || req.Email == "" || req.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "campos obrigatórios ausentes"})
+	if err := req.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	result, err := h.createUser.Execute(c.UserContext(), req)
 	if err != nil {
-		return MapError(c, err)
+		status, body := MapError(err)
+		return c.Status(status).JSON(body)
 	}
 
 	if result.Created {

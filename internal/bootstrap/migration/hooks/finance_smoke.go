@@ -20,6 +20,18 @@ func init() {
 	bootstrapmigration.RegisterHook("finance", FinanceSmokeHook)
 }
 
+// closeRuntime releases the runtime resources owned by the smoke hook: the
+// observability provider (OTel batch processors, log exporters) and the database
+// manager. Both shutdowns share a bounded 5s budget. Errors are swallowed — the
+// hook return value already carries the smoke outcome and these shutdowns happen
+// during defer, so logging here would mask the smoke result.
+func closeRuntime(c *bootstrapcontainer.Container) {
+	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = c.Observability.Shutdown(shutCtx)
+	_ = c.DBManager.Shutdown(shutCtx)
+}
+
 // testableHTTP abstracts Fiber's app.Test so the hook can be tested without a real server.
 type testableHTTP interface {
 	Test(req *http.Request, msTimeout ...int) (*http.Response, error)
@@ -56,15 +68,11 @@ type smokeInvoiceItem struct {
 // one finance.Transaction, and writes Status='smoke_ok' to dbo.FinanceMigrationAudit
 // on success.  Any non-2xx response or infrastructure error returns a non-nil error.
 func FinanceSmokeHook(ctx context.Context, logger *slog.Logger) error {
-	c, err := bootstrapcontainer.BuildRuntime()
+	c, err := bootstrapcontainer.BuildRuntime(ctx)
 	if err != nil {
 		return fmt.Errorf("build runtime: %w", err)
 	}
-	defer func() {
-		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = c.DBManager.Shutdown(shutCtx)
-	}()
+	defer closeRuntime(c)
 
 	jwtCfg := pkgjwt.Config{
 		Secret:    []byte(config.JwtSecret),
@@ -75,10 +83,15 @@ func FinanceSmokeHook(ctx context.Context, logger *slog.Logger) error {
 		return fmt.Errorf("build jwt issuer: %w", err)
 	}
 
+	srv, err := bootstraphttp.NewServer(c)
+	if err != nil {
+		return fmt.Errorf("build http server: %w", err)
+	}
+
 	db := c.DBManager.DBTX(ctx)
 
 	s := &financeSmoke{
-		http:   bootstraphttp.NewApp(c),
+		http:   srv.App(),
 		issuer: issuer,
 		logger: logger,
 		queryUsers: func(qCtx context.Context) ([]string, error) {
@@ -135,17 +148,17 @@ func (s *financeSmoke) smokeUser(ctx context.Context, userID, token string) erro
 	auth := "Bearer " + token
 
 	// RF-38e – 1: paginated transaction listing
-	if err := s.probeGET("/api/v1/finance/transactions", auth); err != nil {
+	if err := s.probeGET(ctx, "/api/v1/finance/transactions", auth); err != nil {
 		return fmt.Errorf("list transactions: %w", err)
 	}
 
 	// RF-38e – 2: monthly summary
-	if err := s.probeGET("/api/v1/finance/summary", auth); err != nil {
+	if err := s.probeGET(ctx, "/api/v1/finance/summary", auth); err != nil {
 		return fmt.Errorf("monthly summary: %w", err)
 	}
 
 	// RF-38e – 3: invoice listing + detail (decision E2: detail only when total > 0)
-	body, err := s.probeGETBody("/api/v1/finance/invoices", auth)
+	body, err := s.probeGETBody(ctx, "/api/v1/finance/invoices", auth)
 	if err != nil {
 		return fmt.Errorf("list invoices: %w", err)
 	}
@@ -153,7 +166,7 @@ func (s *financeSmoke) smokeUser(ctx context.Context, userID, token string) erro
 	var invList smokeInvoiceList
 	if jsonErr := json.Unmarshal(body, &invList); jsonErr == nil && invList.Total > 0 && len(invList.Items) > 0 {
 		detailPath := "/api/v1/finance/invoices/" + invList.Items[0].ID
-		if err := s.probeGET(detailPath, auth); err != nil {
+		if err := s.probeGET(ctx, detailPath, auth); err != nil {
 			return fmt.Errorf("invoice detail: %w", err)
 		}
 	}
@@ -163,14 +176,16 @@ func (s *financeSmoke) smokeUser(ctx context.Context, userID, token string) erro
 }
 
 // probeGET issues a GET request and requires a 2xx response.
-func (s *financeSmoke) probeGET(path, authHeader string) error {
-	_, err := s.probeGETBody(path, authHeader)
+func (s *financeSmoke) probeGET(ctx context.Context, path, authHeader string) error {
+	_, err := s.probeGETBody(ctx, path, authHeader)
 	return err
 }
 
 // probeGETBody issues a GET request, requires 2xx, and returns the response body bytes.
-func (s *financeSmoke) probeGETBody(path, authHeader string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, path, nil)
+// ctx flows through http.NewRequestWithContext so future migrations away from
+// fiber's app.Test (which currently ignores req context) inherit cancellation.
+func (s *financeSmoke) probeGETBody(ctx context.Context, path, authHeader string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}

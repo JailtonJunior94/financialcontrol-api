@@ -2,6 +2,7 @@ package routes
 
 const (
 	Token                  = "/token"
+	Me                     = "/me"
 	Bills                  = "/bills"
 	BillDetail             = "/bills/:id"
 	BillId                 = "/bills/:billid"

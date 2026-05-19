@@ -51,6 +51,12 @@
       "sourceType": "github",
       "computedHash": "46cdb55ffb86c63416558aa96ebf98c1fe16f34caeaddf7a0d405ad69f98b8bf"
     },
+    "skill-best-practices": {
+      "source": "pedronauck/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mine/skill-best-practices/SKILL.md",
+      "computedHash": "f906d43205c182eb633ff7df6ece6f83e8784de77f1b475f0b6c3084a5ed4d06"
+    },
     "us-to-prd": {
       "source": "JailtonJunior94/skills",
       "sourceType": "github",

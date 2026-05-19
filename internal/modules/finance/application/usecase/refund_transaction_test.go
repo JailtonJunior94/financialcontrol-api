@@ -11,6 +11,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports"
 	portmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/vos"
@@ -26,7 +27,7 @@ func newRefundTransactionUC(
 ) usecase.RefundTransaction {
 	t.Helper()
 	factory := services.NewRefundFactory()
-	return usecase.NewRefundTransaction(mgr, txRepo, factory, clock, ids)
+	return usecase.NewRefundTransaction(mgr, txRepo, factory, clock, ids, ports.NoopRecorder{})
 }
 
 func TestRefundTransaction_GoldenPath(t *testing.T) {
@@ -43,12 +44,12 @@ func TestRefundTransaction_GoldenPath(t *testing.T) {
 
 	original := newExpenseTransaction(t, userID)
 
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 	ids.On("NewTransactionID").Return(refundID)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(original, nil)
-	txRepo.On("HasActiveRefundFor", mock.Anything, userID, txID).Return(false, nil)
-	txRepo.On("Add", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(original, nil)
+	txRepo.EXPECT().HasActiveRefundFor(mock.Anything, userID, txID).Return(false, nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
 
 	uc := newRefundTransactionUC(t, mgr, txRepo, clock, ids)
 	req := dtos.RefundTransactionRequest{}
@@ -72,8 +73,8 @@ func TestRefundTransaction_AlreadyHasRefund_ReturnsError(t *testing.T) {
 
 	original := newExpenseTransaction(t, userID)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(original, nil)
-	txRepo.On("HasActiveRefundFor", mock.Anything, userID, txID).Return(true, nil)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(original, nil)
+	txRepo.EXPECT().HasActiveRefundFor(mock.Anything, userID, txID).Return(true, nil)
 
 	uc := newRefundTransactionUC(t, mgr, txRepo, clock, ids)
 	req := dtos.RefundTransactionRequest{}
@@ -93,11 +94,41 @@ func TestRefundTransaction_NotFound_ReturnsError(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
 
 	uc := newRefundTransactionUC(t, mgr, txRepo, clock, ids)
 	req := dtos.RefundTransactionRequest{}
 	_, err := uc.Execute(ctx, userID, txID, req)
 
 	assert.ErrorIs(t, err, domain.ErrTransactionNotFound)
+}
+
+func TestRefundTransaction_RecordsMetrics_WithRefundType(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	userID := identityvo.NewUserID()
+	txID := vos.NewTransactionID()
+	refundID := vos.NewTransactionID()
+
+	mgr, _ := newMockMgr(t)
+	txRepo := portmocks.NewTransactionRepository(t)
+	clock := portmocks.NewClock(t)
+	ids := portmocks.NewIDGenerator(t)
+	spy := &spyRecorder{}
+
+	original := newExpenseTransaction(t, userID)
+	clock.EXPECT().Now().Return(fixedNow)
+	ids.On("NewTransactionID").Return(refundID)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(original, nil)
+	txRepo.EXPECT().HasActiveRefundFor(mock.Anything, userID, txID).Return(false, nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+
+	factory := services.NewRefundFactory()
+	uc := usecase.NewRefundTransaction(mgr, txRepo, factory, clock, ids, spy)
+	resp, err := uc.Execute(ctx, userID, txID, dtos.RefundTransactionRequest{})
+
+	require.NoError(t, err)
+	assert.Equal(t, "refund", resp.TransactionType)
+	require.Len(t, spy.calls, 1)
+	assert.Equal(t, vos.TransactionTypeRefund, spy.calls[0].txType, "refund must record transaction_type=refund")
 }

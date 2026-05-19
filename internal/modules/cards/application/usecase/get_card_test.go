@@ -5,84 +5,73 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
-	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces/mocks"
+	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-type GetCardSuite struct {
-	suite.Suite
-	ctx      context.Context
-	cardRepo *ifacemocks.CardRepository
-	sut      usecase.GetCard
-}
-
-func TestGetCardSuite(t *testing.T) { suite.Run(t, new(GetCardSuite)) }
-
-func (s *GetCardSuite) SetupTest() {
-	s.ctx = context.Background()
-	s.cardRepo = ifacemocks.NewCardRepository(s.T())
-	s.sut = usecase.NewGetCard(s.cardRepo)
-}
-
-func (s *GetCardSuite) TestExecute() {
+func TestGetCard_Execute(t *testing.T) {
+	ctx := context.Background()
 	userID := identityvo.NewUserID()
 	card := mustNewCard(userID)
 	cardID := card.ID()
 
-	type args struct {
+	tests := []struct {
+		name   string
 		userID identityvo.UserID
 		id     vos.CardID
-	}
-	scenarios := []struct {
-		name   string
-		args   args
-		setup  func()
-		expect func(out dtos.CardResponse, err error)
+		setup  func(*ifacemocks.CardRepository)
+		assert func(t *testing.T, out dtos.CardResponse, err error)
 	}{
 		{
-			name: "sucesso",
-			args: args{userID: userID, id: cardID},
-			setup: func() {
-				s.cardRepo.EXPECT().GetByID(s.ctx, userID, cardID).Return(card, nil).Once()
+			name:   "sucesso",
+			userID: userID,
+			id:     cardID,
+			setup: func(cardRepo *ifacemocks.CardRepository) {
+				cardRepo.EXPECT().GetByID(ctx, userID, cardID).Return(card, nil).Once()
 			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.NoError(err)
-				s.Equal(cardID.String(), out.ID)
-			},
-		},
-		{
-			name: "ErrCardNotFound propagado pelo repo",
-			args: args{userID: userID, id: cardID},
-			setup: func() {
-				s.cardRepo.EXPECT().GetByID(s.ctx, userID, cardID).Return(nil, domain.ErrCardNotFound).Once()
-			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.ErrorIs(err, domain.ErrCardNotFound)
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, cardID.String(), out.ID)
 			},
 		},
 		{
-			name: "repo erro generico",
-			args: args{userID: userID, id: cardID},
-			setup: func() {
-				s.cardRepo.EXPECT().GetByID(s.ctx, userID, cardID).Return(nil, errors.New("db error")).Once()
+			name:   "ErrCardNotFound propagado pelo repo",
+			userID: userID,
+			id:     cardID,
+			setup: func(cardRepo *ifacemocks.CardRepository) {
+				cardRepo.EXPECT().GetByID(ctx, userID, cardID).Return(nil, domain.ErrCardNotFound).Once()
 			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrCardNotFound)
+			},
+		},
+		{
+			name:   "repo erro generico",
+			userID: userID,
+			id:     cardID,
+			setup: func(cardRepo *ifacemocks.CardRepository) {
+				cardRepo.EXPECT().GetByID(ctx, userID, cardID).Return(nil, errors.New("db error")).Once()
+			},
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				assert.Error(t, err)
 			},
 		},
 	}
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			out, err := s.sut.Execute(s.ctx, sc.args.userID, sc.args.id)
-			sc.expect(out, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cardRepo := ifacemocks.NewCardRepository(t)
+			tt.setup(cardRepo)
+			sut := usecase.NewGetCard(cardRepo)
+			out, err := sut.Execute(ctx, tt.userID, tt.id)
+			tt.assert(t, out, err)
 		})
 	}
 }

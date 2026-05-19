@@ -1,48 +1,40 @@
 package http
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"os"
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
-	platformhttp "github.com/jailtonjunior94/financialcontrol-api/pkg/http"
+	bootstraphealth "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/health"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	serverfiber "github.com/JailtonJunior94/devkit-go/pkg/http_server/server_fiber"
 )
 
-func NewApp(container *bootstrapcontainer.Container) *fiber.App {
-	app := fiber.New()
-
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "https://financialcontrol.netlify.app,http://localhost:3000,https://financeiro.limateixeira.site,http://financialweb-service",
-	}))
-	app.Use(logger.New())
-
-	RegisterRoutes(app, container)
-
-	return app
-}
-
-func RunServer() error {
-	c, err := bootstrapcontainer.BuildRuntime()
-	if err != nil {
-		return err
+// NewServer mounts *serverfiber.Server with middlewares, observability, health checks
+// and the /api/v1 router. It does not call Start; lifecycle is owned by the caller
+// (see internal/bootstrap/cli/runners.go).
+func NewServer(c *bootstrapcontainer.Container) (*serverfiber.Server, error) {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
 	}
-	defer func() {
-		if err := c.DBManager.Shutdown(context.Background()); err != nil {
-			log.Printf("shutdown db manager: %v", err)
-		}
-	}()
 
-	app := NewApp(c)
-	fmt.Printf("🚀 API is running on http://localhost:%v", os.Getenv("PORT"))
-	return app.Listen(fmt.Sprintf(":%v", os.Getenv("PORT")))
-}
+	srv, err := serverfiber.New(
+		c.Observability,
+		serverfiber.WithPort(port),
+		serverfiber.WithCORS("*"),
+		serverfiber.WithTracing(),
+		serverfiber.WithOTelMetrics(),
+		serverfiber.WithShutdownTimeout(c.ShutdownTimeout.Duration()),
+		serverfiber.WithHealthChecks(bootstraphealth.New(c.DBManager).Map()),
+		serverfiber.WithServiceName(c.Identity.Name()),
+		serverfiber.WithServiceVersion(c.Identity.Version()),
+		serverfiber.WithEnvironment(c.Identity.Environment()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("bootstrap http: %w", err)
+	}
 
-func RegisterRoutes(app *fiber.App, container *bootstrapcontainer.Container) {
-	platformhttp.RegisterRoutes(app, container)
+	srv.RegisterRouters(newAPIV1Router(c))
+	return srv, nil
 }

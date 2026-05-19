@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
@@ -14,10 +14,10 @@ import (
 // excludeID is non-nil the row with that id is ignored, which lets update use
 // cases re-check uniqueness without colliding with the row being updated.
 type CategoryUniquenessService struct {
-	repo interfaces.CategoryRepository
+	repo ports.CategoryRepository
 }
 
-func NewCategoryUniquenessService(repo interfaces.CategoryRepository) *CategoryUniquenessService {
+func NewCategoryUniquenessService(repo ports.CategoryRepository) *CategoryUniquenessService {
 	return &CategoryUniquenessService{repo: repo}
 }
 

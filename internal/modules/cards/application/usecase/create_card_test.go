@@ -5,58 +5,43 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
-	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces/mocks"
+	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-type CreateCardSuite struct {
-	suite.Suite
-	ctx      context.Context
-	cardRepo *ifacemocks.CardRepository
-	flagRepo *ifacemocks.FlagRepository
-	sut      usecase.CreateCard
-}
-
-func TestCreateCardSuite(t *testing.T) { suite.Run(t, new(CreateCardSuite)) }
-
-func (s *CreateCardSuite) SetupTest() {
-	s.ctx = context.Background()
-	s.cardRepo = ifacemocks.NewCardRepository(s.T())
-	s.flagRepo = ifacemocks.NewFlagRepository(s.T())
-	s.sut = usecase.NewCreateCard(s.cardRepo, s.flagRepo)
-}
-
-func (s *CreateCardSuite) TestExecute() {
+func TestCreateCard_Execute(t *testing.T) {
+	ctx := context.Background()
 	userID := identityvo.NewUserID()
 
-	scenarios := []struct {
+	tests := []struct {
 		name   string
 		req    dtos.CardRequest
-		setup  func()
-		expect func(out dtos.CardResponse, err error)
+		setup  func(*ifacemocks.CardRepository, *ifacemocks.FlagRepository)
+		assert func(t *testing.T, out dtos.CardResponse, err error)
 	}{
 		{
 			name: "sucesso",
 			req:  validCardRequest(),
-			setup: func() {
+			setup: func(cardRepo *ifacemocks.CardRepository, _ *ifacemocks.FlagRepository) {
 				reloaded := attachFlag(mustNewCard(userID), testFlagID, "Visa")
-				s.cardRepo.EXPECT().Add(s.ctx, mock.MatchedBy(func(card *entities.Card) bool {
+				cardRepo.EXPECT().Add(ctx, mock.MatchedBy(func(card *entities.Card) bool {
 					return card.ExpirationDate().Equal(validCardRequest().ExpirationDate)
 				})).Return(nil).Once()
-				s.cardRepo.EXPECT().GetByID(s.ctx, userID, mock.Anything).Return(reloaded, nil).Once()
+				cardRepo.EXPECT().GetByID(ctx, userID, mock.Anything).Return(reloaded, nil).Once()
 			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.NoError(err)
-				s.NotEmpty(out.ID)
-				s.Equal(testFlagID.String(), out.Flag.ID)
-				s.Equal("Visa", out.Flag.Name)
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				require.NoError(t, err)
+				assert.NotEmpty(t, out.ID)
+				assert.Equal(t, testFlagID.String(), out.Flag.ID)
+				assert.Equal(t, "Visa", out.Flag.Name)
 			},
 		},
 		{
@@ -67,24 +52,24 @@ func (s *CreateCardSuite) TestExecute() {
 				req.ExpirationDate = validCardRequest().ExpirationDate
 				return req
 			}(),
-			setup: func() {
+			setup: func(cardRepo *ifacemocks.CardRepository, _ *ifacemocks.FlagRepository) {
 				reloaded := attachFlag(mustLegacyCard(userID), testFlagID, "Visa")
-				s.cardRepo.EXPECT().Add(s.ctx, mock.MatchedBy(func(card *entities.Card) bool {
+				cardRepo.EXPECT().Add(ctx, mock.MatchedBy(func(card *entities.Card) bool {
 					return card.ClosingDay().Int() == 10 && card.DueDay().Int() == 10
 				})).Return(nil).Once()
-				s.cardRepo.EXPECT().GetByID(s.ctx, userID, mock.Anything).Return(reloaded, nil).Once()
+				cardRepo.EXPECT().GetByID(ctx, userID, mock.Anything).Return(reloaded, nil).Once()
 			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.NoError(err)
-				s.Equal(10, out.ClosingDay)
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, 10, out.ClosingDay)
 			},
 		},
 		{
 			name:  "request inválido",
 			req:   dtos.CardRequest{Name: "", ClosingDay: 0},
-			setup: func() {},
-			expect: func(out dtos.CardResponse, err error) {
-				s.Error(err)
+			setup: func(_ *ifacemocks.CardRepository, _ *ifacemocks.FlagRepository) {},
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				assert.Error(t, err)
 			},
 		},
 		{
@@ -94,50 +79,53 @@ func (s *CreateCardSuite) TestExecute() {
 				r.FlagID = "not-a-uuid"
 				return r
 			}(),
-			setup: func() {},
-			expect: func(out dtos.CardResponse, err error) {
-				s.ErrorIs(err, domain.ErrInvalidFlagID)
-				s.Empty(out.ID)
+			setup: func(_ *ifacemocks.CardRepository, _ *ifacemocks.FlagRepository) {},
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrInvalidFlagID)
+				assert.Empty(t, out.ID)
 			},
 		},
 		{
 			name: "repo erro",
 			req:  validCardRequest(),
-			setup: func() {
-				s.cardRepo.EXPECT().Add(s.ctx, mock.Anything).Return(errors.New("db error")).Once()
+			setup: func(cardRepo *ifacemocks.CardRepository, _ *ifacemocks.FlagRepository) {
+				cardRepo.EXPECT().Add(ctx, mock.Anything).Return(errors.New("db error")).Once()
 			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				assert.Error(t, err)
 			},
 		},
 		{
 			name: "ErrFlagNotFound propagado do repo",
 			req:  validCardRequest(),
-			setup: func() {
-				s.cardRepo.EXPECT().Add(s.ctx, mock.Anything).Return(domain.ErrFlagNotFound).Once()
+			setup: func(cardRepo *ifacemocks.CardRepository, _ *ifacemocks.FlagRepository) {
+				cardRepo.EXPECT().Add(ctx, mock.Anything).Return(domain.ErrFlagNotFound).Once()
 			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.ErrorIs(err, domain.ErrFlagNotFound)
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrFlagNotFound)
 			},
 		},
 		{
 			name: "erro ao recarregar cartao criado",
 			req:  validCardRequest(),
-			setup: func() {
-				s.cardRepo.EXPECT().Add(s.ctx, mock.Anything).Return(nil).Once()
-				s.cardRepo.EXPECT().GetByID(s.ctx, userID, mock.Anything).Return(nil, errors.New("reload error")).Once()
+			setup: func(cardRepo *ifacemocks.CardRepository, _ *ifacemocks.FlagRepository) {
+				cardRepo.EXPECT().Add(ctx, mock.Anything).Return(nil).Once()
+				cardRepo.EXPECT().GetByID(ctx, userID, mock.Anything).Return(nil, errors.New("reload error")).Once()
 			},
-			expect: func(out dtos.CardResponse, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out dtos.CardResponse, err error) {
+				assert.Error(t, err)
 			},
 		},
 	}
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			out, err := s.sut.Execute(s.ctx, userID, sc.req)
-			sc.expect(out, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cardRepo := ifacemocks.NewCardRepository(t)
+			flagRepo := ifacemocks.NewFlagRepository(t)
+			tt.setup(cardRepo, flagRepo)
+			sut := usecase.NewCreateCard(cardRepo, flagRepo)
+			out, err := sut.Execute(ctx, userID, tt.req)
+			tt.assert(t, out, err)
 		})
 	}
 }

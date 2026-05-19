@@ -1,0 +1,6 @@
+environment: development
+mssql:
+  connectionString: ""
+security:
+  expirationAt: 1
+  jwtSecret: ""

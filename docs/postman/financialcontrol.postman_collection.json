@@ -2,10 +2,121 @@
 	"info": {
 		"_postman_id": "6d3a9b9a-4e5c-4b5a-9a9a-4e5c4b5a9a9a",
 		"name": "Financial Control API",
-		"description": "API para controle financeiro pessoal, incluindo gestão de transações, faturas, cartões e categorias.",
+		"description": "API para controle financeiro pessoal, incluindo gestão de transações, faturas, cartões e categorias.\n\n**Base URL padrão:** `http://localhost:3000/api/v1`\n\n**Pré-requisito:** stack LGTM deve estar de pé antes de iniciar o serviço:\n```\ndocker run --rm -p 4317:4317 -p 4318:4318 -p 3001:3000 grafana/otel-lgtm:0.7.5\n```\n\n**Payload de erro:** RFC 7807 (`application/problem+json`)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string",
+			"description": "Base URL da API (incluindo /api/v1)"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string",
+			"description": "JWT Bearer token obtido via POST /token"
+		}
+	],
 	"item": [
+		{
+			"name": "Health",
+			"description": "Endpoints de health check expostos pelo devkit-go/server_fiber",
+			"item": [
+				{
+					"name": "Liveness",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/live",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["live"]
+						},
+						"description": "Liveness probe — sempre retorna 200 quando o processo está de pé."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "text",
+							"header": [
+								{"key": "Content-Type", "value": "text/plain"}
+							],
+							"body": "OK"
+						}
+					]
+				},
+				{
+					"name": "Readiness",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/ready",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["ready"]
+						},
+						"description": "Readiness probe — 200 quando MSSQL está acessível; 503 caso contrário."
+					},
+					"response": [
+						{
+							"name": "200 Ready",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/json"}
+							],
+							"body": "{\n  \"status\": \"healthy\",\n  \"checks\": {\n    \"mssql\": {\"status\": \"healthy\"}\n  }\n}"
+						},
+						{
+							"name": "503 Not Ready",
+							"status": "Service Unavailable",
+							"code": 503,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/json"}
+							],
+							"body": "{\n  \"status\": \"unhealthy\",\n  \"checks\": {\n    \"mssql\": {\"status\": \"unhealthy\", \"error\": \"dial tcp: connection refused\"}\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Health (detalhado)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/health",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": ["health"]
+						},
+						"description": "Status detalhado com identidade do serviço e estado de cada check."
+					},
+					"response": [
+						{
+							"name": "200 Healthy",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/json"}
+							],
+							"body": "{\n  \"service\": \"financialcontrol-api\",\n  \"version\": \"1.0.0\",\n  \"environment\": \"development\",\n  \"timestamp\": \"2026-05-13T10:00:00Z\",\n  \"status\": \"healthy\",\n  \"checks\": {\n    \"mssql\": {\"status\": \"healthy\"}\n  }\n}"
+						}
+					]
+				}
+			]
+		},
 		{
 			"name": "Identity",
 			"item": [
@@ -33,7 +144,19 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "401 Unauthorized (RFC 7807)",
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/problem+json"},
+								{"key": "X-Request-Id", "value": "abc-123"}
+							],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"invalid credentials\",\n  \"instance\": \"/api/v1/token\",\n  \"request_id\": \"abc-123\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Create User",
@@ -59,7 +182,19 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "422 Validation Error (RFC 7807)",
+							"status": "Unprocessable Entity",
+							"code": 422,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/problem+json"},
+								{"key": "X-Request-Id", "value": "def-456"}
+							],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unprocessable Entity\",\n  \"status\": 422,\n  \"detail\": \"validation failed: email is required\",\n  \"instance\": \"/api/v1/users\",\n  \"request_id\": \"def-456\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Get Authenticated User (Me)",
@@ -86,7 +221,19 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "401 Missing Token (RFC 7807)",
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/problem+json"},
+								{"key": "X-Request-Id", "value": "ghi-789"}
+							],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Unauthorized\",\n  \"status\": 401,\n  \"detail\": \"missing or malformed JWT\",\n  \"instance\": \"/api/v1/me\",\n  \"request_id\": \"ghi-789\"\n}"
+						}
+					]
 				}
 			]
 		},
@@ -136,7 +283,30 @@
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "400 Bad Request (RFC 7807)",
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{"key": "Content-Type", "value": "application/problem+json"},
+										{"key": "X-Request-Id", "value": "req-001"}
+									],
+									"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"validation failed: amount must be positive\",\n  \"instance\": \"/api/v1/finance/transactions\",\n  \"request_id\": \"req-001\"\n}"
+								},
+								{
+									"name": "500 Internal Server Error (RFC 7807)",
+									"status": "Internal Server Error",
+									"code": 500,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{"key": "Content-Type", "value": "application/problem+json"},
+										{"key": "X-Request-Id", "value": "req-002"}
+									],
+									"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Internal Server Error\",\n  \"status\": 500,\n  \"detail\": \"an unexpected error occurred\",\n  \"instance\": \"/api/v1/finance/transactions\",\n  \"request_id\": \"req-002\"\n}"
+								}
+							]
 						},
 						{
 							"name": "List Transactions",
@@ -229,7 +399,19 @@
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "404 Not Found (RFC 7807)",
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{"key": "Content-Type", "value": "application/problem+json"},
+										{"key": "X-Request-Id", "value": "req-003"}
+									],
+									"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"transaction not found\",\n  \"instance\": \"/api/v1/finance/transactions/uuid-transacao\",\n  \"request_id\": \"req-003\"\n}"
+								}
+							]
 						},
 						{
 							"name": "Update Transaction",
@@ -441,7 +623,19 @@
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "404 Not Found (RFC 7807)",
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{"key": "Content-Type", "value": "application/problem+json"},
+										{"key": "X-Request-Id", "value": "req-004"}
+									],
+									"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"invoice not found\",\n  \"instance\": \"/api/v1/finance/invoices/uuid-fatura\",\n  \"request_id\": \"req-004\"\n}"
+								}
+							]
 						},
 						{
 							"name": "Pay Invoice",
@@ -653,7 +847,19 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "404 Not Found (RFC 7807)",
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/problem+json"},
+								{"key": "X-Request-Id", "value": "req-005"}
+							],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"category not found\",\n  \"instance\": \"/api/v1/categories/uuid-categoria\",\n  \"request_id\": \"req-005\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Create Category",
@@ -870,7 +1076,19 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "404 Not Found (RFC 7807)",
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{"key": "Content-Type", "value": "application/problem+json"},
+								{"key": "X-Request-Id", "value": "req-006"}
+							],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"card not found\",\n  \"instance\": \"/api/v1/cards/uuid-cartao\",\n  \"request_id\": \"req-006\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Create Card",

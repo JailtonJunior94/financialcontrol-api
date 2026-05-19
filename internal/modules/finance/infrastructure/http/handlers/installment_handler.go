@@ -5,7 +5,6 @@ import (
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/vos"
-	financehttp "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/http"
 )
 
 // InstallmentHandler handles HTTP endpoints for finance installments.
@@ -45,7 +44,7 @@ func (h *InstallmentHandler) Anticipate(c *fiber.Ctx) error {
 
 	out, err := h.anticipate.Execute(c.UserContext(), userID, txID, installmentID)
 	if err != nil {
-		status, body := financehttp.MapError(err)
+		status, body := MapError(err)
 		return c.Status(status).JSON(body)
 	}
 	return c.Status(fiber.StatusOK).JSON(out)

@@ -183,7 +183,7 @@ func (s *CardHandlerSuite) TestGet() {
 
 func (s *CardHandlerSuite) TestCreate() {
 	cardResp := dtos.CardResponse{ID: testCardID, Name: "Meu Cartão", Active: true}
-	validBody := `{"flagId":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão","number":"4111111111111111","description":"desc","closingDay":15,"expirationDate":"2026-05-10T00:00:00Z"}`
+	validBody := `{"flag_id":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão","number":"4111111111111111","description":"desc","closing_day":15,"expiration_date":"2026-05-10T00:00:00Z"}`
 
 	scenarios := []struct {
 		name        string
@@ -267,7 +267,7 @@ func (s *CardHandlerSuite) TestCreate_ResponseContractPreservesFlagPayload() {
 			Active: true,
 		},
 	}
-	body := `{"flagId":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão","number":"4111111111111111","description":"desc","closingDay":15,"expirationDate":"2026-05-10T00:00:00Z"}`
+	body := `{"flag_id":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão","number":"4111111111111111","description":"desc","closing_day":15,"expiration_date":"2026-05-10T00:00:00Z"}`
 	s.createCard.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).Return(cardResp, nil).Once()
 
 	req := httptest.NewRequest("POST", "/cards", bytes.NewBufferString(body))
@@ -279,7 +279,7 @@ func (s *CardHandlerSuite) TestCreate_ResponseContractPreservesFlagPayload() {
 	_, err = rawBody.ReadFrom(resp.Body)
 	s.Require().NoError(err)
 	s.Equal(fiber.StatusCreated, resp.StatusCode)
-	s.Equal(`{"id":"550e8400-e29b-41d4-a716-446655440002","name":"Meu Cartão","number":"4111111111111111","description":"desc","closingDay":15,"bestDayToBuy":14,"expirationDate":"2026-05-10T00:00:00Z","active":true,"flag":{"id":"550e8400-e29b-41d4-a716-446655440000","name":"Visa","active":true}}`, rawBody.String())
+	s.Equal(`{"id":"550e8400-e29b-41d4-a716-446655440002","name":"Meu Cartão","number":"4111111111111111","description":"desc","closing_day":15,"best_day_to_buy":14,"expiration_date":"2026-05-10T00:00:00Z","active":true,"flag":{"id":"550e8400-e29b-41d4-a716-446655440000","name":"Visa","active":true}}`, rawBody.String())
 }
 
 func (s *CardHandlerSuite) TestGet_WrappedNotFoundUsesCanonicalMessage() {
@@ -293,12 +293,12 @@ func (s *CardHandlerSuite) TestGet_WrappedNotFoundUsesCanonicalMessage() {
 	_, err = rawBody.ReadFrom(resp.Body)
 	s.Require().NoError(err)
 	s.Equal(fiber.StatusNotFound, resp.StatusCode)
-	s.Equal(`{"error":"Cartão não encontrado"}`, rawBody.String())
+	s.Equal(`{"error":"cartão não encontrado"}`, rawBody.String())
 }
 
 func (s *CardHandlerSuite) TestUpdate() {
 	cardResp := dtos.CardResponse{ID: testCardID, Name: "Meu Cartão", Active: true}
-	validBody := `{"flagId":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão","number":"4111111111111111","description":"desc","closingDay":15,"expirationDate":"2026-05-10T00:00:00Z"}`
+	validBody := `{"flag_id":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão","number":"4111111111111111","description":"desc","closing_day":15,"expiration_date":"2026-05-10T00:00:00Z"}`
 
 	scenarios := []struct {
 		name        string
@@ -409,7 +409,7 @@ func (s *CardHandlerSuite) TestUpdate_ResponseContractPreservesFlagPayload() {
 			Active: true,
 		},
 	}
-	body := `{"flagId":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão Atualizado","number":"4111111111111111","description":"desc","closingDay":10,"expirationDate":"2026-05-10T00:00:00Z"}`
+	body := `{"flag_id":"550e8400-e29b-41d4-a716-446655440000","name":"Meu Cartão Atualizado","number":"4111111111111111","description":"desc","closing_day":10,"expiration_date":"2026-05-10T00:00:00Z"}`
 	s.updateCard.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(cardResp, nil).Once()
 
 	req := httptest.NewRequest("PUT", "/cards/"+testCardID, bytes.NewBufferString(body))
@@ -421,7 +421,7 @@ func (s *CardHandlerSuite) TestUpdate_ResponseContractPreservesFlagPayload() {
 	_, err = rawBody.ReadFrom(resp.Body)
 	s.Require().NoError(err)
 	s.Equal(fiber.StatusOK, resp.StatusCode)
-	s.Equal(`{"id":"550e8400-e29b-41d4-a716-446655440002","name":"Meu Cartão Atualizado","number":"4111111111111111","description":"desc","closingDay":10,"bestDayToBuy":9,"expirationDate":"2026-05-10T00:00:00Z","active":true,"flag":{"id":"550e8400-e29b-41d4-a716-446655440000","name":"Visa","active":true}}`, rawBody.String())
+	s.Equal(`{"id":"550e8400-e29b-41d4-a716-446655440002","name":"Meu Cartão Atualizado","number":"4111111111111111","description":"desc","closing_day":10,"best_day_to_buy":9,"expiration_date":"2026-05-10T00:00:00Z","active":true,"flag":{"id":"550e8400-e29b-41d4-a716-446655440000","name":"Visa","active":true}}`, rawBody.String())
 }
 
 func (s *CardHandlerSuite) TestDeactivate() {

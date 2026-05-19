@@ -11,7 +11,7 @@ import (
 
 	categoriesdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	categoriesentities "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
-	categoriesmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces/mocks"
+	categoriesmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports/mocks"
 	categoriesvos "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	financedomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/projections"

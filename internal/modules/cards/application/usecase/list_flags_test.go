@@ -5,65 +5,54 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
-	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces/mocks"
+	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports/mocks"
 )
 
-type ListFlagsSuite struct {
-	suite.Suite
-	ctx      context.Context
-	flagRepo *ifacemocks.FlagRepository
-	sut      usecase.ListFlags
-}
-
-func TestListFlagsSuite(t *testing.T) { suite.Run(t, new(ListFlagsSuite)) }
-
-func (s *ListFlagsSuite) SetupTest() {
-	s.ctx = context.Background()
-	s.flagRepo = ifacemocks.NewFlagRepository(s.T())
-	s.sut = usecase.NewListFlags(s.flagRepo)
-}
-
-func (s *ListFlagsSuite) TestExecute() {
+func TestListFlags_Execute(t *testing.T) {
+	ctx := context.Background()
 	flag := entities.NewFlag(testFlagID, "Visa", true)
 
-	scenarios := []struct {
+	tests := []struct {
 		name   string
-		setup  func()
-		expect func(out []dtos.FlagResponse, err error)
+		setup  func(*ifacemocks.FlagRepository)
+		assert func(t *testing.T, out []dtos.FlagResponse, err error)
 	}{
 		{
 			name: "sucesso sempre retorna lista completa",
-			setup: func() {
-				s.flagRepo.EXPECT().List(s.ctx).Return([]entities.Flag{flag}, nil).Once()
+			setup: func(flagRepo *ifacemocks.FlagRepository) {
+				flagRepo.EXPECT().List(ctx).Return([]entities.Flag{flag}, nil).Once()
 			},
-			expect: func(out []dtos.FlagResponse, err error) {
-				s.NoError(err)
-				s.Len(out, 1)
-				s.Equal("Visa", out[0].Name)
+			assert: func(t *testing.T, out []dtos.FlagResponse, err error) {
+				require.NoError(t, err)
+				assert.Len(t, out, 1)
+				assert.Equal(t, "Visa", out[0].Name)
 			},
 		},
 		{
 			name: "repo erro",
-			setup: func() {
-				s.flagRepo.EXPECT().List(s.ctx).Return(nil, errors.New("db error")).Once()
+			setup: func(flagRepo *ifacemocks.FlagRepository) {
+				flagRepo.EXPECT().List(ctx).Return(nil, errors.New("db error")).Once()
 			},
-			expect: func(out []dtos.FlagResponse, err error) {
-				s.Error(err)
-				s.Nil(out)
+			assert: func(t *testing.T, out []dtos.FlagResponse, err error) {
+				assert.Error(t, err)
+				assert.Nil(t, out)
 			},
 		},
 	}
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			out, err := s.sut.Execute(s.ctx)
-			sc.expect(out, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flagRepo := ifacemocks.NewFlagRepository(t)
+			tt.setup(flagRepo)
+			sut := usecase.NewListFlags(flagRepo)
+			out, err := sut.Execute(ctx)
+			tt.assert(t, out, err)
 		})
 	}
 }

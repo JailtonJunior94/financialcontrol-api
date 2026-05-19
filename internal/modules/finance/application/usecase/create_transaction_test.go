@@ -15,6 +15,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/entities"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports"
 	portmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/vos"
@@ -37,7 +38,25 @@ func newCreateTransactionUC(
 ) usecase.CreateTransaction {
 	t.Helper()
 	splitter := services.NewInstallmentSplitter()
-	return usecase.NewCreateTransaction(mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, splitter, clock, ids)
+	return usecase.NewCreateTransaction(mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, splitter, clock, ids, ports.NoopRecorder{})
+}
+
+func newCreateTransactionUCWithMetrics(
+	t *testing.T,
+	mgr *mockManager,
+	txRepo *portmocks.TransactionRepository,
+	invRepo *portmocks.InvoiceRepository,
+	instRepo *portmocks.InstallmentRepository,
+	idempRepo *idempmocks.IdempotencyRepository,
+	cards *portmocks.CardProvider,
+	cats *portmocks.CategoryProvider,
+	clock *portmocks.Clock,
+	ids *portmocks.IDGenerator,
+	metrics ports.FinancialMetricsRecorder,
+) usecase.CreateTransaction {
+	t.Helper()
+	splitter := services.NewInstallmentSplitter()
+	return usecase.NewCreateTransaction(mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, splitter, clock, ids, metrics)
 }
 
 func validCreateRequest(catID string) dtos.CreateTransactionRequest {
@@ -69,13 +88,13 @@ func TestCreateTransaction_GoldenPath_Expense(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 	ids.On("NewTransactionID").Return(txID)
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	txRepo.On("Add", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
-	idempRepo.On("Save", mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	idempRepo.EXPECT().Save(mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	req := validCreateRequest(catID.String())
@@ -117,7 +136,7 @@ func TestCreateTransaction_IdempotencyHit_ReturnsCached(t *testing.T) {
 		StatusCode:   201,
 	}
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(hit, nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(hit, nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	resp, err := uc.Execute(ctx, userID, key, req)
@@ -149,7 +168,7 @@ func TestCreateTransaction_IdempotencyMismatch(t *testing.T) {
 		ResponseBody: `{"id":"old"}`,
 		StatusCode:   201,
 	}
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(hit, nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(hit, nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	req := validCreateRequest(catID.String())
@@ -175,10 +194,10 @@ func TestCreateTransaction_CategoryNotActive(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
 	inactiveView := newActiveCategoryView(userID, catID)
 	inactiveView.Active = false
-	cats.On("GetByID", mock.Anything, userID, catID).Return(inactiveView, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(inactiveView, nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	req := validCreateRequest(catID.String())
@@ -205,10 +224,10 @@ func TestCreateTransaction_CardNotActive(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
 	inactiveCard := newActiveCardView(userID, cardID)
 	inactiveCard.Active = false
-	cards.On("GetByID", mock.Anything, userID, cardID).Return(inactiveCard, nil)
+	cards.EXPECT().GetByID(mock.Anything, userID, cardID).Return(inactiveCard, nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	cid := cardID.String()
@@ -251,20 +270,20 @@ func TestCreateTransaction_UoWRollback_WhenInstallmentBatchFails(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 	ids.On("NewTransactionID").Return(txID)
 	ids.On("NewInstallmentID").Return(instID)
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	cards.EXPECT().GetByID(mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
 
 	openInv := newOpenInvoiceForCard(userID, cardID, invoiceID)
-	invRepo.On("AssignOrCreateOpen", mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
+	invRepo.EXPECT().AssignOrCreateOpen(mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
 
 	batchErr := errTest("batch failed")
-	txRepo.On("Add", mock.Anything, mock.Anything).Return(nil)
-	instRepo.On("AddBatch", mock.Anything, mock.Anything).Return(batchErr)
+	txRepo.EXPECT().Add(mock.Anything, mock.Anything).Return(nil)
+	instRepo.EXPECT().AddBatch(mock.Anything, mock.Anything).Return(batchErr)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	cid := cardID.String()
@@ -303,22 +322,22 @@ func TestCreateTransaction_WithSubcategory(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 	ids.On("NewTransactionID").Return(txID)
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
 
 	// parent category
 	catView := newActiveCategoryView(userID, catID)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(catView, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(catView, nil)
 
 	// subcategory - child of catID
 	subView := newActiveCategoryView(userID, subcatID)
 	subView.ParentID = &catID
-	cats.On("GetByID", mock.Anything, userID, subcatID).Return(subView, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, subcatID).Return(subView, nil)
 
-	txRepo.On("Add", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
-	idempRepo.On("Save", mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	idempRepo.EXPECT().Save(mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	scid := subcatID.String()
@@ -359,19 +378,19 @@ func TestCreateTransaction_CreditPurchase_SingleInstallment(t *testing.T) {
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 	ids.On("NewTransactionID").Return(txID)
 	ids.On("NewInstallmentID").Return(instID)
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	cards.EXPECT().GetByID(mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
 
 	openInv := newOpenInvoiceForCard(userID, cardID, invoiceID)
-	invRepo.On("AssignOrCreateOpen", mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
-	txRepo.On("Add", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
-	instRepo.On("AddBatch", mock.Anything, mock.Anything).Return(nil)
-	idempRepo.On("Save", mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
+	invRepo.EXPECT().AssignOrCreateOpen(mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	instRepo.EXPECT().AddBatch(mock.Anything, mock.Anything).Return(nil)
+	idempRepo.EXPECT().Save(mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	cid := cardID.String()
@@ -414,20 +433,20 @@ func TestCreateTransaction_InstallmentPurchase_MultipleInstallments(t *testing.T
 	clock := portmocks.NewClock(t)
 	ids := portmocks.NewIDGenerator(t)
 
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 	ids.On("NewTransactionID").Return(txID)
 	ids.On("NewInstallmentID").Return(instID1).Once()
 	ids.On("NewInstallmentID").Return(instID2).Once()
 
-	idempRepo.On("Get", mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
-	cats.On("GetByID", mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
-	cards.On("GetByID", mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	cards.EXPECT().GetByID(mock.Anything, userID, cardID).Return(newActiveCardView(userID, cardID), nil)
 
 	openInv := newOpenInvoiceForCard(userID, cardID, invoiceID)
-	invRepo.On("AssignOrCreateOpen", mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
-	txRepo.On("Add", mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
-	instRepo.On("AddBatch", mock.Anything, mock.Anything).Return(nil)
-	idempRepo.On("Save", mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
+	invRepo.EXPECT().AssignOrCreateOpen(mock.Anything, userID, cardID, mock.AnythingOfType("time.Time"), mock.Anything, mock.Anything).Return(openInv, nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	instRepo.EXPECT().AddBatch(mock.Anything, mock.Anything).Return(nil)
+	idempRepo.EXPECT().Save(mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
 
 	uc := newCreateTransactionUC(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids)
 	cid := cardID.String()
@@ -447,6 +466,112 @@ func TestCreateTransaction_InstallmentPurchase_MultipleInstallments(t *testing.T
 	assert.Equal(t, txID.String(), resp.ID)
 	assert.Equal(t, "installment_purchase", resp.TransactionType)
 	assert.Len(t, resp.Installments, 2)
+}
+
+func TestCreateTransaction_RecordsMetrics_AfterSuccessfulCommit(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	userID := identityvo.NewUserID()
+	catID := vos.NewCategoryID()
+	txID := vos.NewTransactionID()
+	key, _ := vos.NewIdempotencyKey("test-key-metrics")
+
+	mgr, _ := newMockMgr(t)
+	txRepo := portmocks.NewTransactionRepository(t)
+	invRepo := portmocks.NewInvoiceRepository(t)
+	instRepo := portmocks.NewInstallmentRepository(t)
+	idempRepo := idempmocks.NewIdempotencyRepository(t)
+	cards := portmocks.NewCardProvider(t)
+	cats := portmocks.NewCategoryProvider(t)
+	clock := portmocks.NewClock(t)
+	ids := portmocks.NewIDGenerator(t)
+	spy := &spyRecorder{}
+
+	clock.EXPECT().Now().Return(fixedNow)
+	ids.On("NewTransactionID").Return(txID)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	idempRepo.EXPECT().Save(mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
+
+	uc := newCreateTransactionUCWithMetrics(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids, spy)
+	req := validCreateRequest(catID.String())
+	_, err := uc.Execute(ctx, userID, key, req)
+
+	require.NoError(t, err)
+	require.Len(t, spy.calls, 1)
+	assert.Equal(t, vos.TransactionTypeExpense, spy.calls[0].txType)
+	assert.Equal(t, vos.PaymentMethodPix, spy.calls[0].method)
+}
+
+func TestCreateTransaction_DoesNotRecordMetrics_OnCommitFailure(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	userID := identityvo.NewUserID()
+	catID := vos.NewCategoryID()
+	txID := vos.NewTransactionID()
+	key, _ := vos.NewIdempotencyKey("test-key-no-metrics")
+
+	tx := &mockTx{}
+	mgr := &mockManager{}
+	mgr.On("BeginTx", mock.Anything, mock.Anything).Return(tx, nil)
+	tx.On("Rollback", mock.Anything).Return(nil)
+
+	txRepo := portmocks.NewTransactionRepository(t)
+	invRepo := portmocks.NewInvoiceRepository(t)
+	instRepo := portmocks.NewInstallmentRepository(t)
+	idempRepo := idempmocks.NewIdempotencyRepository(t)
+	cards := portmocks.NewCardProvider(t)
+	cats := portmocks.NewCategoryProvider(t)
+	clock := portmocks.NewClock(t)
+	ids := portmocks.NewIDGenerator(t)
+	spy := &spyRecorder{}
+
+	clock.EXPECT().Now().Return(fixedNow)
+	ids.On("NewTransactionID").Return(txID)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(errTest("repo failure"))
+
+	uc := newCreateTransactionUCWithMetrics(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids, spy)
+	req := validCreateRequest(catID.String())
+	_, err := uc.Execute(ctx, userID, key, req)
+
+	require.Error(t, err)
+	assert.Empty(t, spy.calls, "recorder must not be called on commit failure")
+}
+
+func TestCreateTransaction_PanicInRecorder_DoesNotPropagate(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	userID := identityvo.NewUserID()
+	catID := vos.NewCategoryID()
+	txID := vos.NewTransactionID()
+	key, _ := vos.NewIdempotencyKey("test-key-panic")
+
+	mgr, _ := newMockMgr(t)
+	txRepo := portmocks.NewTransactionRepository(t)
+	invRepo := portmocks.NewInvoiceRepository(t)
+	instRepo := portmocks.NewInstallmentRepository(t)
+	idempRepo := idempmocks.NewIdempotencyRepository(t)
+	cards := portmocks.NewCardProvider(t)
+	cats := portmocks.NewCategoryProvider(t)
+	clock := portmocks.NewClock(t)
+	ids := portmocks.NewIDGenerator(t)
+
+	clock.EXPECT().Now().Return(fixedNow)
+	ids.On("NewTransactionID").Return(txID)
+	idempRepo.EXPECT().Get(mock.Anything, userID, "POST /finance/transactions", key.Value()).Return(nil, nil)
+	cats.EXPECT().GetByID(mock.Anything, userID, catID).Return(newActiveCategoryView(userID, catID), nil)
+	txRepo.EXPECT().Add(mock.Anything, mock.AnythingOfType("*entities.Transaction")).Return(nil)
+	idempRepo.EXPECT().Save(mock.Anything, mock.AnythingOfType("idempotency.IdempotencyRecord")).Return(nil)
+
+	uc := newCreateTransactionUCWithMetrics(t, mgr, txRepo, invRepo, instRepo, idempRepo, cards, cats, clock, ids, &panicRecorder{})
+	req := validCreateRequest(catID.String())
+	resp, err := uc.Execute(ctx, userID, key, req)
+
+	require.NoError(t, err, "panic in recorder must not propagate to caller")
+	assert.Equal(t, txID.String(), resp.ID)
 }
 
 // --- helpers local to this file ---
@@ -469,4 +594,25 @@ func newOpenInvoiceForCard(userID identityvo.UserID, cardID vos.CardID, _ vos.In
 	dueDate := fixedNow.AddDate(0, 1, 20)
 	inv, _ := entities.NewInvoice(card, cycleStart, cycleEnd, closingDate, dueDate, fixedNow)
 	return inv
+}
+
+// spyRecorder records calls to RecordAmountProcessed for assertion in tests.
+type spyRecorder struct {
+	calls []spyCall
+}
+
+type spyCall struct {
+	txType vos.TransactionType
+	method vos.PaymentMethod
+}
+
+func (s *spyRecorder) RecordAmountProcessed(_ context.Context, _ vos.Money, txType vos.TransactionType, method vos.PaymentMethod) {
+	s.calls = append(s.calls, spyCall{txType: txType, method: method})
+}
+
+// panicRecorder panics on every call to test safeRecord recovery.
+type panicRecorder struct{}
+
+func (panicRecorder) RecordAmountProcessed(_ context.Context, _ vos.Money, _ vos.TransactionType, _ vos.PaymentMethod) {
+	panic("simulated recorder panic")
 }

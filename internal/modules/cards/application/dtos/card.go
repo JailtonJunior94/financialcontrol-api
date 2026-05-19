@@ -10,12 +10,12 @@ import (
 )
 
 type CardRequest struct {
-	FlagID         string    `json:"flagId"`
+	FlagID         string    `json:"flag_id"`
 	Name           string    `json:"name"`
 	Number         string    `json:"number"`
 	Description    string    `json:"description"`
-	ClosingDay     int       `json:"closingDay"`
-	ExpirationDate time.Time `json:"expirationDate"`
+	ClosingDay     int       `json:"closing_day"`
+	ExpirationDate time.Time `json:"expiration_date"`
 }
 
 func (r CardRequest) Validate() error {
@@ -55,9 +55,9 @@ type CardResponse struct {
 	Name           string       `json:"name"`
 	Number         string       `json:"number,omitempty"`
 	Description    string       `json:"description,omitempty"`
-	ClosingDay     int          `json:"closingDay,omitempty"`
-	BestDayToBuy   int          `json:"bestDayToBuy,omitempty"`
-	ExpirationDate time.Time    `json:"expirationDate"`
+	ClosingDay     int          `json:"closing_day,omitempty"`
+	BestDayToBuy   int          `json:"best_day_to_buy,omitempty"`
+	ExpirationDate time.Time    `json:"expiration_date"`
 	Active         bool         `json:"active"`
 	Flag           FlagResponse `json:"flag"`
 }

@@ -7,7 +7,8 @@ import (
 	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
-	interfacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces/mocks"
+	portmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports/mocks"
+	pkgroutes "github.com/jailtonjunior94/financialcontrol-api/pkg/routes"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/suite"
@@ -30,16 +31,16 @@ func (s *dbtxStub) QueryRowContext(_ context.Context, _ string, _ ...any) devkit
 // ModuleWiringSuite validates that NewModule composes all dependencies correctly.
 type ModuleWiringSuite struct {
 	suite.Suite
-	hasher      *interfacemocks.Hasher
-	tokenIssuer *interfacemocks.TokenIssuer
+	hasher      *portmocks.Hasher
+	tokenIssuer *portmocks.TokenIssuer
 	deps        identity.Deps
 }
 
 func TestModuleWiringSuite(t *testing.T) { suite.Run(t, new(ModuleWiringSuite)) }
 
 func (s *ModuleWiringSuite) SetupTest() {
-	s.hasher = interfacemocks.NewHasher(s.T())
-	s.tokenIssuer = interfacemocks.NewTokenIssuer(s.T())
+	s.hasher = portmocks.NewHasher(s.T())
+	s.tokenIssuer = portmocks.NewTokenIssuer(s.T())
 	s.deps = identity.Deps{
 		DB:          &dbtxStub{},
 		Hasher:      s.hasher,
@@ -96,9 +97,9 @@ func (s *ModuleWiringSuite) TestRegisterHTTP_RegistersRoutes() {
 				for _, r := range routes {
 					paths[r.Path] = true
 				}
-				s.True(paths["/token"], "POST /token must be registered")
-				s.True(paths["/me"], "GET /me must be registered")
-				s.True(paths["/users"], "POST /users must be registered")
+				s.True(paths[pkgroutes.Token], "POST /token must be registered")
+				s.True(paths[pkgroutes.Me], "GET /me must be registered")
+				s.True(paths[pkgroutes.Users], "POST /users must be registered")
 			},
 		},
 	}
@@ -110,34 +111,6 @@ func (s *ModuleWiringSuite) TestRegisterHTTP_RegistersRoutes() {
 			noop := func(c *fiber.Ctx) error { return c.Next() }
 			m.RegisterHTTP(app, noop)
 			sc.expect(app)
-		})
-	}
-}
-
-func (s *ModuleWiringSuite) TestNewHasherAdapter_SatisfiesInterface() {
-	type args struct{ plain string }
-	scenarios := []struct {
-		name   string
-		args   args
-		setup  func()
-		expect func(err error)
-	}{
-		{
-			name: "hash delegates to inner adapter",
-			args: args{plain: "secret"},
-			setup: func() {
-				s.hasher.EXPECT().Hash("secret").Return("hashed", nil).Once()
-			},
-			expect: func(err error) {
-				s.NoError(err)
-			},
-		},
-	}
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			_, err := s.deps.Hasher.Hash(sc.args.plain)
-			sc.expect(err)
 		})
 	}
 }

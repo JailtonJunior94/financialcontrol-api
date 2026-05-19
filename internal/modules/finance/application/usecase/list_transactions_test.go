@@ -48,14 +48,14 @@ func TestListTransactions_GoldenPath_NoLazyClose(t *testing.T) {
 	invRepo := portmocks.NewInvoiceRepository(t)
 	clock := portmocks.NewClock(t)
 
-	clock.On("Now").Return(fixedNow)
+	clock.EXPECT().Now().Return(fixedNow)
 
 	// open invoices query returns empty — no lazy close
-	invRepo.On("List", mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{}, int64(0), nil)
+	invRepo.EXPECT().List(mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{}, int64(0), nil)
 
 	tx := newExpenseTransaction(t, userID)
 	txs := []entities.Transaction{*tx}
-	txRepo.On("List", mock.Anything, userID, mock.AnythingOfType("filters.TransactionFilter")).Return(txs, int64(1), nil)
+	txRepo.EXPECT().List(mock.Anything, userID, mock.AnythingOfType("filters.TransactionFilter")).Return(txs, int64(1), nil)
 
 	pag := mustPagination(t)
 	f, err := filters.NewTransactionFilter(userID, nil, nil, nil, nil, vos.InvoiceStatusFilterNone, "", nil, nil, pag)
@@ -89,11 +89,11 @@ func TestListTransactions_LazyClose_UpdatesChangedInvoices(t *testing.T) {
 	openInv, err := entities.NewInvoice(card, pastStart, pastEnd, pastClosing, dueDate, fixedNow.AddDate(0, -2, 0))
 	require.NoError(t, err)
 
-	clock.On("Now").Return(fixedNow)
-	invRepo.On("List", mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{*openInv}, int64(1), nil)
-	invRepo.On("Update", mock.Anything, mock.AnythingOfType("*entities.Invoice")).Return(nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	invRepo.EXPECT().List(mock.Anything, userID, mock.AnythingOfType("filters.InvoiceFilter")).Return([]entities.Invoice{*openInv}, int64(1), nil)
+	invRepo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*entities.Invoice")).Return(nil)
 
-	txRepo.On("List", mock.Anything, userID, mock.AnythingOfType("filters.TransactionFilter")).Return([]entities.Transaction{}, int64(0), nil)
+	txRepo.EXPECT().List(mock.Anything, userID, mock.AnythingOfType("filters.TransactionFilter")).Return([]entities.Transaction{}, int64(0), nil)
 
 	pag := mustPagination(t)
 	f, ferr := filters.NewTransactionFilter(userID, nil, nil, nil, nil, vos.InvoiceStatusFilterNone, "", nil, nil, pag)

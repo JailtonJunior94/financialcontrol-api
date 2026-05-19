@@ -3,8 +3,9 @@ WORKDIR /app
 
 COPY . .
 
+ARG GIT_SHA=dev
 RUN go clean --modcache
-RUN GOOS=linux go build -o main ./cmd/financialcontrol-api
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.version=${GIT_SHA}" -o main ./cmd/financialcontrol-api
 
 FROM alpine:3.22
 WORKDIR /app
@@ -15,9 +16,9 @@ ENV TZ=America/Sao_Paulo
 ENV PORT=4000
 
 COPY --from=builder /app/main .
-COPY configs/config.Development.yaml ./configs/config.Development.yaml
-COPY configs/config.Staging.yaml ./configs/config.Staging.yaml
-COPY configs/config.Production.yaml ./configs/config.Production.yaml
+COPY configs/config.development.yaml ./configs/config.development.yaml
+COPY configs/config.staging.yaml ./configs/config.staging.yaml
+COPY configs/config.production.yaml ./configs/config.production.yaml
 
 EXPOSE 4000
 CMD [ "/app/main" ]

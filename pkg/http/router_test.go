@@ -39,14 +39,22 @@ func stubFinanceModule() *finance.Module {
 	}
 }
 
-func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
-	app := fiber.New()
-	pkghttp.RegisterRoutes(app, &bootstrapcontainer.Container{
+func stubContainer() *bootstrapcontainer.Container {
+	return &bootstrapcontainer.Container{
 		IdentityModule:   &identity.Module{},
 		CardsModule:      stubCardsModule(),
 		CategoriesModule: stubCategoriesModule(),
 		FinanceModule:    stubFinanceModule(),
-	})
+	}
+}
+
+// TestRegisterRoutesPreservesHTTPContract verifies the full /api/v1/* route surface
+// is preserved after the migration to apiV1Router in internal/bootstrap/http/router.go.
+// RegisterRoutes is the pkg-level entry used in tests; the bootstrap layer uses
+// apiV1Router (same delegation chain) to mount routes via serverfiber.Server.
+func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
+	app := fiber.New()
+	pkghttp.RegisterRoutes(app, stubContainer())
 
 	routes := app.GetRoutes(true)
 	routeIndex := make(map[string]map[string]bool, len(routes))
@@ -81,4 +89,33 @@ func TestRegisterRoutesPreservesHTTPContract(t *testing.T) {
 			require.Truef(t, routeIndex[path][method], "expected route %s %s", method, path)
 		}
 	}
+}
+
+// TestRegisterRoutes_SameContractAsAPIV1Router verifies that RegisterRoutes and the
+// bootstrap apiV1Router (tested in internal/bootstrap/http) wire the same /api/v1
+// surface. If this test diverges from TestNewAppRegistersAPIBootstrapRoutes in the
+// bootstrap package, the route contracts have drifted.
+func TestRegisterRoutes_SameContractAsAPIV1Router(t *testing.T) {
+	app := fiber.New()
+	pkghttp.RegisterRoutes(app, stubContainer())
+
+	routes := app.GetRoutes(true)
+	routeIndex := make(map[string]map[string]bool, len(routes))
+	for _, route := range routes {
+		if routeIndex[route.Path] == nil {
+			routeIndex[route.Path] = map[string]bool{}
+		}
+		routeIndex[route.Path][route.Method] = true
+	}
+
+	// Spot-check the routes also verified in TestNewAppRegistersAPIBootstrapRoutes.
+	require.True(t, routeIndex["/api/v1/token"]["POST"])
+	require.True(t, routeIndex["/api/v1/users"]["POST"])
+	require.True(t, routeIndex["/api/v1/me"]["GET"])
+	require.True(t, routeIndex["/api/v1/cards"]["POST"])
+	require.True(t, routeIndex["/api/v1/categories"]["GET"])
+	require.True(t, routeIndex["/api/v1/finance/transactions"]["POST"])
+	require.True(t, routeIndex["/api/v1/finance/transactions"]["GET"])
+	require.True(t, routeIndex["/api/v1/finance/invoices"]["GET"])
+	require.True(t, routeIndex["/api/v1/finance/summary"]["GET"])
 }

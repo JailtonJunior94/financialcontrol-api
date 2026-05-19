@@ -6,134 +6,119 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
-	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces/mocks"
+	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 )
 
-type CreateUserSuite struct {
-	suite.Suite
-	ctx      context.Context
-	userRepo *ifacemocks.UserRepository
-	hasher   *ifacemocks.Hasher
-	sut      usecase.CreateUser
-}
-
-func TestCreateUserSuite(t *testing.T) { suite.Run(t, new(CreateUserSuite)) }
-
-func (s *CreateUserSuite) SetupTest() {
-	s.ctx = context.Background()
-	s.userRepo = ifacemocks.NewUserRepository(s.T())
-	s.hasher = ifacemocks.NewHasher(s.T())
-	s.sut = usecase.NewCreateUser(s.userRepo, s.hasher)
-}
-
-func (s *CreateUserSuite) TestExecute() {
+func TestCreateUser_Execute(t *testing.T) {
+	ctx := context.Background()
 	email, _ := vos.NewEmail("new@example.com")
 	hashedPwd, _ := vos.NewHashedPassword("hashed123")
-	existingUser := entities.Rehydrate(vos.NewUserID(), "Existing", email, hashedPwd, time.Now(), time.Now(), true)
+	existingUser := entities.RehydrateUser(vos.NewUserID(), "Existing", email, hashedPwd, time.Now(), time.Now(), true)
 
-	type args struct{ in dtos.UserRequest }
-	scenarios := []struct {
+	tests := []struct {
 		name   string
-		args   args
-		setup  func()
-		expect func(out usecase.CreateUserResult, err error)
+		in     dtos.UserRequest
+		setup  func(*ifacemocks.UserRepository, *ifacemocks.Hasher)
+		assert func(t *testing.T, out usecase.CreateUserResult, err error)
 	}{
 		{
 			name: "sucesso criado=true",
-			args: args{in: dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(nil, nil).Once()
-				s.hasher.EXPECT().Hash("plainpwd").Return(hashedPwd, nil).Once()
-				s.userRepo.EXPECT().Add(s.ctx, mock.AnythingOfType("*entities.User")).Return(nil).Once()
+			in:   dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(nil, nil).Once()
+				hasher.EXPECT().Hash("plainpwd").Return(hashedPwd, nil).Once()
+				repo.EXPECT().Add(ctx, mock.AnythingOfType("*entities.User")).Return(nil).Once()
 			},
-			expect: func(out usecase.CreateUserResult, err error) {
-				s.NoError(err)
-				s.True(out.Created)
-				s.Equal("new@example.com", out.User.Email)
+			assert: func(t *testing.T, out usecase.CreateUserResult, err error) {
+				require.NoError(t, err)
+				assert.True(t, out.Created)
+				assert.Equal(t, "new@example.com", out.User.Email)
 			},
 		},
 		{
 			name: "idempotente criado=false Add nao chamado",
-			args: args{in: dtos.UserRequest{Name: "Existing", Email: "new@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(existingUser, nil).Once()
-				s.hasher.EXPECT().Verify(hashedPwd, "plainpwd").Return(true).Once()
-				// Add must NOT be called — mock will fail if it is
+			in:   dtos.UserRequest{Name: "Existing", Email: "new@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(existingUser, nil).Once()
+				hasher.EXPECT().Verify(hashedPwd, "plainpwd").Return(true).Once()
 			},
-			expect: func(out usecase.CreateUserResult, err error) {
-				s.NoError(err)
-				s.False(out.Created)
-				s.Equal(email.String(), out.User.Email)
+			assert: func(t *testing.T, out usecase.CreateUserResult, err error) {
+				require.NoError(t, err)
+				assert.False(t, out.Created)
+				assert.Equal(t, email.String(), out.User.Email)
 			},
 		},
 		{
 			name: "divergencia ErrUserAlreadyExists Add nao chamado",
-			args: args{in: dtos.UserRequest{Name: "Existing", Email: "new@example.com", Password: "different"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(existingUser, nil).Once()
-				s.hasher.EXPECT().Verify(hashedPwd, "different").Return(false).Once()
-				// Add must NOT be called
+			in:   dtos.UserRequest{Name: "Existing", Email: "new@example.com", Password: "different"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(existingUser, nil).Once()
+				hasher.EXPECT().Verify(hashedPwd, "different").Return(false).Once()
 			},
-			expect: func(out usecase.CreateUserResult, err error) {
-				s.ErrorIs(err, domain.ErrUserAlreadyExists)
+			assert: func(t *testing.T, out usecase.CreateUserResult, err error) {
+				assert.ErrorIs(t, err, domain.ErrUserAlreadyExists)
 			},
 		},
 		{
 			name: "falha de hash",
-			args: args{in: dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(nil, nil).Once()
-				s.hasher.EXPECT().Hash("plainpwd").Return(vos.HashedPassword(""), errors.New("hash error")).Once()
+			in:   dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(nil, nil).Once()
+				hasher.EXPECT().Hash("plainpwd").Return(vos.HashedPassword(""), errors.New("hash error")).Once()
 			},
-			expect: func(out usecase.CreateUserResult, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out usecase.CreateUserResult, err error) {
+				assert.Error(t, err)
 			},
 		},
 		{
 			name: "falha de repo Add",
-			args: args{in: dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(nil, nil).Once()
-				s.hasher.EXPECT().Hash("plainpwd").Return(hashedPwd, nil).Once()
-				s.userRepo.EXPECT().Add(s.ctx, mock.AnythingOfType("*entities.User")).Return(errors.New("db error")).Once()
+			in:   dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(nil, nil).Once()
+				hasher.EXPECT().Hash("plainpwd").Return(hashedPwd, nil).Once()
+				repo.EXPECT().Add(ctx, mock.AnythingOfType("*entities.User")).Return(errors.New("db error")).Once()
 			},
-			expect: func(out usecase.CreateUserResult, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out usecase.CreateUserResult, err error) {
+				assert.Error(t, err)
 			},
 		},
 		{
 			name: "falha de repo GetByEmail",
-			args: args{in: dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(nil, errors.New("db error")).Once()
+			in:   dtos.UserRequest{Name: "New User", Email: "new@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(nil, errors.New("db error")).Once()
 			},
-			expect: func(out usecase.CreateUserResult, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out usecase.CreateUserResult, err error) {
+				assert.Error(t, err)
 			},
 		},
 		{
 			name:  "email invalido",
-			args:  args{in: dtos.UserRequest{Name: "New User", Email: "not-valid", Password: "plainpwd"}},
-			setup: func() {},
-			expect: func(out usecase.CreateUserResult, err error) {
-				s.ErrorIs(err, domain.ErrInvalidEmail)
+			in:    dtos.UserRequest{Name: "New User", Email: "not-valid", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher) {},
+			assert: func(t *testing.T, out usecase.CreateUserResult, err error) {
+				assert.ErrorIs(t, err, domain.ErrInvalidEmail)
 			},
 		},
 	}
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			out, err := s.sut.Execute(s.ctx, sc.args.in)
-			sc.expect(out, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := ifacemocks.NewUserRepository(t)
+			hasher := ifacemocks.NewHasher(t)
+			tt.setup(repo, hasher)
+			sut := usecase.NewCreateUser(repo, hasher)
+			out, err := sut.Execute(ctx, tt.in)
+			tt.assert(t, out, err)
 		})
 	}
 }

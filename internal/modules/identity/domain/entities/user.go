@@ -1,13 +1,11 @@
 package entities
 
 import (
-	"errors"
 	"time"
 
+	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 )
-
-var ErrInvalidUser = errors.New("usuário inválido")
 
 type User struct {
 	id        vos.UserID
@@ -21,7 +19,7 @@ type User struct {
 
 func NewUser(name string, email vos.Email, password vos.HashedPassword) (*User, error) {
 	if name == "" {
-		return nil, ErrInvalidUser
+		return nil, domain.ErrInvalidUser
 	}
 	return &User{
 		id:        vos.NewUserID(),
@@ -34,7 +32,7 @@ func NewUser(name string, email vos.Email, password vos.HashedPassword) (*User, 
 	}, nil
 }
 
-func Rehydrate(id vos.UserID, name string, email vos.Email, pwd vos.HashedPassword, createdAt, updatedAt time.Time, active bool) *User {
+func RehydrateUser(id vos.UserID, name string, email vos.Email, pwd vos.HashedPassword, createdAt, updatedAt time.Time, active bool) *User {
 	return &User{
 		id:        id,
 		name:      name,

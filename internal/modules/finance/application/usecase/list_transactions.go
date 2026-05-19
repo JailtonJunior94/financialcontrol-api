@@ -15,11 +15,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// ListTransactions is the use case interface for listing transactions with lazy invoice close (RF-19/RF-48).
-type ListTransactions interface {
-	Execute(ctx context.Context, userID identityvo.UserID, f filters.TransactionFilter) (dtos.PaginatedResponse[dtos.TransactionResponse], error)
-}
-
 type listTransactions struct {
 	mgr     manager.Manager
 	txRepo  ports.TransactionRepository

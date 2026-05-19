@@ -13,8 +13,14 @@ services:
     networks:
       - financial_net
     environment:
-      - ENVIRONMENT=Staging
+      - ENVIRONMENT=staging
+      - SERVICE_NAME=financialcontrol-api
       - TZ=America/Sao_Paulo
+      # K8s downward API vars are not set in local Docker; the app falls back to "unknown".
+      # POD_UID=
+      # POD_NAME=
+      # POD_NAMESPACE=
+      # CONTAINER_NAME=
 
   mssql:
     container_name: mssql
@@ -36,7 +42,7 @@ services:
     image: financialcontrol-migration
     build:
       context: ../..
-      dockerfile: Dockerfile.migration
+      dockerfile: deployments/docker/Dockerfile.migration
     depends_on:
       - mssql
     networks:

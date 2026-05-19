@@ -11,11 +11,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// DeleteTransaction is the use case interface for soft-deleting a transaction (RF-55/RF-44).
-type DeleteTransaction interface {
-	Execute(ctx context.Context, userID identityvo.UserID, txID vos.TransactionID) error
-}
-
 type deleteTransaction struct {
 	mgr      manager.Manager
 	txRepo   ports.TransactionRepository

@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 )
 
 type listFlags struct {
-	flagRepo interfaces.FlagRepository
+	flagRepo ports.FlagRepository
 }
 
-func NewListFlags(flagRepo interfaces.FlagRepository) ListFlags {
+func NewListFlags(flagRepo ports.FlagRepository) ListFlags {
 	return &listFlags{flagRepo: flagRepo}
 }
 

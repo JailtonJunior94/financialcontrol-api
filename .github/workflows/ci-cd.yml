@@ -37,7 +37,7 @@ jobs:
       - name: Variable Substitution
         uses: microsoft/variable-substitution@v1
         with:
-          files: ${{ github.workspace }}/configs/config.Production.yaml
+          files: ${{ github.workspace }}/configs/config.production.yaml
         env:
           mssql.connectionString: ${{ secrets.SQL_CONNECTION_STRING }}
           security.jwtSecret: ${{ secrets.JWT_SECRET }}
@@ -54,9 +54,39 @@ jobs:
           context: .
           file: deployments/docker/Dockerfile
           push: true
+          build-args: GIT_SHA=${{ github.sha }}
           tags: |
             ${{ env.DOCKER_USERNAME }}/financial_api:latest
             ${{ env.DOCKER_USERNAME }}/financial_api:v${{ github.run_number }}
+
+  integration:
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: "Integration Tests (testcontainers)"
+        run: go test -tags=integration -timeout=15m ./...
+
+  pii-guardrail:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: "PII Guardrail — TestPIIRedactedEndToEnd (required)"
+        run: go test -tags=integration -timeout=15m -run TestPIIRedactedEndToEnd ./internal/bootstrap/http/...
 
   deploy:
     needs: [build]
@@ -89,11 +119,3 @@ jobs:
             deployments/k8s/services/financialapi-svc.yaml
             deployments/k8s/certmanager/issuer.yaml
             deployments/k8s/ingress/ingress.yaml
-
-      # - name: "Deploy to Heroku"
-      #   uses: akhileshns/heroku-deploy@v3.11.10
-      #   with:
-      #     heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-      #     heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
-      #     heroku_email: ${{ secrets.HEROKU_EMAIL }}
-      #     usedocker: true

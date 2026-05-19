@@ -7,13 +7,11 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/routes"
 	mssqlrepo "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/persistence/mssql"
-	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
 )
 
 // Deps holds the external dependencies required to build the cards module.
 type Deps struct {
-	DB        devkitdb.DBTX
-	JwtParser pkgjwt.Parser
+	DB devkitdb.DBTX
 }
 
 // Module holds all wired use cases and handlers for the cards domain.
@@ -56,6 +54,6 @@ func NewModule(deps Deps) *Module {
 }
 
 // RegisterHTTP registers all cards routes on the provided router.
-func (m *Module) RegisterHTTP(router fiber.Router, parser pkgjwt.Parser) {
-	routes.RegisterCardRoutes(router, m.CardHandler, m.FlagHandler, parser)
+func (m *Module) RegisterHTTP(router fiber.Router, protected fiber.Handler) {
+	routes.RegisterCardRoutes(router, m.CardHandler, m.FlagHandler, protected)
 }

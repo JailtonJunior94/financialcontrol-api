@@ -1,58 +1,65 @@
 package cli
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	bootstrapcontainer "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/container"
 	bootstraphttp "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/http"
 )
 
-// AppRunners implements platform/modules.CLIRunner.
-// Planning CLI commands were removed together with the billing, transactions,
-// invoicing, and planning/sync modules in task 9.0. All planning methods return
-// errPlanningNotAvailable to satisfy the interface; they are never invoked because
-// RegisterCLI no longer adds the corresponding cobra commands.
+// AppRunners implements platform/modules.CLIRunner. The only CLI capability is
+// running the HTTP server; legacy budget/sync commands were removed together
+// with the planning module.
 type AppRunners struct{}
 
-var errPlanningNotAvailable = errors.New("planning CLI commands removed in task 9.0: use finance endpoints instead")
-
 func NewAppRunners() (*AppRunners, error) {
-	_, err := bootstrapcontainer.BuildRuntime()
-	if err != nil {
-		return nil, err
-	}
 	return &AppRunners{}, nil
 }
 
 func (r *AppRunners) RunServer() error {
-	return bootstraphttp.RunServer()
+	return RunServer(context.Background())
 }
 
-func (r *AppRunners) RunBudget(_ time.Time) error {
-	return errPlanningNotAvailable
+// RunServer builds the runtime container, mounts the HTTP server and starts it.
+// Graceful shutdown executes in order: server (via Start) → observability → db.
+// The caller must pass a context tied to OS signals so cancellation propagates correctly.
+func RunServer(ctx context.Context) error {
+	return runServer(ctx, bootstrapcontainer.BuildRuntime, func(ctx context.Context, c *bootstrapcontainer.Container) error {
+		srv, err := bootstraphttp.NewServer(c)
+		if err != nil {
+			return fmt.Errorf("http server: %w", err)
+		}
+		return srv.Start(ctx)
+	})
 }
 
-func (r *AppRunners) RunBudgetCardsAndOthers(_ time.Time) error {
-	return errPlanningNotAvailable
-}
+// runServer is the testable core. It accepts factory functions so unit tests can
+// inject mock containers and controlled start functions without real infrastructure.
+func runServer(
+	ctx context.Context,
+	buildContainer func(context.Context) (*bootstrapcontainer.Container, error),
+	start func(context.Context, *bootstrapcontainer.Container) error,
+) error {
+	c, err := buildContainer(ctx)
+	if err != nil {
+		return fmt.Errorf("run server: %w", err)
+	}
 
-func (r *AppRunners) RunBudgetUnified(_ time.Time) error {
-	return errPlanningNotAvailable
-}
+	startErr := start(ctx, c)
 
-func (r *AppRunners) RunBudgetFull(_ time.Time) error {
-	return errPlanningNotAvailable
-}
+	timeout := c.ShutdownTimeout.Duration()
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
 
-func (r *AppRunners) RunBalance(_ time.Time) error {
-	return errPlanningNotAvailable
-}
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
-func (r *AppRunners) RunBudgetByCategory(_ time.Time, _ string) error {
-	return errPlanningNotAvailable
-}
+	obsErr := c.Observability.Shutdown(shutdownCtx)
+	dbErr := c.DBManager.Shutdown(shutdownCtx)
 
-func (r *AppRunners) RunSync() error {
-	return errPlanningNotAvailable
+	return errors.Join(startErr, obsErr, dbErr)
 }

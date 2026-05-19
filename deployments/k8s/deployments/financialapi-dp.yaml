@@ -3,7 +3,8 @@ kind: ConfigMap
 metadata:
   name: financialapi-config
 data:
-  ENVIRONMENT: "Production"
+  ENVIRONMENT: "production"
+  SERVICE_NAME: "financialcontrol-api"
   TZ: "America/Sao_Paulo"
 ---
 apiVersion: apps/v1
@@ -37,5 +38,20 @@ spec:
           envFrom:
             - configMapRef:
                 name: financialapi-config
+          env:
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CONTAINER_NAME
+              value: financialapi
           ports:
             - containerPort: 4000

@@ -1,0 +1,52 @@
+groups:
+  - name: http_alerts
+    interval: 30s
+    rules:
+      # Alert: HighTechnicalErrorRate
+      # Fires when 5xx responses exceed 1% of total requests over a 5-minute window.
+      # Label `route` allows silencing per-endpoint during maintenance.
+      - alert: HighTechnicalErrorRate
+        expr: |
+          sum by (route) (
+            rate(http_server_request_duration_seconds_count{
+              http_response_status_code=~"5.."
+            }[5m])
+          )
+          /
+          sum by (route) (
+            rate(http_server_request_duration_seconds_count[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High technical error rate on route {{ $labels.route }}"
+          description: >
+            More than 1% of requests on route {{ $labels.route }} are returning
+            5xx status codes (current value: {{ $value | humanizePercentage }}).
+            Investigate application logs and recent deployments.
+          runbook_url: "TBD"
+
+      # Alert: PaymentRouteHighLatencyP99
+      # Fires when P99 latency exceeds 2s on write routes under /api/v1/finance/*.
+      # Covers POST/PUT/PATCH/DELETE per techspec §"Endpoints de API" (R7/R8).
+      - alert: PaymentRouteHighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, http_route) (
+              rate(http_server_request_duration_seconds_bucket{
+                http_route=~"/api/v1/finance/.*",
+                http_request_method=~"POST|PUT|PATCH|DELETE"
+              }[5m])
+            )
+          ) > 2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "P99 latency above 2s on finance write route {{ $labels.http_route }}"
+          description: >
+            The 99th percentile request duration on {{ $labels.http_route }} has exceeded
+            2 seconds (current p99: {{ $value | humanizeDuration }}).
+            Check for slow database queries, lock contention or downstream timeouts.
+          runbook_url: "TBD"

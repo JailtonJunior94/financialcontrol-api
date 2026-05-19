@@ -6,7 +6,7 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/dtos"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 )
 
@@ -15,16 +15,12 @@ type CreateUserResult struct {
 	Created bool
 }
 
-type CreateUser interface {
-	Execute(ctx context.Context, in dtos.UserRequest) (CreateUserResult, error)
-}
-
 type createUser struct {
-	repo   interfaces.UserRepository
-	hasher interfaces.Hasher
+	repo   ports.UserRepository
+	hasher ports.Hasher
 }
 
-func NewCreateUser(repo interfaces.UserRepository, hasher interfaces.Hasher) CreateUser {
+func NewCreateUser(repo ports.UserRepository, hasher ports.Hasher) CreateUser {
 	return &createUser{repo: repo, hasher: hasher}
 }
 

@@ -39,12 +39,12 @@ func TestDeleteTransaction_GoldenPath(t *testing.T) {
 
 	tx := newExpenseTransaction(t, userID)
 
-	clock.On("Now").Return(fixedNow)
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	txRepo.On("HasActiveRefundFor", mock.Anything, userID, txID).Return(false, nil)
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
-	txRepo.On("SoftDelete", mock.Anything, mock.Anything, mock.AnythingOfType("time.Time")).Return(nil)
-	instRepo.On("SoftDeleteByTransaction", mock.Anything, userID, txID, mock.AnythingOfType("time.Time")).Return(nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	txRepo.EXPECT().HasActiveRefundFor(mock.Anything, userID, txID).Return(false, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(false, nil)
+	txRepo.EXPECT().SoftDelete(mock.Anything, mock.Anything, mock.AnythingOfType("time.Time")).Return(nil)
+	instRepo.EXPECT().SoftDeleteByTransaction(mock.Anything, userID, txID, mock.AnythingOfType("time.Time")).Return(nil)
 
 	uc := newDeleteTransactionUC(t, mgr, txRepo, instRepo, clock)
 	err := uc.Execute(ctx, userID, txID)
@@ -65,10 +65,10 @@ func TestDeleteTransaction_HasActiveRefund_ReturnsError(t *testing.T) {
 
 	tx := newExpenseTransaction(t, userID)
 
-	clock.On("Now").Return(fixedNow)
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	txRepo.On("HasActiveRefundFor", mock.Anything, userID, txID).Return(true, nil)
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(false, nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	txRepo.EXPECT().HasActiveRefundFor(mock.Anything, userID, txID).Return(true, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(false, nil)
 
 	uc := newDeleteTransactionUC(t, mgr, txRepo, instRepo, clock)
 	err := uc.Execute(ctx, userID, txID)
@@ -94,11 +94,11 @@ func TestDeleteTransaction_BlocksWhenInstallmentInClosedOrPaidInvoice(t *testing
 
 	tx := newExpenseTransaction(t, userID)
 
-	clock.On("Now").Return(fixedNow)
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(tx, nil)
-	txRepo.On("HasActiveRefundFor", mock.Anything, userID, txID).Return(false, nil)
+	clock.EXPECT().Now().Return(fixedNow)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(tx, nil)
+	txRepo.EXPECT().HasActiveRefundFor(mock.Anything, userID, txID).Return(false, nil)
 	// repository now reflects the invoice-state check — returns true for closed-unpaid
-	instRepo.On("HasClosedOrPaidForTransaction", mock.Anything, txID).Return(true, nil)
+	instRepo.EXPECT().HasClosedOrPaidForTransaction(mock.Anything, txID).Return(true, nil)
 
 	uc := newDeleteTransactionUC(t, mgr, txRepo, instRepo, clock)
 	err := uc.Execute(ctx, userID, txID)
@@ -117,7 +117,7 @@ func TestDeleteTransaction_NotFound_ReturnsError(t *testing.T) {
 	instRepo := portmocks.NewInstallmentRepository(t)
 	clock := portmocks.NewClock(t)
 
-	txRepo.On("GetByID", mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
+	txRepo.EXPECT().GetByID(mock.Anything, userID, txID).Return(nil, domain.ErrTransactionNotFound)
 
 	uc := newDeleteTransactionUC(t, mgr, txRepo, instRepo, clock)
 	err := uc.Execute(ctx, userID, txID)

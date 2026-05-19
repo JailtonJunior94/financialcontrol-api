@@ -10,11 +10,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// GetTransaction is the use case interface for retrieving a single transaction with its installments (RF-49).
-type GetTransaction interface {
-	Execute(ctx context.Context, userID identityvo.UserID, txID vos.TransactionID) (dtos.TransactionResponse, error)
-}
-
 type getTransaction struct {
 	txRepo   ports.TransactionRepository
 	instRepo ports.InstallmentRepository

@@ -11,7 +11,7 @@ import (
 
 	cardsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
 	cardsentities "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
-	cardsmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces/mocks"
+	cardsmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports/mocks"
 	cardsvos "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	financedomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/projections"

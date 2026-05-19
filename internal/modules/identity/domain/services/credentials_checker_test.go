@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces/mocks"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 
@@ -29,7 +29,7 @@ func (s *CredentialsCheckerSuite) TestCheck_ReturnsTrue_WhenPasswordMatches() {
 	email, _ := vos.NewEmail("user@example.com")
 	hashedPwd, _ := vos.NewHashedPassword("$2a$10$hash")
 	now := time.Now()
-	user := entities.Rehydrate(vos.NewUserID(), "User", email, hashedPwd, now, now, true)
+	user := entities.RehydrateUser(vos.NewUserID(), "User", email, hashedPwd, now, now, true)
 
 	s.hasher.EXPECT().Verify(hashedPwd, "plain-password").Return(true)
 
@@ -41,7 +41,7 @@ func (s *CredentialsCheckerSuite) TestCheck_ReturnsFalse_WhenPasswordDoesNotMatc
 	email, _ := vos.NewEmail("user@example.com")
 	hashedPwd, _ := vos.NewHashedPassword("$2a$10$hash")
 	now := time.Now()
-	user := entities.Rehydrate(vos.NewUserID(), "User", email, hashedPwd, now, now, true)
+	user := entities.RehydrateUser(vos.NewUserID(), "User", email, hashedPwd, now, now, true)
 
 	s.hasher.EXPECT().Verify(hashedPwd, "wrong-password").Return(false)
 

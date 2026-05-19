@@ -3,29 +3,23 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/services"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// Clock abstracts time.Now to keep use cases deterministic in tests.
-type Clock interface {
-	Now() time.Time
-}
-
 type createCategory struct {
-	repo       interfaces.CategoryRepository
+	repo       ports.CategoryRepository
 	uniqueness *services.CategoryUniquenessService
-	clock      Clock
+	clock      ports.Clock
 }
 
-func NewCreateCategory(repo interfaces.CategoryRepository, uniqueness *services.CategoryUniquenessService, clock Clock) CreateCategory {
+func NewCreateCategory(repo ports.CategoryRepository, uniqueness *services.CategoryUniquenessService, clock ports.Clock) CreateCategory {
 	return &createCategory{repo: repo, uniqueness: uniqueness, clock: clock}
 }
 

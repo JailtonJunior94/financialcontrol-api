@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type updateCard struct {
-	cardRepo interfaces.CardRepository
-	flagRepo interfaces.FlagRepository
+	cardRepo ports.CardRepository
+	flagRepo ports.FlagRepository
 }
 
-func NewUpdateCard(cardRepo interfaces.CardRepository, flagRepo interfaces.FlagRepository) UpdateCard {
+func NewUpdateCard(cardRepo ports.CardRepository, flagRepo ports.FlagRepository) UpdateCard {
 	return &updateCard{cardRepo: cardRepo, flagRepo: flagRepo}
 }
 

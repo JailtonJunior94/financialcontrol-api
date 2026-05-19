@@ -1,4 +1,4 @@
-.PHONY: build test vet lint run run_sync run_budget run_budget_cards_and_others run_budget_unified run_budget_full run_balance run_budget_category mocks mocks/clean infra-up infra-down infra-logs infra-migrate infra-wait infra-db-create infra-finalize
+.PHONY: build test test-integration vet lint run run_sync run_budget run_budget_cards_and_others run_budget_unified run_budget_full run_balance run_budget_category mocks mocks/clean infra-up infra-down infra-logs infra-migrate infra-wait infra-db-create infra-finalize observability-up observability-down
 
 # Mockery v2 pinned — see ADR-003. v2.46.0 incompatível com Go 1.26; mínimo v2.53.6.
 MOCKERY ?= go run github.com/vektra/mockery/v2@v2.53.6
@@ -8,12 +8,16 @@ BINARY := financial_control
 
 build:
 	@echo "Building the project..."
-	@CGO_ENABLED=0 go build -o $(BINARY) $(ENTRYPOINT)
+	@CGO_ENABLED=0 go build -ldflags "-X main.version=$(COMMIT)" -o $(BINARY) $(ENTRYPOINT)
 	@echo "Build complete."
 
 test:
 	@echo "Running tests..."
 	@go test --coverprofile tests/coverage.out ./...
+
+test-integration:
+	@echo "Running integration tests (requires Docker)..."
+	@go test -tags=integration -timeout=10m ./internal/bootstrap/http/...
 
 vet:
 	@echo "Running go vet..."
@@ -126,3 +130,14 @@ infra-down:
 
 infra-logs:
 	@$(COMPOSE) logs -f mssql
+
+OBS_COMPOSE_FILE := deployments/observability/docker-compose.yml
+OBS_COMPOSE      := docker compose -f $(OBS_COMPOSE_FILE)
+
+observability-up:
+	@echo "Starting observability stack (Grafana + Tempo + Loki + Mimir + otelcol)..."
+	@$(OBS_COMPOSE) up -d
+	@echo "Grafana available at http://localhost:3001 (admin/admin)"
+
+observability-down:
+	@$(OBS_COMPOSE) down

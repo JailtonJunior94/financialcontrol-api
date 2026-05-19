@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	cardsdomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain"
-	cardsinterfaces "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	cardsinterfaces "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	cardsvos "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	financedomain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/domain/ports"

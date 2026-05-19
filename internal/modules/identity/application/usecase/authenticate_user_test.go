@@ -6,121 +6,107 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/application/usecase"
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/entities"
-	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/interfaces/mocks"
+	ifacemocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports/mocks"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/vos"
 )
 
-type AuthenticateUserSuite struct {
-	suite.Suite
-	ctx         context.Context
-	userRepo    *ifacemocks.UserRepository
-	hasher      *ifacemocks.Hasher
-	tokenIssuer *ifacemocks.TokenIssuer
-	sut         usecase.AuthenticateUser
-}
-
-func TestAuthenticateUserSuite(t *testing.T) { suite.Run(t, new(AuthenticateUserSuite)) }
-
-func (s *AuthenticateUserSuite) SetupTest() {
-	s.ctx = context.Background()
-	s.userRepo = ifacemocks.NewUserRepository(s.T())
-	s.hasher = ifacemocks.NewHasher(s.T())
-	s.tokenIssuer = ifacemocks.NewTokenIssuer(s.T())
-	s.sut = usecase.NewAuthenticateUser(s.userRepo, s.hasher, s.tokenIssuer)
-}
-
-func (s *AuthenticateUserSuite) TestExecute() {
+func TestAuthenticateUser_Execute(t *testing.T) {
+	ctx := context.Background()
 	email, _ := vos.NewEmail("user@example.com")
 	pwd, _ := vos.NewHashedPassword("hashedpwd")
-	user := entities.Rehydrate(vos.NewUserID(), "Test User", email, pwd, time.Now(), time.Now(), true)
+	user := entities.RehydrateUser(vos.NewUserID(), "Test User", email, pwd, time.Now(), time.Now(), true)
 	expiresAt := time.Now().Add(15 * time.Minute)
 
-	type args struct{ in dtos.AuthRequest }
-	scenarios := []struct {
+	tests := []struct {
 		name   string
-		args   args
-		setup  func()
-		expect func(out dtos.AuthResponse, err error)
+		in     dtos.AuthRequest
+		setup  func(*ifacemocks.UserRepository, *ifacemocks.Hasher, *ifacemocks.TokenIssuer)
+		assert func(t *testing.T, out dtos.AuthResponse, err error)
 	}{
 		{
 			name: "sucesso",
-			args: args{in: dtos.AuthRequest{Email: "user@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(user, nil).Once()
-				s.hasher.EXPECT().Verify(pwd, "plainpwd").Return(true).Once()
-				s.tokenIssuer.EXPECT().Issue(s.ctx, user.ID(), user.Email()).Return("token123", expiresAt, nil).Once()
+			in:   dtos.AuthRequest{Email: "user@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher, issuer *ifacemocks.TokenIssuer) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(user, nil).Once()
+				hasher.EXPECT().Verify(pwd, "plainpwd").Return(true).Once()
+				issuer.EXPECT().Issue(ctx, user.ID(), user.Email()).Return("token123", expiresAt, nil).Once()
 			},
-			expect: func(out dtos.AuthResponse, err error) {
-				s.NoError(err)
-				s.Equal("token123", out.Token)
-				s.Equal(expiresAt, out.ExpiresAt)
+			assert: func(t *testing.T, out dtos.AuthResponse, err error) {
+				require.NoError(t, err)
+				assert.Equal(t, "token123", out.Token)
+				assert.Equal(t, expiresAt, out.ExpiresAt)
 			},
 		},
 		{
 			name:  "e-mail invalido",
-			args:  args{in: dtos.AuthRequest{Email: "not-an-email", Password: "plainpwd"}},
-			setup: func() {},
-			expect: func(out dtos.AuthResponse, err error) {
-				s.ErrorIs(err, domain.ErrInvalidCredentials)
+			in:    dtos.AuthRequest{Email: "not-an-email", Password: "plainpwd"},
+			setup: func(_ *ifacemocks.UserRepository, _ *ifacemocks.Hasher, _ *ifacemocks.TokenIssuer) {},
+			assert: func(t *testing.T, out dtos.AuthResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrInvalidCredentials)
 			},
 		},
 		{
 			name: "e-mail desconhecido",
-			args: args{in: dtos.AuthRequest{Email: "unknown@example.com", Password: "plainpwd"}},
-			setup: func() {
+			in:   dtos.AuthRequest{Email: "unknown@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, _ *ifacemocks.Hasher, _ *ifacemocks.TokenIssuer) {
 				unknownEmail, _ := vos.NewEmail("unknown@example.com")
-				s.userRepo.EXPECT().GetByEmail(s.ctx, unknownEmail).Return(nil, nil).Once()
+				repo.EXPECT().GetByEmail(ctx, unknownEmail).Return(nil, nil).Once()
 			},
-			expect: func(out dtos.AuthResponse, err error) {
-				s.ErrorIs(err, domain.ErrInvalidCredentials)
+			assert: func(t *testing.T, out dtos.AuthResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrInvalidCredentials)
 			},
 		},
 		{
 			name: "senha incorreta",
-			args: args{in: dtos.AuthRequest{Email: "user@example.com", Password: "wrong"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(user, nil).Once()
-				s.hasher.EXPECT().Verify(pwd, "wrong").Return(false).Once()
+			in:   dtos.AuthRequest{Email: "user@example.com", Password: "wrong"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher, _ *ifacemocks.TokenIssuer) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(user, nil).Once()
+				hasher.EXPECT().Verify(pwd, "wrong").Return(false).Once()
 			},
-			expect: func(out dtos.AuthResponse, err error) {
-				s.ErrorIs(err, domain.ErrInvalidCredentials)
+			assert: func(t *testing.T, out dtos.AuthResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrInvalidCredentials)
 			},
 		},
 		{
 			name: "falha de repo",
-			args: args{in: dtos.AuthRequest{Email: "user@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(nil, errors.New("db error")).Once()
+			in:   dtos.AuthRequest{Email: "user@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, _ *ifacemocks.Hasher, _ *ifacemocks.TokenIssuer) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(nil, errors.New("db error")).Once()
 			},
-			expect: func(out dtos.AuthResponse, err error) {
-				s.Error(err)
+			assert: func(t *testing.T, out dtos.AuthResponse, err error) {
+				assert.Error(t, err)
 			},
 		},
 		{
 			name: "falha de issuer",
-			args: args{in: dtos.AuthRequest{Email: "user@example.com", Password: "plainpwd"}},
-			setup: func() {
-				s.userRepo.EXPECT().GetByEmail(s.ctx, email).Return(user, nil).Once()
-				s.hasher.EXPECT().Verify(pwd, "plainpwd").Return(true).Once()
-				s.tokenIssuer.EXPECT().Issue(s.ctx, user.ID(), user.Email()).Return("", time.Time{}, errors.New("issuer error")).Once()
+			in:   dtos.AuthRequest{Email: "user@example.com", Password: "plainpwd"},
+			setup: func(repo *ifacemocks.UserRepository, hasher *ifacemocks.Hasher, issuer *ifacemocks.TokenIssuer) {
+				repo.EXPECT().GetByEmail(ctx, email).Return(user, nil).Once()
+				hasher.EXPECT().Verify(pwd, "plainpwd").Return(true).Once()
+				issuer.EXPECT().Issue(ctx, user.ID(), user.Email()).Return("", time.Time{}, errors.New("issuer error")).Once()
 			},
-			expect: func(out dtos.AuthResponse, err error) {
-				s.ErrorIs(err, domain.ErrTokenIssuance)
+			assert: func(t *testing.T, out dtos.AuthResponse, err error) {
+				assert.ErrorIs(t, err, domain.ErrTokenIssuance)
 			},
 		},
 	}
 
-	for _, sc := range scenarios {
-		s.Run(sc.name, func() {
-			sc.setup()
-			out, err := s.sut.Execute(s.ctx, sc.args.in)
-			sc.expect(out, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := ifacemocks.NewUserRepository(t)
+			hasher := ifacemocks.NewHasher(t)
+			issuer := ifacemocks.NewTokenIssuer(t)
+			tt.setup(repo, hasher, issuer)
+			sut := usecase.NewAuthenticateUser(repo, hasher, issuer)
+			out, err := sut.Execute(ctx, tt.in)
+			tt.assert(t, out, err)
 		})
 	}
 }

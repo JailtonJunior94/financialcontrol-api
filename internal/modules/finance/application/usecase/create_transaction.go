@@ -24,11 +24,6 @@ import (
 
 const createTransactionEndpoint = "POST /finance/transactions"
 
-// CreateTransaction is the use case interface for creating a new transaction (RF-01..04, RF-26).
-type CreateTransaction interface {
-	Execute(ctx context.Context, userID identityvo.UserID, key vos.IdempotencyKey, req dtos.CreateTransactionRequest) (dtos.TransactionResponse, error)
-}
-
 type createTransaction struct {
 	mgr      manager.Manager
 	txRepo   ports.TransactionRepository
@@ -40,6 +35,7 @@ type createTransaction struct {
 	splitter *services.InstallmentSplitter
 	clock    ports.Clock
 	ids      ports.IDGenerator
+	metrics  ports.FinancialMetricsRecorder
 }
 
 // NewCreateTransaction constructs the CreateTransaction use case with all required collaborators.
@@ -54,6 +50,7 @@ func NewCreateTransaction(
 	splitter *services.InstallmentSplitter,
 	clock ports.Clock,
 	ids ports.IDGenerator,
+	metrics ports.FinancialMetricsRecorder,
 ) CreateTransaction {
 	return &createTransaction{
 		mgr:      mgr,
@@ -66,6 +63,7 @@ func NewCreateTransaction(
 		splitter: splitter,
 		clock:    clock,
 		ids:      ids,
+		metrics:  metrics,
 	}
 }
 
@@ -175,6 +173,10 @@ func (uc *createTransaction) Execute(ctx context.Context, userID identityvo.User
 	if err != nil {
 		return dtos.TransactionResponse{}, err
 	}
+
+	safeRecord(ctx, func() {
+		uc.metrics.RecordAmountProcessed(ctx, tx.Amount().Money(), tx.TransactionType(), tx.PaymentMethod())
+	})
 
 	return resp, nil
 }

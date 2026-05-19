@@ -60,10 +60,10 @@ func TestMonthlySummary_GoldenPath(t *testing.T) {
 		TotalRefundsOut: mustMoney(t, "20.00"),
 	}
 
-	txRepo.On("SumForSummary", mock.Anything, userID, period).Return(agg, nil)
-	instRepo.On("SumByMonthCompetence", mock.Anything, userID, period).Return(mustMoney(t, "200.00"), nil)
-	invRepo.On("SumOpenForUser", mock.Anything, userID, period).Return(mustMoney(t, "300.00"), nil)
-	invRepo.On("SumPaidInPeriod", mock.Anything, userID, period).Return(mustMoney(t, "150.00"), nil)
+	txRepo.EXPECT().SumForSummary(mock.Anything, userID, period).Return(agg, nil)
+	instRepo.EXPECT().SumByMonthCompetence(mock.Anything, userID, period).Return(mustMoney(t, "200.00"), nil)
+	invRepo.EXPECT().SumOpenForUser(mock.Anything, userID, period).Return(mustMoney(t, "300.00"), nil)
+	invRepo.EXPECT().SumPaidInPeriod(mock.Anything, userID, period).Return(mustMoney(t, "150.00"), nil)
 
 	uc := newMonthlySummaryUC(t, txRepo, invRepo, instRepo)
 	resp, err := uc.Execute(ctx, userID, period)
@@ -95,8 +95,8 @@ func TestMonthlySummary_ErrorOnInstallmentSum(t *testing.T) {
 	}
 
 	sumErr := errTest("installment sum failed")
-	txRepo.On("SumForSummary", mock.Anything, userID, period).Return(agg, nil)
-	instRepo.On("SumByMonthCompetence", mock.Anything, userID, period).Return(zero, sumErr)
+	txRepo.EXPECT().SumForSummary(mock.Anything, userID, period).Return(agg, nil)
+	instRepo.EXPECT().SumByMonthCompetence(mock.Anything, userID, period).Return(zero, sumErr)
 
 	uc := newMonthlySummaryUC(t, txRepo, invRepo, instRepo)
 	_, err := uc.Execute(ctx, userID, period)
@@ -116,7 +116,7 @@ func TestMonthlySummary_ErrorOnSumForSummary(t *testing.T) {
 
 	zero := vos.ZeroMoney()
 	sumErr := errTest("sum for summary failed")
-	txRepo.On("SumForSummary", mock.Anything, userID, period).Return(portmocks.SummaryAggregates{}, sumErr)
+	txRepo.EXPECT().SumForSummary(mock.Anything, userID, period).Return(portmocks.SummaryAggregates{}, sumErr)
 
 	uc := newMonthlySummaryUC(t, txRepo, invRepo, instRepo)
 	_, err := uc.Execute(ctx, userID, period)
@@ -144,10 +144,10 @@ func TestMonthlySummary_ZeroValues(t *testing.T) {
 		TotalRefundsOut: zero,
 	}
 
-	txRepo.On("SumForSummary", mock.Anything, userID, period).Return(agg, nil)
-	instRepo.On("SumByMonthCompetence", mock.Anything, userID, period).Return(zero, nil)
-	invRepo.On("SumOpenForUser", mock.Anything, userID, period).Return(zero, nil)
-	invRepo.On("SumPaidInPeriod", mock.Anything, userID, period).Return(zero, nil)
+	txRepo.EXPECT().SumForSummary(mock.Anything, userID, period).Return(agg, nil)
+	instRepo.EXPECT().SumByMonthCompetence(mock.Anything, userID, period).Return(zero, nil)
+	invRepo.EXPECT().SumOpenForUser(mock.Anything, userID, period).Return(zero, nil)
+	invRepo.EXPECT().SumPaidInPeriod(mock.Anything, userID, period).Return(zero, nil)
 
 	uc := newMonthlySummaryUC(t, txRepo, invRepo, instRepo)
 	resp, err := uc.Execute(ctx, userID, period)

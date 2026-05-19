@@ -13,17 +13,13 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// RefundTransaction is the use case interface for creating a refund (RF-53/RF-13).
-type RefundTransaction interface {
-	Execute(ctx context.Context, userID identityvo.UserID, txID vos.TransactionID, req dtos.RefundTransactionRequest) (dtos.TransactionResponse, error)
-}
-
 type refundTransaction struct {
 	mgr     manager.Manager
 	txRepo  ports.TransactionRepository
 	factory *services.RefundFactory
 	clock   ports.Clock
 	ids     ports.IDGenerator
+	metrics ports.FinancialMetricsRecorder
 }
 
 // NewRefundTransaction constructs the RefundTransaction use case.
@@ -33,6 +29,7 @@ func NewRefundTransaction(
 	factory *services.RefundFactory,
 	clock ports.Clock,
 	ids ports.IDGenerator,
+	metrics ports.FinancialMetricsRecorder,
 ) RefundTransaction {
 	return &refundTransaction{
 		mgr:     mgr,
@@ -40,6 +37,7 @@ func NewRefundTransaction(
 		factory: factory,
 		clock:   clock,
 		ids:     ids,
+		metrics: metrics,
 	}
 }
 
@@ -75,6 +73,10 @@ func (uc *refundTransaction) Execute(ctx context.Context, userID identityvo.User
 	if err != nil {
 		return dtos.TransactionResponse{}, err
 	}
+
+	safeRecord(ctx, func() {
+		uc.metrics.RecordAmountProcessed(ctx, refund.Amount().Money(), refund.TransactionType(), refund.PaymentMethod())
+	})
 
 	return toTransactionResponse(refund), nil
 }

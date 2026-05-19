@@ -9,11 +9,6 @@ import (
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
-// MonthlySummary is the use case interface for computing the 7-bucket monthly summary (RF-20/RF-51).
-type MonthlySummary interface {
-	Execute(ctx context.Context, userID identityvo.UserID, period vos.Period) (dtos.MonthlySummaryResponse, error)
-}
-
 type monthlySummary struct {
 	txRepo   ports.TransactionRepository
 	invRepo  ports.InvoiceRepository

@@ -8,12 +8,12 @@ import (
 	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	pkgdatabase "github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 )
 
-var _ interfaces.FlagRepository = (*FlagRepository)(nil)
+var _ ports.FlagRepository = (*FlagRepository)(nil)
 
 type FlagRepository struct {
 	db devkitdb.DBTX

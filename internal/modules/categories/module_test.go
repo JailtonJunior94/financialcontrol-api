@@ -5,24 +5,20 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	categories "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/routes"
-	jwtmocks "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt/mocks"
 )
 
 func TestRegisterHTTP_RegistersAuthenticatedRoutes(t *testing.T) {
-	parser := jwtmocks.NewParser(t)
-
 	module := &categories.Module{
 		CategoryHandler: handlers.NewCategoryHandler(nil, nil, nil, nil, nil),
 	}
 
 	app := fiber.New()
-	module.RegisterHTTP(app, parser)
+	module.RegisterHTTP(app, allowAll())
 
 	routesList := app.GetRoutes(true)
 	got := make(map[string]map[string]bool, len(routesList))
@@ -48,12 +44,9 @@ func TestRegisterHTTP_RegistersAuthenticatedRoutes(t *testing.T) {
 }
 
 func TestRegisterCategoryRoutes_RequiresAuthentication(t *testing.T) {
-	parser := jwtmocks.NewParser(t)
-	parser.EXPECT().Parse(mock.Anything, mock.AnythingOfType("string")).Maybe()
-
 	app := fiber.New()
 	handler := handlers.NewCategoryHandler(nil, nil, nil, nil, nil)
-	routes.RegisterCategoryRoutes(app, handler, parser)
+	routes.RegisterCategoryRoutes(app, handler, rejectAll())
 
 	cases := []struct {
 		method string
@@ -70,5 +63,15 @@ func TestRegisterCategoryRoutes_RequiresAuthentication(t *testing.T) {
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		require.Equalf(t, fiber.StatusUnauthorized, resp.StatusCode, "%s %s should require auth", tc.method, tc.path)
+	}
+}
+
+func allowAll() fiber.Handler {
+	return func(c *fiber.Ctx) error { return c.Next() }
+}
+
+func rejectAll() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 }

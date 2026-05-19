@@ -6,17 +6,17 @@ import (
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/vos"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type createCard struct {
-	cardRepo interfaces.CardRepository
-	flagRepo interfaces.FlagRepository
+	cardRepo ports.CardRepository
+	flagRepo ports.FlagRepository
 }
 
-func NewCreateCard(cardRepo interfaces.CardRepository, flagRepo interfaces.FlagRepository) CreateCard {
+func NewCreateCard(cardRepo ports.CardRepository, flagRepo ports.FlagRepository) CreateCard {
 	return &createCard{cardRepo: cardRepo, flagRepo: flagRepo}
 }
 

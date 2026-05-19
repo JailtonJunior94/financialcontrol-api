@@ -14,7 +14,7 @@ import (
 
 	domain "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/entities"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/vos"
 	repomssql "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/persistence/mssql"
 	dbmssql "github.com/jailtonjunior94/financialcontrol-api/pkg/database/mssql"
@@ -95,7 +95,7 @@ func (s *CategoryRepositorySuite) TestAddGetByIDList() {
 	s.Equal(5, got.Sequence())
 	s.True(got.IsActive())
 
-	items, total, err := repo.List(s.ctx, userID, interfaces.ListFilter{})
+	items, total, err := repo.List(s.ctx, userID, ports.ListFilter{})
 	s.Require().NoError(err)
 	s.Equal(int64(1), total)
 	s.Len(items, 1)
@@ -165,13 +165,13 @@ func (s *CategoryRepositorySuite) TestSoftDeleteCascadeNotFoundAndListFilters() 
 	s.Require().NoError(repo.Add(s.ctx, second))
 	s.Require().NoError(repo.Add(s.ctx, third))
 
-	items, total, err := repo.List(s.ctx, userID, interfaces.ListFilter{NameLike: "Tra"})
+	items, total, err := repo.List(s.ctx, userID, ports.ListFilter{NameLike: "Tra"})
 	s.Require().NoError(err)
 	s.Equal(int64(2), total)
 	s.Len(items, 2)
 	s.Equal("Trabalho", items[0].Name().String())
 
-	items, total, err = repo.List(s.ctx, userID, interfaces.ListFilter{
+	items, total, err = repo.List(s.ctx, userID, ports.ListFilter{
 		Pagination: vos.NewPagination(1, 2),
 	})
 	s.Require().NoError(err)

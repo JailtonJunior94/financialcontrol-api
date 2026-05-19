@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/dtos"
-	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/interfaces"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/identityvo"
 )
 
 type listCards struct {
-	cardRepo interfaces.CardRepository
+	cardRepo ports.CardRepository
 }
 
-func NewListCards(cardRepo interfaces.CardRepository) ListCards {
+func NewListCards(cardRepo ports.CardRepository) ListCards {
 	return &listCards{cardRepo: cardRepo}
 }
 

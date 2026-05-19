@@ -43,7 +43,6 @@ var moduleDirs = []string{
 	"internal/modules/cards",
 	"internal/modules/categories",
 	"internal/modules/finance",
-	"internal/modules/planning",
 }
 
 // crossModuleRestricted are import paths that must not appear in modular
@@ -53,7 +52,6 @@ var crossModuleRestricted = map[string][]string{
 	"cards":      {"internal/infrastructure/repositories", "internal/application/handlers"},
 	"categories": {"internal/infrastructure/repositories", "internal/application/handlers"},
 	"finance":    {"internal/infrastructure/repositories", "internal/application/handlers"},
-	"planning":   {"internal/infrastructure/repositories", "internal/application/handlers"},
 }
 
 func TestRefactorProgress_Snapshot(t *testing.T) {
@@ -188,9 +186,10 @@ func TestRefactorProgress_LegacyEquivalentArtifactsRemoved(t *testing.T) {
 			shouldExist: true,
 		},
 		{
-			name:        "planning module registration preserved",
-			relative:    "internal/modules/planning/registration.go",
-			shouldExist: true,
+			name:        "planning module removed",
+			relative:    "internal/modules/planning",
+			shouldExist: false,
+			goFilesOnly: true,
 		},
 		{
 			name:        "billing module removed",
