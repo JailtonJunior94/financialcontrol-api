@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/application/usecase"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/domain/services"
 	categoriesclock "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/clock"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/http/handlers"
@@ -25,7 +26,14 @@ type Module struct {
 	GetCategory     usecase.GetCategory
 	ListCategories  usecase.ListCategories
 	CategoryHandler *handlers.CategoryHandler
+
+	categoryRepo ports.CategoryRepository
 }
+
+// CategoryRepository exposes the categories repository as a domain port so the
+// composition root can wire cross-module providers without reaching into
+// categories-owned infrastructure (persistence/mssql).
+func (m *Module) CategoryRepository() ports.CategoryRepository { return m.categoryRepo }
 
 // NewModule builds the categories module from its external dependencies.
 func NewModule(deps Deps) *Module {
@@ -50,6 +58,7 @@ func NewModule(deps Deps) *Module {
 		GetCategory:     get,
 		ListCategories:  list,
 		CategoryHandler: handler,
+		categoryRepo:    repo,
 	}
 }
 

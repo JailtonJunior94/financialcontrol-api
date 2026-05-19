@@ -4,6 +4,7 @@ import (
 	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/application/usecase"
+	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/domain/ports"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/handlers"
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/http/routes"
 	mssqlrepo "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/persistence/mssql"
@@ -24,7 +25,14 @@ type Module struct {
 	ListFlags      usecase.ListFlags
 	CardHandler    *handlers.CardHandler
 	FlagHandler    *handlers.FlagHandler
+
+	cardRepo ports.CardRepository
 }
+
+// CardRepository exposes the cards repository as a domain port so the
+// composition root can wire cross-module providers without reaching into
+// cards-owned infrastructure (persistence/mssql).
+func (m *Module) CardRepository() ports.CardRepository { return m.cardRepo }
 
 // NewModule builds the cards module from its external dependencies.
 func NewModule(deps Deps) *Module {
@@ -50,6 +58,7 @@ func NewModule(deps Deps) *Module {
 		ListFlags:      listFlags,
 		CardHandler:    cardHandler,
 		FlagHandler:    flagHandler,
+		cardRepo:       cardRepo,
 	}
 }
 

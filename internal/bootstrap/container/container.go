@@ -14,13 +14,10 @@ import (
 	bootstrapmetrics "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/observability/metrics"
 	bootstrapredactor "github.com/jailtonjunior94/financialcontrol-api/internal/bootstrap/observability/redactor"
 	cards "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards"
-	cardsmssql "github.com/jailtonjunior94/financialcontrol-api/internal/modules/cards/infrastructure/persistence/mssql"
 	categories "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories"
-	categoriesmssql "github.com/jailtonjunior94/financialcontrol-api/internal/modules/categories/infrastructure/persistence/mssql"
 	finance "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance"
 	financeproviders "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/providers"
 	identity "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
-	identityadapters "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/infrastructure/adapters"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/config"
 	"github.com/jailtonjunior94/financialcontrol-api/pkg/database"
 	pkgjwt "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt"
@@ -83,17 +80,15 @@ func Build(ctx context.Context, mgr manager.Manager, obs observability.Observabi
 
 	c.IdentityModule = identity.NewModule(identity.Deps{
 		DB:          dbtx,
-		Hasher:      identityadapters.NewHasher(c.HashAdapter),
-		TokenIssuer: identityadapters.NewTokenIssuer(jwtIssuer),
+		HashAdapter: c.HashAdapter,
+		JwtIssuer:   jwtIssuer,
 	})
 
 	c.CardsModule = cards.NewModule(cards.Deps{DB: dbtx})
 	c.CategoriesModule = categories.NewModule(categories.Deps{DB: dbtx})
 
-	cardRepo := cardsmssql.NewCardRepository(dbtx)
-	catRepo := categoriesmssql.NewCategoryRepository(dbtx)
-	cardProvider := financeproviders.NewCardProviderAdapter(cardRepo)
-	catProvider := financeproviders.NewCategoryProviderAdapter(catRepo)
+	cardProvider := financeproviders.NewCardProviderAdapter(c.CardsModule.CardRepository())
+	catProvider := financeproviders.NewCategoryProviderAdapter(c.CategoriesModule.CategoryRepository())
 
 	c.FinanceModule = finance.NewModule(finance.Deps{
 		Manager:          mgr,

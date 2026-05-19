@@ -7,8 +7,9 @@ import (
 	devkitdb "github.com/JailtonJunior94/devkit-go/pkg/database"
 
 	"github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity"
-	portmocks "github.com/jailtonjunior94/financialcontrol-api/internal/modules/identity/domain/ports/mocks"
+	jwtmocks "github.com/jailtonjunior94/financialcontrol-api/pkg/jwt/mocks"
 	pkgroutes "github.com/jailtonjunior94/financialcontrol-api/pkg/routes"
+	platformsecurity "github.com/jailtonjunior94/financialcontrol-api/pkg/security"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/suite"
@@ -31,20 +32,16 @@ func (s *dbtxStub) QueryRowContext(_ context.Context, _ string, _ ...any) devkit
 // ModuleWiringSuite validates that NewModule composes all dependencies correctly.
 type ModuleWiringSuite struct {
 	suite.Suite
-	hasher      *portmocks.Hasher
-	tokenIssuer *portmocks.TokenIssuer
-	deps        identity.Deps
+	deps identity.Deps
 }
 
 func TestModuleWiringSuite(t *testing.T) { suite.Run(t, new(ModuleWiringSuite)) }
 
 func (s *ModuleWiringSuite) SetupTest() {
-	s.hasher = portmocks.NewHasher(s.T())
-	s.tokenIssuer = portmocks.NewTokenIssuer(s.T())
 	s.deps = identity.Deps{
 		DB:          &dbtxStub{},
-		Hasher:      s.hasher,
-		TokenIssuer: s.tokenIssuer,
+		HashAdapter: platformsecurity.NewHashAdapter(),
+		JwtIssuer:   jwtmocks.NewIssuer(s.T()),
 	}
 }
 

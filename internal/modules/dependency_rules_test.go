@@ -18,27 +18,38 @@ var allModules = []string{
 	"identity", "categories", "cards", "finance",
 }
 
-// TestContainerWiresFinanceThroughModuleContracts asserts the container wires
-// finance only through its module contract (the finance package facade) plus
-// the documented cross-module providers adapter. The container must NOT reach
-// into finance-owned infrastructure (persistence/clock/idgen/idempotency):
-// those are constructed inside finance.NewModule, matching every other module's
-// encapsulation. This is the canonical module form.
-func TestContainerWiresFinanceThroughModuleContracts(t *testing.T) {
+// TestContainerWiresModulesThroughModuleContracts asserts the canonical module
+// form for EVERY bounded-context module: the container wires each module only
+// through its package facade (NewModule) and must NOT reach into any
+// module-owned infrastructure (persistence/clock/idgen/idempotency/adapters).
+// Those are constructed inside <module>.NewModule.
+//
+// Documented exception: internal/modules/finance/infrastructure/providers holds
+// intentional Ports & Adapters cross-module adapters composed by the container
+// (the same exception carved out by TestNoCrossModuleDomainImports).
+func TestContainerWiresModulesThroughModuleContracts(t *testing.T) {
 	imports := fileImports(t, "internal/bootstrap/container/container.go")
 
 	assert.NotContains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/application/handlers")
-	assert.Contains(t, imports, "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance")
 
-	leakedInfra := []string{
-		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/persistence/mssql",
-		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/clock",
-		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/idgen",
-		"github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/idempotency",
-	}
-	for _, imp := range leakedInfra {
-		assert.NotContains(t, imports, imp,
-			"container must not construct finance-owned infrastructure; build it inside finance.NewModule")
+	const allowedProvidersException = "github.com/jailtonjunior94/financialcontrol-api/internal/modules/finance/infrastructure/providers"
+
+	for _, mod := range allModules {
+		t.Run(mod, func(t *testing.T) {
+			facade := "github.com/jailtonjunior94/financialcontrol-api/internal/modules/" + mod
+			assert.Contains(t, imports, facade,
+				"container must import the %s module facade", mod)
+
+			infraPrefix := facade + "/infrastructure"
+			for _, imp := range imports {
+				if imp == allowedProvidersException {
+					continue
+				}
+				assert.Falsef(t, strings.HasPrefix(imp, infraPrefix),
+					"container must not construct %s-owned infrastructure (%s); build it inside %s.NewModule",
+					mod, imp, mod)
+			}
+		})
 	}
 }
 
