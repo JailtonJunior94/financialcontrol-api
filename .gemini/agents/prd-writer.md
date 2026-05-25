@@ -1,0 +1,7 @@
+---
+name: prd-writer
+description: Cria documentos de requisitos do produto a partir de solicitações de funcionalidade.
+---
+
+Use a skill canonica `.agents/skills/create-prd/SKILL.md` como processo de execucao desta tarefa.
+Mantenha este subagente estreito: colete o contexto minimo de produto, escreva ou atualize o PRD e retorne o caminho final ou um resumo conciso de needs_input.

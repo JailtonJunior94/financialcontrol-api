@@ -1,6 +1,6 @@
 ---
 name: review
-version: 1.1.0
+version: 1.2.0
 description: Revisa um diff de código quanto a correção, segurança, regressões e testes faltantes usando regras específicas do repositório. Use quando uma branch ou diff local precisar de revisão no estilo dono do código antes de merge ou fechamento de tarefa. Não use para implementação, planejamento de produto ou limpeza apenas de estilo.
 ---
 
@@ -10,7 +10,7 @@ description: Revisa um diff de código quanto a correção, segurança, regress�
 
 **Etapa 1: Carregar contexto mínimo**
 
-1. Aplicar guard de profundidade quando disponível: `[ -r scripts/lib/check-invocation-depth.sh ] && source scripts/lib/check-invocation-depth.sh || true`. Em harness instalado, o script aborta com mensagem própria se o limite for atingido. Se o arquivo não existir, seguir.
+1. Aplicar guard de profundidade quando disponível, resolvendo `check-invocation-depth.sh` em cascata `.agents/lib/` → `scripts/lib/` (B1): `for d in .agents/lib scripts/lib; do [ -r "$d/check-invocation-depth.sh" ] && { source "$d/check-invocation-depth.sh" || true; break; }; done`. Em harness instalado, o script aborta com mensagem própria se o limite for atingido. Se nenhum dos caminhos existir, seguir.
 2. Determinar escopo do diff:
    - Se `AI_REVIEW_PRIOR_SHA` estiver definido (rodada pós-`bugfix`), revisar apenas `git diff "$AI_REVIEW_PRIOR_SHA"..HEAD` — somente o delta da remediação, não o PR inteiro.
    - Caso contrário, usar a base apropriada (ex.: `git diff --merge-base origin/main`) restrita aos arquivos efetivamente alterados.

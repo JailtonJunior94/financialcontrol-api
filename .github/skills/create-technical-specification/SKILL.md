@@ -1,7 +1,7 @@
 ---
 name: create-technical-specification
-version: 1.0.0
-description: Cria especificações técnicas prontas para implementação a partir de um PRD aprovado e do contexto do repositório. Use quando arquitetura, interfaces, riscos, ADRs e estratégia de testes precisarem ser definidos antes da codificação. Não use para descoberta de produto, execução de tarefa ou revisão de código.
+version: 1.2.1
+description: Cria especificações técnicas prontas para implementação a partir de um PRD aprovado e do contexto do repositório. Registra spec-hash do PRD consumido no cabeçalho da techspec para rastreabilidade e detecção de drift downstream. Use quando arquitetura, interfaces, riscos, ADRs e estratégia de testes precisarem ser definidos antes da codificação. Não use para descoberta de produto, execução de tarefa ou revisão de código.
 ---
 
 # Criar Especificação Técnica
@@ -9,7 +9,7 @@ description: Cria especificações técnicas prontas para implementação a part
 ## Procedimentos
 
 **Etapa 1: Validar o artefato de entrada**
-1. Confirmar que o PRD alvo existe em `tasks/prd-<slug-da-funcionalidade>/prd.md`.
+1. Confirmar que o PRD alvo existe em `.specs/prd-<slug-da-funcionalidade>/prd.md`.
 2. Extrair requisitos, restrições, métricas e itens fora de escopo do PRD antes de explorar o codebase.
 3. Parar com `needs_input` se o PRD estiver ausente ou incompleto demais para sustentar decisões de arquitetura.
 
@@ -46,17 +46,24 @@ description: Cria especificações técnicas prontas para implementação a part
 
 **Etapa 6: Criar ADRs para decisões materiais**
 1. Ler `assets/adr-template.md`.
-2. Para cada decisão material introduzida na especificação técnica, criar uma ADR separada em `tasks/prd-<slug-da-funcionalidade>/`.
+2. Para cada decisão material introduzida na especificação técnica, criar uma ADR separada em `.specs/prd-<slug-da-funcionalidade>/`.
 3. Usar nomes estáveis de arquivo como `adr-001-<slug-da-decisao>.md`.
 4. Vincular as ADRs a partir da especificação técnica.
 
 **Etapa 7: Persistir e reportar**
-1. Salvar a especificação técnica como `tasks/prd-<slug-da-funcionalidade>/techspec.md`.
-2. Informar o caminho final, os caminhos das ADRs e os itens ainda em aberto.
-3. Retornar estado final `done` ou `needs_input`.
+1. **Calcular e injetar spec-hash do PRD no topo da techspec** (mandatório):
+   - `<!-- spec-hash-prd: $(ai-spec hash .specs/prd-<slug>/prd.md) -->`
+   - Esse comentário rastreia qual versão do PRD foi consumida; se o PRD for editado depois, `create-tasks` e `execute-task` detectam o drift comparando este hash com o atual.
+2. Salvar a especificação técnica como `.specs/prd-<slug-da-funcionalidade>/techspec.md`.
+3. Informar o caminho final, os caminhos das ADRs e os itens ainda em aberto.
+4. Retornar estado final `done` ou `needs_input`.
 
 ## Tratamento de Erros
 
 * Se o PRD misturar produto com detalhe de implementação, preservar a intenção de produto e mover apenas as decisões de implementação para a especificação técnica.
 * Se a exploração do repositório mostrar que o desenho solicitado viola regras existentes de arquitetura ou segurança, documentar o conflito explicitamente em vez de normalizá-lo em silêncio.
 * Se a documentação externa de uma dependência estiver indisponível, marcar a decisão afetada como suposição e reduzir o raio de impacto dessa suposição na implementação proposta.
+
+## Resolução de paths
+
+Todo caminho `.specs/prd-<slug>/` referenciado neste documento resolve para `${AI_TASKS_ROOT:-.specs}/${AI_PRD_PREFIX:-prd-}<slug>/`. Defaults preservam o layout histórico. Customização via `.claude/config.yaml` ou `.agents/config.yaml` (chaves `tasks_root`, `prd_prefix`). `check-invocation-depth.sh` exporta `AI_TASKS_ROOT` e `AI_PRD_PREFIX` para garantir paridade entre Claude Code, Codex, Gemini e Copilot — resolução em cascata `.agents/lib/` → `scripts/lib/` (vendor canônico em `.agents/lib/`).

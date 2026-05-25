@@ -1,6 +1,6 @@
 ---
 name: bugfix
-version: 1.0.0
+version: 1.1.1
 description: Corrige bugs pela causa raiz com testes de regressao obrigatorios e evidencia de validacao. Use quando o usuario pedir para corrigir bugs ou referenciar bugs.md, especialmente a partir de achados emitidos pela skill review. Nao use para review ou auditoria sem alteracao, nem para refatoracao sem defeito confirmado.
 ---
 
@@ -9,7 +9,15 @@ description: Corrige bugs pela causa raiz com testes de regressao obrigatorios e
 ## Procedimentos
 
 **Etapa 1: Validar entrada e escopo**
-1. Verificar profundidade de invocação: resolver a raiz do repositorio com `repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` e executar `source "$repo_root/scripts/lib/check-invocation-depth.sh" || { echo "failed: depth limit exceeded"; exit 1; }` — parar se o limite for atingido.
+1. Verificar profundidade de invocação: resolver a raiz com `repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"` e localizar `check-invocation-depth.sh` em cascata `.agents/lib/` → `scripts/lib/` (B1, suporta bootstrap em projetos que copiam apenas `.agents/`):
+   ```bash
+   _depth_lib=""
+   for d in "$repo_root/.agents/lib" "$repo_root/scripts/lib"; do
+     [[ -r "$d/check-invocation-depth.sh" ]] && { _depth_lib="$d/check-invocation-depth.sh"; break; }
+   done
+   [[ -n "$_depth_lib" ]] || { echo "failed: check-invocation-depth.sh ausente em .agents/lib/ e scripts/lib/"; exit 1; }
+   source "$_depth_lib" || { echo "failed: depth limit exceeded"; exit 1; }
+   ```
 2. Confirmar que a lista de bugs foi recebida no formato canonico `{ id, severity, file, line, reproduction, expected, actual }`.
 3. Ler `references/canonical-bug-format.md` quando houver duvida sobre campos obrigatorios, severidades ou estados canonicos.
 4. Se a lista vier em arquivo JSON, validar contra o schema canonico com `python3 "$repo_root/.agents/skills/bugfix/scripts/validate-bug-input.py" --input <caminho>` antes de prosseguir. O script tenta JSON Schema (`jsonschema`) e cai para validacao manual equivalente quando a lib nao esta disponivel.
@@ -39,7 +47,7 @@ description: Corrige bugs pela causa raiz com testes de regressao obrigatorios e
 1. Registrar para cada bug o arquivo alterado, o teste de regressao adicionado e o resultado da validacao.
 2. Atualizar o estado de cada bug usando apenas `fixed`, `blocked`, `skipped` ou `failed`.
 3. Ler `assets/bugfix-report-template.md`.
-4. Salvar o relatorio em `tasks/prd-<feature-slug>/bugfix_report.md` quando estiver em contexto de tarefa; caso contrario, em `./bugfix_report.md`.
+4. Salvar o relatorio em `.specs/prd-<feature-slug>/bugfix_report.md` quando estiver em contexto de tarefa; caso contrario, em `./bugfix_report.md`.
 5. Validar o relatorio com `bash "$repo_root/.claude/scripts/validate-bugfix-evidence.sh" <caminho-do-relatorio>`; corrigir secoes faltantes antes de encerrar.
 
 **Etapa 6: Encerrar o fluxo**
@@ -60,12 +68,12 @@ description: Corrige bugs pela causa raiz com testes de regressao obrigatorios e
 
 ## Resolução de paths
 
-Todo caminho `tasks/prd-<slug>/` referenciado neste documento resolve para `${AI_TASKS_ROOT:-tasks}/${AI_PRD_PREFIX:-prd-}<slug>/`. Defaults preservam o layout histórico. Customização via `.claude/config.yaml` ou `.agents/config.yaml`:
+Todo caminho `.specs/prd-<slug>/` referenciado neste documento resolve para `${AI_TASKS_ROOT:-.specs}/${AI_PRD_PREFIX:-prd-}<slug>/`. Defaults preservam o layout histórico. Customização via `.claude/config.yaml` ou `.agents/config.yaml`:
 
 ```yaml
-tasks_root: tasks
+tasks_root: .specs
 prd_prefix: prd-
 evidence_dir: ""
 ```
 
-`scripts/lib/check-invocation-depth.sh` (Etapa 1) exporta `AI_TASKS_ROOT`, `AI_PRD_PREFIX`, `AI_EVIDENCE_DIR`, `AI_TOOL` para skills, validators e runtime, garantindo paridade exata entre Claude Code, Codex, Gemini e Copilot.
+`check-invocation-depth.sh` (Etapa 1, resolvido em cascata `.agents/lib/` → `scripts/lib/`) exporta `AI_TASKS_ROOT`, `AI_PRD_PREFIX`, `AI_EVIDENCE_DIR`, `AI_TOOL` para skills, validators e runtime, garantindo paridade exata entre Claude Code, Codex, Gemini e Copilot.

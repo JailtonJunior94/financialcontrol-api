@@ -1,0 +1,9 @@
+description = "Atualiza CHANGELOG.md, revisa README.md quando necessario, prepara staging, cria commit semantico e publica no remoto."
+prompt = """
+Use `.agents/skills/finalize-changelog-readme-push/SKILL.md` como fluxo canonico desta tarefa.
+Leia os assets e references sob demanda conforme descrito no SKILL.md.
+Nao invente um processo paralelo neste comando.
+
+Aplicar a habilidade a esta solicitacao:
+{{args}}
+"""

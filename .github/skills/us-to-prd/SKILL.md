@@ -1,6 +1,6 @@
 ---
 name: us-to-prd
-version: 1.0.0
+version: 1.0.1
 description: Converte User Stories brutas em um PRD estruturado com objetivo, escopo, restricoes e requisitos funcionais numerados. Use como etapa anterior ao create-prd quando a entrada for historias de usuario (formato "Como <persona>, quero <acao>, para <valor>"). Nao use para criar PRDs a partir do zero sem historias de usuario.
 ---
 
@@ -25,7 +25,7 @@ description: Converte User Stories brutas em um PRD estruturado com objetivo, es
 1. Redigir as secoes: Objetivo, Escopo, Restricoes, Usuarios-alvo, Requisitos Funcionais.
 2. Adicionar secao de Requisitos Nao-Funcionais quando identificados nas historias.
 3. Incluir a lista original de User Stories como apendice para rastreabilidade.
-4. Salvar em `tasks/<slug-feature>/prd.md`.
+4. Salvar em `.specs/<slug-feature>/prd.md`.
 
 **Etapa 4: Validar com o solicitante**
 1. Apresentar o PRD gerado para revisao.

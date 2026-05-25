@@ -1,4 +1,4 @@
-description = "Executa uma tarefa de implementação aprovada por meio de codificação, validação, revisão e captura de evidências"
+description = "Executa uma tarefa de implementação aprovada via codificação, validação, revisão e captura de evidências."
 prompt = """
 Use `.agents/skills/execute-task/SKILL.md` como fluxo canonico desta tarefa.
 Carregue `.agents/skills/execute-task/assets/task-execution-report-template.md` antes de iniciar.

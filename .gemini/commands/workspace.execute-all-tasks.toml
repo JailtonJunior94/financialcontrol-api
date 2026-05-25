@@ -1,0 +1,10 @@
+description = "Orquestra execução completa de PRD spawnando subagent fresh por tarefa para isolar contexto."
+prompt = """
+Use `.agents/skills/execute-all-tasks/SKILL.md` como fluxo canonico desta tarefa.
+Carregue `.agents/skills/execute-all-tasks/assets/orchestration-report-template.md` antes de iniciar.
+Leia os assets e references sob demanda conforme descrito no SKILL.md.
+Nao invente um processo paralelo neste comando.
+
+Aplicar a habilidade a esta solicitacao:
+{{args}}
+"""

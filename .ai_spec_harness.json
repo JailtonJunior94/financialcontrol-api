@@ -1,14 +1,14 @@
 {
-  "version": "dev",
-  "created_at": "2026-05-08T14:34:33.909268-03:00",
-  "updated_at": "2026-05-08T15:18:54.011415-03:00",
-  "source_dir": "/var/folders/hg/97c4drd559zgx8mztt_4b6fw0000gn/T/ai-spec-harness-embedded-3926616511",
+  "version": "0.23.2",
+  "created_at": "2026-05-25T08:50:25.853514-03:00",
+  "updated_at": "2026-05-25T08:50:25.853514-03:00",
+  "source_dir": "/Users/jailtonjunior/Git/orchestrator",
   "link_mode": "copy",
   "tools": [
     "claude",
+    "gemini",
     "codex",
-    "copilot",
-    "gemini"
+    "copilot"
   ],
   "langs": [
     "go"
@@ -18,6 +18,7 @@
     "create-technical-specification",
     "create-tasks",
     "execute-task",
+    "execute-all-tasks",
     "refactor",
     "review",
     "analyze-project",
@@ -38,14 +39,15 @@
     "object-calisthenics-go"
   ],
   "checksums": {
-    "agent-governance": "212c15e7cee69549636c62782b48a01406650527961d71ca872256cd8eebb387",
+    "agent-governance": "36928abd42a87e528e9274e4ebe599d1dfc07da60f69b4cb87500bcf5c25f64d",
     "analyze-project": "ed9258200cffc36cb8672cda199d3b0d1ea5e8a762b78acc779943ffff7fd4ae",
-    "bugfix": "eba9a16e0a41bad105f27ade8f006f919f19f61e5b4f96cc2250113fcd084ecb",
+    "bugfix": "4ccf39efe17078493f77c26528cd6b9c0bf8f03a67b628f6250967bd3f210806",
     "confluence-changelog-publisher": "ce8d962e126b442f553fe00fda126475020bdfea5fd38624d32a4d735e7d97ba",
-    "create-prd": "fa2682cd9ccd5a54d61b80d46dd56ed4b33950e504aa93a3cddf3b560193ec5f",
-    "create-tasks": "1a4cdf434a1ef4592f02cfc8623b5d51d6956f938568cb10d8ee2ab58d151798",
-    "create-technical-specification": "bcb9505c7f1dda1796100892987d7eea1e32d4a4f4153655f5387e004bcb7a20",
-    "execute-task": "2eeed6d2d034f8828286560ef75af3c7d01ebf20be4d94d94c38ebce39f173af",
+    "create-prd": "b52d6b27cf65561b1f701d32dd910120afb5604ddd62cdab349c1fd0c39252e8",
+    "create-tasks": "e56986db6bef90dc0b616dd4a1b8d19ab9246c48e6cd89047cb888542cb0cfe9",
+    "create-technical-specification": "50ad7442395a3f9e8dafef6c52a3844acce9e322adf5a005dac0df5262f987f7",
+    "execute-all-tasks": "d0be403b617c38d5f7f7789e6f7d80cdd5516c51f90ae82684659a4aa9443002",
+    "execute-task": "ecc43ab18506cc851122520762ecd348707359bebf4ac5de19216ceacbbb0e17",
     "github-diff-changelog-publisher": "0d1f820929477686ff6cd1f9c0ea6abdab6f4366566e9c57d3cc0e1a73ff61b7",
     "github-pr-comment-triage": "46c38babf131cd6234d6ae5c81f435baf281f533707c8a4e220f0eb31df94e00",
     "github-release-publication-flow": "a231e779d50506d4fbcbe58d662e756bc360decf2b63769bf063215a91b15acf",
@@ -56,21 +58,22 @@
     "postman-collection-generator": "2198fb4aa0a09855dc395f87ae439d98f03caca167ef69d2afb367e6af5964a2",
     "prompt-enricher": "dda3d776b43010648031829f4cd314b00ff2ce47a43186ecf5afdd4b41bf7e13",
     "pull-request": "dd5160610b8185d9b050dde71be72d376f9b1c88767836e928fe6d7b26b10619",
-    "refactor": "190cda0c07c1c9799f6f36c71f14f31574eadfbf738c838eccccca84045f7541",
-    "review": "65e2369bcc929ba1f0abcdc98098e9f7a27fba5c7ca973fc8c957f8e197c0618",
+    "refactor": "d804cf099a0b1adae16a17cfdfa3c7de2e91a7c538d3c40fac52432d44524bc7",
+    "review": "ecd47a5fdbd8639842178f15cfae3b1079b34d4e5ed12a25e65df66296701754",
     "semantic-commit": "ea289b301d4afae4f798a8a394eb74aaa943fd5990307fc0c86da07036167280",
-    "us-to-prd": "8c31fdbbb41087347c4fad1c14deb4420d577f139a439ee6221b3f003073f622"
+    "us-to-prd": "f2a3793f02bd30984b5fe0f19efeb3a8d9280302056f88f41cc7f7fea900697a"
   },
   "codex_profile": "full",
   "skill_versions": {
-    "agent-governance": "1.0.0",
+    "agent-governance": "1.1.1",
     "analyze-project": "1.0.0",
-    "bugfix": "1.0.0",
+    "bugfix": "1.1.1",
     "confluence-changelog-publisher": "1.0.0",
-    "create-prd": "1.1.0",
-    "create-tasks": "1.1.0",
-    "create-technical-specification": "1.0.0",
-    "execute-task": "1.0.0",
+    "create-prd": "1.3.1",
+    "create-tasks": "1.6.1",
+    "create-technical-specification": "1.2.1",
+    "execute-all-tasks": "1.7.2",
+    "execute-task": "1.5.1",
     "github-diff-changelog-publisher": "1.0.0",
     "github-pr-comment-triage": "1.0.0",
     "github-release-publication-flow": "1.0.0",
@@ -81,9 +84,9 @@
     "postman-collection-generator": "1.0.0",
     "prompt-enricher": "1.0.0",
     "pull-request": "1.0.0",
-    "refactor": "1.0.0",
-    "review": "1.1.0",
+    "refactor": "1.0.1",
+    "review": "1.2.0",
     "semantic-commit": "1.0.0",
-    "us-to-prd": "1.0.0"
+    "us-to-prd": "1.0.1"
   }
 }

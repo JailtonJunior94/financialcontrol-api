@@ -19,6 +19,10 @@ path = ".agents/skills/execute-task"
 enabled = true
 
 [[skills.config]]
+path = ".agents/skills/execute-all-tasks"
+enabled = true
+
+[[skills.config]]
 path = ".agents/skills/analyze-project"
 enabled = true
 
@@ -40,13 +44,5 @@ enabled = true
 
 [[skills.config]]
 path = ".agents/skills/object-calisthenics-go"
-enabled = true
-
-[[skills.config]]
-path = ".agents/skills/node-implementation"
-enabled = true
-
-[[skills.config]]
-path = ".agents/skills/python-implementation"
 enabled = true
 

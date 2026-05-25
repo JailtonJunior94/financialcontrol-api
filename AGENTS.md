@@ -12,16 +12,38 @@ Use estas instrucoes para manter consistencia, seguranca e qualidade ao trabalha
 O projeto aparenta ser um monolito unico. A governanca deve privilegiar coesao local, limites de pacote claros e crescimento incremental da estrutura.
 
 Stack detectada: Go.
-Frameworks detectados: Fiber.
+Frameworks detectados: Fiber, gRPC.
 
 ## Estrutura de Pastas
 
 ```
 .
-.ai_spec_harness.json
+.docker
+.docker/data
+.docker/data/Entropy.bin
+.docker/data/financial_control.mdf
+.docker/data/financial_control_log.ldf
+.docker/data/master.mdf
+.docker/data/mastlog.ldf
+.docker/data/model.mdf
+.docker/data/model_msdbdata.mdf
+.docker/data/model_msdblog.ldf
+.docker/data/model_replicatedmaster.ldf
+.docker/data/model_replicatedmaster.mdf
+.docker/data/modellog.ldf
+.docker/data/msdbdata.mdf
+.docker/data/msdblog.ldf
+.docker/data/tempdb.mdf
+.docker/data/tempdb2.ndf
+.docker/data/tempdb3.ndf
+.docker/data/tempdb4.ndf
+.docker/data/templog.ldf
 .env
 .env.example
 .github
+.github/CODEOWNERS
+.github/PULL_REQUEST_TEMPLATE
+.github/PULL_REQUEST_TEMPLATE/pii-quarterly-review.md
 .github/agents
 .github/agents/bugfix.agent.md
 .github/agents/prd-writer.agent.md
@@ -31,7 +53,15 @@ Frameworks detectados: Fiber.
 .github/agents/task-executor.agent.md
 .github/agents/task-planner.agent.md
 .github/agents/technical-specification-writer.agent.md
-.github/copilot-instructions.md
+.github/hooks
+.github/hooks/post-execute-task.sh
+.github/hooks/post-wave.sh
+.github/hooks/pre-execute-all-tasks.sh
+.github/hooks/subagent-stop-wrapper.sh
+.github/hooks/validate-governance.sh
+.github/hooks/validate-preload.sh
+.github/scripts
+.github/scripts/lint-migrations.sh
 .github/skills
 .github/skills/agent-governance
 .github/skills/agent-governance/SKILL.md
@@ -67,36 +97,6 @@ Frameworks detectados: Fiber.
 .github/skills/bugfix
 .github/skills/bugfix/SKILL.md
 .github/skills/bugfix/assets
-.github/skills/bugfix/assets/bugfix-report-template.md
-.github/skills/bugfix/references
-.github/skills/bugfix/references/canonical-bug-format.md
-.github/skills/bugfix/scripts
-.github/skills/bugfix/scripts/validate-bug-input.py
-.github/skills/confluence-changelog-publisher
-.github/skills/confluence-changelog-publisher/SKILL.md
-.github/skills/create-prd
-.github/skills/create-prd/SKILL.md
-.github/skills/create-prd/assets
-.github/skills/create-prd/assets/prd-template.md
-.github/skills/create-tasks
-.github/skills/create-tasks/SKILL.md
-.github/skills/create-tasks/assets
-.github/skills/create-tasks/assets/task-template.md
-.github/skills/create-tasks/assets/tasks-template.md
-.github/skills/create-technical-specification
-.github/skills/create-technical-specification/SKILL.md
-.github/skills/create-technical-specification/assets
-.github/skills/create-technical-specification/assets/adr-template.md
-.github/skills/create-technical-specification/assets/techspec-template.md
-.github/skills/execute-task
-.github/skills/execute-task/SKILL.md
-.github/skills/execute-task/assets
-.github/skills/execute-task/assets/task-execution-report-template.md
-.github/skills/github-diff-changelog-publisher
-.github/skills/github-diff-changelog-publisher/SKILL.md
-.github/skills/github-pr-comment-triage
-.github/skills/github-pr-comment-triage/SKILL.md
-.github/skills/github-release-publication-flow
 ```
 
 ## Padrao Arquitetural
@@ -108,37 +108,6 @@ Predominio de packages internos coesos, com estrutura orientada por dominio ou c
 - Transporte e adapters devem depender de casos de uso ou servicos explicitos, nao do contrario.
 - Dominio nao deve conhecer detalhes de HTTP, banco, filas, serializacao ou drivers.
 - Infraestrutura pode implementar contratos consumidos pela aplicacao, preservando dependencia para dentro.
-
-### Forma Canonica de Modulo (`internal/modules/<m>/`)
-
-Todo modulo de negocio segue a mesma forma. Divergencias precisam de justificativa explicita.
-
-1. Camadas: `application/` (`dtos`, `usecase`, `usecase/mocks`), `domain/`
-   (`entities`, `vos`, `ports`, `ports/mocks`, `errors.go`; `services/` quando
-   houver regra de dominio sem estado), `infrastructure/`
-   (`http/handlers`, `http/routes`, `persistence/mssql`).
-2. `module.go` expoe o quarteto `Deps` / `Module` / `NewModule` / `RegisterHTTP`.
-3. `Deps` carrega apenas dependencias externas brutas (`DB devkitdb.DBTX` e/ou
-   `Manager manager.Manager`) e adapters cross-module/cross-cutting que **nao
-   pertencem** ao modulo. Repositorios, clock e id generator **internos** sao
-   construidos dentro de `NewModule` — nunca no container.
-4. `infrastructure/http/handlers/error_mapping.go` no pacote `handlers`.
-5. `infrastructure/persistence/mssql/`: `queries.go`, `row_mappers.go`,
-   `errors.go` (`MapDriverError` traduzindo erro de driver para sentinela de
-   dominio quando houver constraint mapeavel) e `<entidade>_repository.go`.
-6. Clock como porta de dominio + `infrastructure/clock/system_clock.go` apenas
-   quando o modulo precisar de tempo.
-7. Naming: `application/dtos/pagination.go`; rotas em `<modulo>_routes.go` (ou
-   `<recurso>_routes.go` por recurso).
-8. Excecao documentada: `infrastructure/providers/` guarda adapters de portas
-   cross-module por design (enforcada em `dependency_rules_test.go` e
-   `governance_rules_test.go`). Nao renomear. `infrastructure/adapters/` e para
-   adapters cross-cutting (ex.: hasher, token issuer) — proposito distinto.
-
-Divergencias legitimas (sem acao): modulo sem `domain/services`/clock quando nao
-ha regra sem estado nem dependencia de tempo; modulo sem paginacao quando nao
-lista colecao; subpastas extras de dominio (`filters`, `projections`) conforme
-complexidade real.
 
 ## Modo de trabalho
 
@@ -224,25 +193,6 @@ Carregar o minimo necessario para a tarefa reduz custo de tokens em 35-50%:
 - Classificar a complexidade **antes** de carregar qualquer referencia.
 - Quando a reference tiver bloco `<!-- TL;DR ... -->`, preferir o TL;DR ao documento completo em tarefas standard.
 - Override explicito via `--complexity=<nivel>` prevalece sobre classificacao automatica.
-
-## Denylist de PII (RF-27)
-
-Campos listados abaixo sao automaticamente redacionados em logs, atributos de span e `db.statement` pelo redator em `internal/bootstrap/observability/redactor/denylist.go`.
-
-**Nunca sugira codigo que leia, imprima ou propague esses campos sem passar pelo redator.**
-
-Campos cobertos:
-
-| Categoria | Campos |
-|-----------|--------|
-| PCI / credenciais | `pan`, `card_number`, `cardnumber`, `cvv`, `cvc`, `password`, `passwd`, `secret`, `token`, `access_token`, `refresh_token`, `authorization` |
-| Documentos BR | `cpf`, `cnpj`, `rg` |
-| Contato | `email`, `phone`, `telefone`, `address`, `endereco`, `zipcode`, `cep` |
-| Bancario e identidade | `account_number`, `agency`, `bank_account`, `pix_key`, `pix_chave`, `full_name`, `holder_name`, `nome_completo` |
-
-Sentinela: `[REDACTED]`. Matching case-insensitive, recursivo em qualquer profundidade, atravessa arrays/listas de objetos.
-
-Evolucao da lista: PR direto + entrada no CHANGELOG. Auditoria trimestral obrigatoria (PR template em `.github/PULL_REQUEST_TEMPLATE/pii-quarterly-review.md`, cron em `.github/workflows/pii-quarterly-review.yml`).
 
 ## Validacao
 

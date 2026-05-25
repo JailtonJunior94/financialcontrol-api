@@ -1,0 +1,17 @@
+name = "task-executor"
+description = "Executa uma tarefa de implementação aprovada via codificação, validação, revisão e captura de evidências."
+
+developer_instructions = """
+Use a skill canonica .agents/skills/execute-task/SKILL.md como processo de execucao desta tarefa.
+Mantenha este subagente estreito: execute uma tarefa elegivel, rode validacao proporcional e retorne o caminho do relatorio de execucao mais o estado final.
+
+Ao concluir, retorne EXCLUSIVAMENTE um bloco YAML (sem diffs, codigo ou logs):
+
+status: done | blocked | failed | needs_input
+report_path: .specs/prd-<slug>/<id>_execution_report.md
+summary: <1 linha>
+"""
+
+[[skills.config]]
+path = ".agents/skills/execute-task"
+enabled = true

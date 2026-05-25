@@ -299,3 +299,39 @@ Checklist pre-merge:
 Pos-deploy (T+5 min): validar `/live`, `/ready`, `/health` em producao. Janela de observacao: T+1h monitorando dashboards LGTM e taxa de erros. Rollback: revert do PR e redeploy da versao anterior (sem migracao de dados envolvida).
 
 ADRs desta entrega: [ADR-001](tasks/prd-migration-devkit-httpserver/adr-001-adocao-server-fiber.md), [ADR-002](tasks/prd-migration-devkit-httpserver/adr-002-cors-aberto-rfc7807.md), [ADR-003](tasks/prd-migration-devkit-httpserver/adr-003-fail-fast-observability-mssql.md), [ADR-004](tasks/prd-migration-devkit-httpserver/adr-004-envs-identidade-servico.md).
+
+## AI Governance
+
+Este repositorio usa a governanca `ai-spec` para padronizar o uso de agentes de IA (Claude, Gemini, Codex, Copilot) em tarefas de produto, arquitetura, implementacao e revisao.
+
+- **Ultima atualizacao do baseline:** 2026-05-25
+- **Versao `ai-spec`:** 0.23.2 (modo `copy`, linguagem `go`)
+- **Ferramentas instaladas:** `claude`, `gemini`, `codex`, `copilot`
+- **Fonte canonica de regras:** `AGENTS.md` (raiz). Espelhos por ferramenta: `CLAUDE.md`, `GEMINI.md`. Os fluxos procedurais vivem em `.agents/skills/`.
+
+### Como invocar skills
+
+Skills sao fluxos procedurais executados por um agente de IA. Os mais comuns no ciclo de desenvolvimento:
+
+| Skill | Quando usar |
+| --- | --- |
+| `create-prd` | Escopar uma nova funcionalidade (objetivo, restricoes, requisitos numerados) |
+| `create-technical-specification` | Desenhar arquitetura/interfaces a partir de um PRD aprovado |
+| `create-tasks` | Decompor PRD + techspec em tarefas incrementais e testaveis |
+| `execute-task` / `execute-all-tasks` | Implementar uma tarefa (ou o PRD inteiro) com validacao e evidencia |
+| `review` | Revisar um diff/branch antes do merge |
+| `bugfix` | Corrigir bug pela causa raiz com teste de regressao |
+| `refactor` | Refatoracao incremental com preservacao de comportamento |
+
+No Claude Code (ou agente compativel), invoque a skill pelo nome (ex.: peca "use a skill `execute-task`"). A skill `go-implementation` e carregada automaticamente para mudancas em codigo Go.
+
+### Verificar a instalacao da governanca
+
+```bash
+ai-spec doctor .   # saude geral (git, manifesto, symlinks, permissoes)
+ai-spec verify .   # estado das skills (current / missing / drifted)
+ai-spec lint .     # validacao dos arquivos de governanca
+ai-spec inspect .  # detalhes do manifesto e toolchain detectado
+```
+
+> Nota: os hooks `validate-preload` e `validate-governance` precisam ser adicionados manualmente em `.claude/settings.local.json` — o instalador preserva o arquivo existente e nao o sobrescreve.
