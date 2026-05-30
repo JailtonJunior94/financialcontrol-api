@@ -9,6 +9,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/spec
 
 ### Added
 
+### Changed
+
+### Removed
+
+### Security
+
+### Deprecated
+
+---
+
+## [1.0.0] - 2026-05-30
+
+### Added
+
 - **PII denylist** auditável em `internal/bootstrap/observability/redactor/denylist.go`. Lista canônica de campos sensíveis cobertos por redator que sanitiza logs, atributos de span e `db.statement`. Evolução via PR direto + entrada nesta seção. Auditoria trimestral obrigatória (PR template + cron Actions).
 - Pipeline de observabilidade orientado ao domínio financeiro: counters `financial_operation_total` e `financial_amount_processed`, histograma `partner_integration_latency` (declarado, não alimentado nesta release).
 - Driver MSSQL instrumentado em `internal/bootstrap/database/instrumented`: spans OTel por chamada, slow-query log com threshold parametrizável (`SLOW_QUERY_THRESHOLD_MS`, default 1000ms), `application_name=financialcontrol-api-{env}` injetado na connection string.

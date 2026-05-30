@@ -13,19 +13,24 @@ API backend para controle de financas pessoais, organizada em um layout Go-like 
 ```text
 .
 |-- cmd/
-|   |-- financialcontrol-api/   # entrypoint do binario principal
-|   `-- test-permissions/       # binario auxiliar de teste
+|   |-- financialcontrol-api/   # entrypoint da API
+|   `-- migration/              # entrypoint das migracoes
 |-- configs/                    # config.<ENV>.yaml
 |-- deployments/
 |   |-- docker/                 # Dockerfile e compose
-|   `-- k8s/                    # manifests Kubernetes
+|   |-- k8s/                    # manifests Kubernetes
+|   `-- observability/          # stack LGTM + alertas PromQL
 |-- internal/
-|   |-- application/            # DTOs, services, handlers e use cases
-|   |-- bootstrap/              # wiring de CLI, HTTP e container
-|   |-- domain/                 # entidades, eventos e contratos
-|   |-- http/                   # middlewares e constantes HTTP compartilhadas
-|   |-- infrastructure/         # config, banco, queries e repositories
-|   `-- shared/                 # utilitarios internos do servico
+|   |-- bootstrap/              # composition root e plataforma
+|   |   |-- cli/                # RunServer (Cobra)
+|   |   |-- container/          # wiring dos 4 modulos
+|   |   `-- config/ · database/ · http/ · health/ · migration/ · observability/
+|   `-- modules/                # bounded contexts
+|       |-- identity/           # application · domain · infrastructure
+|       |-- cards/              # application · domain · infrastructure
+|       |-- categories/         # application · domain · infrastructure
+|       `-- finance/            # application · domain · infrastructure · providers
+|-- pkg/                        # shared kernel transversal
 |-- tests/                      # artefatos auxiliares de teste e coverage
 |-- Makefile
 `-- .github/workflows/ci-cd.yml
@@ -38,9 +43,7 @@ API backend para controle de financas pessoais, organizada em um layout Go-like 
 - Bootstrap HTTP: `internal/bootstrap/http`
 - Composicao de dependencias: `internal/bootstrap/container`
 
-O binario sobe a API por padrao e tambem expoe os comandos operacionais `sync`, `budget`, `budget-cards-and-others`, `budget-unified`, `budget-full`, `balance` e `budget-category`.
-
-Para listar os comandos disponiveis:
+O binario sobe a API HTTP. Para listar os comandos disponiveis:
 
 ```bash
 go run ./cmd/financialcontrol-api --help
@@ -60,7 +63,6 @@ Exemplos:
 
 ```bash
 ENVIRONMENT=development go run ./cmd/financialcontrol-api
-ENVIRONMENT=production go run ./cmd/financialcontrol-api sync
 ```
 
 ## Variaveis de Ambiente
@@ -142,23 +144,6 @@ Subir a API localmente:
 
 ```bash
 make run ENVIRONMENT=development
-```
-
-Executar sync:
-
-```bash
-make run_sync ENVIRONMENT=production
-```
-
-Executar comandos de orcamento:
-
-```bash
-make run_budget ENVIRONMENT=production DATE=01/04/2025
-make run_budget_cards_and_others ENVIRONMENT=production DATE=01/04/2025
-make run_budget_unified ENVIRONMENT=production DATE=01/04/2025
-make run_budget_full ENVIRONMENT=production DATE=01/04/2025
-make run_balance ENVIRONMENT=production DATE=01/04/2025
-make run_budget_category ENVIRONMENT=production DATE=01/04/2025 CATEGORY=Alimentacao
 ```
 
 ## Validacao

@@ -7,107 +7,54 @@ Este diretorio centraliza regras para uso com agentes de IA em tarefas reais de 
 
 Use estas instrucoes para manter consistencia, seguranca e qualidade ao trabalhar com codigo, configuracao, validacao e evolucao de sistemas.
 
-## Arquitetura: monolito
+## Arquitetura: monolito modular
 
-O projeto aparenta ser um monolito unico. A governanca deve privilegiar coesao local, limites de pacote claros e crescimento incremental da estrutura.
+O projeto e um monolito modular: um unico Go module e um unico binario (`cmd/financialcontrol-api`), particionado em bounded contexts autonomos sob `internal/modules/` (`identity`, `cards`, `categories`, `finance`). A governanca deve privilegiar isolamento entre modulos, fronteiras de contexto explicitas e comunicacao cross-module apenas por ports + adapters (anti-corruption layer), nunca por import direto de internals de outro modulo.
 
-Stack detectada: Go.
-Frameworks detectados: Fiber, gRPC.
+Stack detectada: Go 1.26.3.
+Frameworks detectados: Fiber v2 (HTTP). Sem gRPC.
+Persistencia: SQL Server (go-mssqldb) com migracoes via golang-migrate.
+Observabilidade: OpenTelemetry. Auth: JWT. CLI/config: Cobra + Viper.
 
 ## Estrutura de Pastas
 
 ```
-.
-.docker
-.docker/data
-.docker/data/Entropy.bin
-.docker/data/financial_control.mdf
-.docker/data/financial_control_log.ldf
-.docker/data/master.mdf
-.docker/data/mastlog.ldf
-.docker/data/model.mdf
-.docker/data/model_msdbdata.mdf
-.docker/data/model_msdblog.ldf
-.docker/data/model_replicatedmaster.ldf
-.docker/data/model_replicatedmaster.mdf
-.docker/data/modellog.ldf
-.docker/data/msdbdata.mdf
-.docker/data/msdblog.ldf
-.docker/data/tempdb.mdf
-.docker/data/tempdb2.ndf
-.docker/data/tempdb3.ndf
-.docker/data/tempdb4.ndf
-.docker/data/templog.ldf
-.env
-.env.example
-.github
-.github/CODEOWNERS
-.github/PULL_REQUEST_TEMPLATE
-.github/PULL_REQUEST_TEMPLATE/pii-quarterly-review.md
-.github/agents
-.github/agents/bugfix.agent.md
-.github/agents/prd-writer.agent.md
-.github/agents/project-analyzer.agent.md
-.github/agents/refactorer.agent.md
-.github/agents/reviewer.agent.md
-.github/agents/task-executor.agent.md
-.github/agents/task-planner.agent.md
-.github/agents/technical-specification-writer.agent.md
-.github/hooks
-.github/hooks/post-execute-task.sh
-.github/hooks/post-wave.sh
-.github/hooks/pre-execute-all-tasks.sh
-.github/hooks/subagent-stop-wrapper.sh
-.github/hooks/validate-governance.sh
-.github/hooks/validate-preload.sh
-.github/scripts
-.github/scripts/lint-migrations.sh
-.github/skills
-.github/skills/agent-governance
-.github/skills/agent-governance/SKILL.md
-.github/skills/agent-governance/references
-.github/skills/agent-governance/references/bug-schema.json
-.github/skills/agent-governance/references/ddd.md
-.github/skills/agent-governance/references/enforcement-matrix.md
-.github/skills/agent-governance/references/error-handling.md
-.github/skills/agent-governance/references/messaging.md
-.github/skills/agent-governance/references/observability.md
-.github/skills/agent-governance/references/persistence.md
-.github/skills/agent-governance/references/security-app.md
-.github/skills/agent-governance/references/security.md
-.github/skills/agent-governance/references/shared-architecture.md
-.github/skills/agent-governance/references/shared-lifecycle.md
-.github/skills/agent-governance/references/shared-patterns.md
-.github/skills/agent-governance/references/shared-testing.md
-.github/skills/agent-governance/references/testing.md
-.github/skills/agent-governance/scripts
-.github/skills/agent-governance/scripts/detect-architecture.sh
-.github/skills/agent-governance/scripts/detect-toolchain.sh
-.github/skills/agent-governance/triggers
-.github/skills/agent-governance/triggers/go.yaml
-.github/skills/agent-governance/triggers/node.yaml
-.github/skills/agent-governance/triggers/python.yaml
-.github/skills/analyze-project
-.github/skills/analyze-project/SKILL.md
-.github/skills/analyze-project/assets
-.github/skills/analyze-project/assets/agents-template.md
-.github/skills/analyze-project/assets/ai-tool-template.md
-.github/skills/analyze-project/scripts
-.github/skills/analyze-project/scripts/generate-governance.sh
-.github/skills/bugfix
-.github/skills/bugfix/SKILL.md
-.github/skills/bugfix/assets
+financialcontrol-api/
+├── cmd/
+│   ├── financialcontrol-api/main.go   # entrypoint da API
+│   └── migration/main.go              # entrypoint das migracoes
+├── internal/
+│   ├── bootstrap/                     # composition root + plataforma
+│   │   ├── cli/                       # RunServer (Cobra)
+│   │   ├── container/container.go     # monta e injeta os 4 modulos
+│   │   ├── config/ · database/ · http/ · health/ · migration/
+│   │   └── observability/             # logging, metrics, tracing, redactor
+│   └── modules/                       # bounded contexts
+│       ├── identity/    (application · domain · infrastructure)
+│       ├── cards/       (application · domain · infrastructure)
+│       ├── categories/  (application · domain · infrastructure)
+│       └── finance/     (application · domain · infrastructure · providers)
+│           ├── domain/{entities,vos,services,ports,projections,filters}
+│           ├── application/{usecase,dtos}
+│           └── infrastructure/{http,persistence/mssql,providers,idempotency,idgen,clock}
+├── pkg/                               # shared kernel transversal
+│   ├── jwt/ · authmiddleware/ · identityvo/ · identitycontext/
+│   ├── customerrors/ · web/ · http/ · events/ · security/ · uuid/
+│   └── database/{mssql,migrations} · modules/registration.go
+├── configs/ · deployments/ · docs/ · tests/ · scripts/
+└── AGENTS.md · CLAUDE.md · GEMINI.md · Makefile   # governanca
 ```
 
 ## Padrao Arquitetural
 
-Predominio de packages internos coesos, com estrutura orientada por dominio ou componente.
+Clean Architecture / Hexagonal + DDD tatico aplicado por modulo. Cada bounded context expoe a triade `domain/` (entities, vos, services, ports, projections, filters), `application/` (usecase, dtos) e `infrastructure/` (http, persistence/mssql, providers, clock, idgen, idempotency). O wiring de cada modulo segue a forma canonica `NewModule(Deps) *Module` + `RegisterHTTP`, montado no composition root `internal/bootstrap/container/container.go`.
 
 ### Fluxo de Dependencias
 
-- Transporte e adapters devem depender de casos de uso ou servicos explicitos, nao do contrario.
-- Dominio nao deve conhecer detalhes de HTTP, banco, filas, serializacao ou drivers.
-- Infraestrutura pode implementar contratos consumidos pela aplicacao, preservando dependencia para dentro.
+- Dentro do modulo a dependencia aponta para dentro: `http/handlers -> application/usecase -> domain`. O dominio define interfaces (`domain/ports`); `infrastructure/persistence/mssql` as implementa.
+- Dominio nao conhece HTTP, SQL, drivers ou serializacao. Regra verificada por codigo em `internal/modules/finance/domain/dependency_rules_test.go` (proibe `database/sql` e `fiber` no dominio).
+- Cross-module so via ports + adapters: o consumidor declara um port no proprio dominio (ex: `finance/domain/ports.CardProvider`) e mapeia para um read model proprio (`finance/domain/projections.CardView`); o adapter vive em `*/infrastructure/providers/` e traduz o contexto de origem. Hoje apenas `finance` consome `cards` e `categories` por esse caminho; `cards`, `categories` e `identity` nao tem dependencia cross-module.
+- `pkg/` e o shared kernel transversal (jwt, authmiddleware, customerrors, identityvo, database/mssql, etc.), sem regra de negocio de modulo.
 
 ## Modo de trabalho
 
@@ -131,9 +78,18 @@ Predominio de packages internos coesos, com estrutura orientada por dominio ou c
 
 ## Regras por Arquitetura
 
-1. Preservar coesao local e dependencia unidirecional entre packages.
-2. Evitar helpers transversais que escondam regra de negocio ou IO.
-3. Crescer a estrutura apenas quando o codigo atual ja nao comportar a mudanca com clareza.
+Regras de fronteira de modulo (hard):
+
+1. Proibido import direto de internals de outro modulo (`internal/modules/<outro>/...`) fora de `*/infrastructure/providers/`. Comunicacao cross-module so por port (declarado no dominio consumidor) + adapter (na infraestrutura) + projection/read model proprio.
+2. Proibido dependencia circular entre bounded contexts. O grafo permitido hoje e `finance -> {cards, categories}`; `identity`, `cards` e `categories` permanecem sem dependencia cross-module.
+3. Dominio nao importa HTTP, SQL, drivers nem outro modulo. Replicar `dependency_rules_test.go` ao criar/alterar dominio em `cards`, `categories` e `identity` (hoje so `finance` tem o teste).
+4. Wiring novo deve seguir a forma canonica `NewModule(Deps) *Module` + `RegisterHTTP` e ser montado em `internal/bootstrap/container/container.go`, nao em pacotes de dominio/aplicacao.
+
+Regras gerais:
+
+5. Preservar coesao local e dependencia unidirecional entre packages.
+6. Evitar helpers transversais que escondam regra de negocio ou IO.
+7. Crescer a estrutura apenas quando o codigo atual ja nao comportar a mudanca com clareza.
 
 ## Regras por Linguagem
 
@@ -202,8 +158,9 @@ Seguir Etapa 4 de `.agents/skills/agent-governance/SKILL.md` como base canonica.
 
 Comandos detectados no projeto (Go):
 1. Rodar fmt: `gofmt -w .`.
-2. Rodar test: `go test ./...`.
+2. Rodar vet: `go vet ./...`.
 3. Rodar lint: `golangci-lint run`.
+4. Rodar test: `go test ./...`.
 
 ## Restricoes
 
