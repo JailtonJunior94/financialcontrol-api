@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # Valida o pacote de evidencias de um relatorio de bugfix.
-# Uso: $0 [--rf <RF-ID>] <bugfix_report.md>
+# Uso: $0 [--rf <RF-ID>] [--no-rf] <bugfix_report.md>
 #
 # Opcoes:
 #   --rf <RF-ID>  Verifica se o RF/requisito informado e mencionado no relatorio (rastreabilidade).
 #                 Pode ser repetido para multiplos IDs: --rf RF-01 --rf RF-02
+#   --no-rf       Desabilita a checagem default-on de rastreabilidade de origem (escape hatch).
+#
+# Por padrao (default-on), o validador exige que o relatorio comprove a origem do bug
+# (campo "Origem:" referenciando RF, task, finding de review ou issue). Use --no-rf para opt-out.
 #
 # Exit 0 = aprovado, Exit 1 = reprovado, Exit 2 = uso incorreto.
 
@@ -13,6 +17,7 @@ set -euo pipefail
 export LC_ALL=C
 
 rf_ids=()
+check_traceability=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -24,9 +29,13 @@ while [[ $# -gt 0 ]]; do
       rf_ids+=("$2")
       shift 2
       ;;
+    --no-rf)
+      check_traceability=0
+      shift
+      ;;
     -*)
       echo "Opcao desconhecida: $1"
-      echo "Uso: $0 [--rf <RF-ID>]... <bugfix_report.md>"
+      echo "Uso: $0 [--rf <RF-ID>]... [--no-rf] <bugfix_report.md>"
       exit 2
       ;;
     *)
@@ -94,6 +103,16 @@ require_pattern "Corrigidos[[:space:]]*:" "contagem de bugs corrigidos"
 if ! grep -Eiq "^[-*]?[[:space:]]*(Estado|estado|Estado final)[[:space:]]*:[[:space:]]*(done|blocked|failed|needs_input)" "$report_file"; then
   echo "FALTANDO: estado terminal canonico (done|blocked|failed|needs_input)"
   missing=1
+fi
+
+# Rastreabilidade de origem default-on: cada bug deve declarar de onde veio
+# (RF, task, finding de review ou issue). Use --no-rf para opt-out.
+if [[ "$check_traceability" -eq 1 ]]; then
+  if ! grep -Eiq "^[-*]?[[:space:]]*Origem[[:space:]]*:[[:space:]]*\S" "$report_file" \
+     && ! grep -Eiq "(RF-[0-9]|task[- ][0-9]|finding|issue[ -]#?[0-9])" "$report_file"; then
+    echo "FALTANDO: rastreabilidade de origem (campo 'Origem:' com RF/task/finding/issue) — use --no-rf para opt-out"
+    missing=1
+  fi
 fi
 
 # Rastreabilidade RF: cada ID informado via --rf deve aparecer no relatorio

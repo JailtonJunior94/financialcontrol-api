@@ -19,6 +19,10 @@ path = ".agents/skills/execute-task"
 enabled = true
 
 [[skills.config]]
+path = ".agents/skills/execute-all-tasks"
+enabled = true
+
+[[skills.config]]
 path = ".agents/skills/analyze-project"
 enabled = true
 
